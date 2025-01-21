@@ -9,6 +9,7 @@ import Import
 import Part
 import os, shutil, json, time
 from pathlib import Path
+import pandas as pd
 
 import constants
 
@@ -176,6 +177,12 @@ class RawPrimaryPipeline:
         #2. exclude classes manually if given
         if self.config["filter_criteria"]["classes_to_exclude"]:
             data = self.exclude_classes(data, self.config["filter_criteria"]["classes_to_exclude"] )
+
+        #3. remove files from duplicates file
+        dplk = pd.read_csv(r"../../reports/raw->primary/detected_duplicates.csv", header=None, names=['file', 'error'])
+        for file in list(dplk.file):
+            if Path(file).exists():
+                os.remove(file)
 
         return data
     
