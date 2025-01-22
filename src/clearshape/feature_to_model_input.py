@@ -46,6 +46,21 @@ class FeatureModelInputPipeline:
     -------
     run()
         Execute the entire pipeline.
+
+    Notes
+    -----
+    The assumes the following folder structure:
+    data
+    |- 4_feature
+        |- images
+        |   |- fabwave
+        |       |- ...
+        |- invariants
+        |   |- fabwave
+        |       |-...
+        |- trees
+            |- fabwave
+                |- ...
     """
 
     _instance = None
@@ -68,12 +83,12 @@ class FeatureModelInputPipeline:
         Initialises the `self._master_table` attribute.
         """
         data = []
-        for path in iter((cons.PATHS.DATA_FEATURE / "fabwave").rglob("*.stp")):
+        for path in iter((cons.PATHS.DATA_FEATURE / "trees/fabwave").rglob("*.stp")):
             class_name = path.relative_to(
-                cons.PATHS.DATA_FEATURE / "fabwave"
+                cons.PATHS.DATA_FEATURE / "trees/fabwave"
             ).parent.as_posix()
             relative_part_path = path.relative_to(
-                cons.PATHS.DATA_FEATURE / "fabwave"
+                cons.PATHS.DATA_FEATURE / "trees/fabwave"
             ).as_posix()
             data.append((class_name, relative_part_path))
 
