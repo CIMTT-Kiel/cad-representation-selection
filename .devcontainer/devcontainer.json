@@ -13,7 +13,9 @@
     "vscode": {
       "extensions": [
         "ms-python.python",
-        "ms-toolsai.jupyter"
+        "ms-toolsai.jupyter",
+        "gruntfuggly.todo-tree",
+        "ms-python.black-formatter"
       ]
     }
   }
