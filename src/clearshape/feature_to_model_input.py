@@ -80,7 +80,7 @@ class FeatureModelInputPipeline:
 
     def _get_master_table(self) -> None:
         """
-        Initialises the `self._master_table` attribute.
+        Initialises the `self._master_table` attribute with all data points availabel in `4_feature`. (Based on `trees` subfolder)
         """
         data = []
         for path in iter((cons.PATHS.DATA_FEATURE / "trees/fabwave").rglob("*.stp")):
@@ -93,6 +93,8 @@ class FeatureModelInputPipeline:
             data.append((class_name, relative_part_path))
 
         self._master_table = pd.DataFrame(data, columns=["class", "path"])
+        # add numeric class IDs
+        self._master_table['class_ID'] = self._master_table.groupby('class').ngroup()
 
     def _oversample(self, classes: list[str]) -> None:
         """
