@@ -74,7 +74,8 @@ class STEPEncoder(nn.Module):
 
         root_h = g.ndata["h"][root_nodes]
         return root_h
-    
+
+# TODO remove deprecated class? 
 class Linears(nn.Module):
     def __init__(
         self,
