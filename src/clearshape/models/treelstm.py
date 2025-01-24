@@ -163,3 +163,22 @@ class FeedforwardMLP(nn.Module):
         if self.task_type == 'classification':
             x = nnf.softmax(x, dim=1)
         return x
+    
+class EncoderHeaderModel(nn.Module):
+    """
+    Model constiting of two parts.
+    
+    The encoder gives an vector representation of the input data, while the header generates the desired output based on that vector representation.
+    """
+
+    def __init__(self, encoder, header):
+        super().__init__()
+        # TODO rename STEPEncoder?
+        self.encoder = encoder
+        self.header = header
+
+    def forward(self, x):
+        x = self.encoder(x)
+        x = self.header(x)
+        return x
+
