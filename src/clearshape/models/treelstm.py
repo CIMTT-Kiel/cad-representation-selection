@@ -125,7 +125,7 @@ class Linears(nn.Module):
         return logits
 
 
-class MetaModel(nn.Module):
+class ModelStack(nn.Module):
     """
     MetaModel is a neural network module that sequentially applies a list of models to the input data.
 
