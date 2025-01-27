@@ -82,14 +82,12 @@ class FeatureModelInputPipeline:
         """
         Initialises the `self._master_table` attribute with all data points availabel in `4_feature`. (Based on `trees` subfolder)
         """
+        #source_folder = cons.PATHS.DATA_RAW / "fabwave"
+        source_folder = cons.PATHS.DATA_FEATURE / "trees/fabwave"
         data = []
-        for path in iter((cons.PATHS.DATA_FEATURE / "trees/fabwave").rglob("*.stp")):
-            class_name = path.relative_to(
-                cons.PATHS.DATA_FEATURE / "trees/fabwave"
-            ).parent.as_posix()
-            relative_part_path = path.relative_to(
-                cons.PATHS.DATA_FEATURE / "trees/fabwave"
-            ).as_posix()
+        for path in iter(source_folder.rglob("*.stp")):
+            class_name = path.relative_to(source_folder).parent.as_posix()
+            relative_part_path = path.relative_to(source_folder).with_suffix("").as_posix()
             data.append((class_name, relative_part_path))
 
         self._master_table = pd.DataFrame(data, columns=["class", "path"])
@@ -118,17 +116,12 @@ class FeatureModelInputPipeline:
             resampled_parts = []
             for _ in range(self._class_size_min_required - class_sizes[class_name]):
                 resampled_part = original_parts.sample(n=1)
-                resampled_parts.append(
-                    {
-                        "class": resampled_part["class"].iloc[0],
-                        "path": resampled_part["path"],
-                    }
-                )
+                resampled_parts.append(resampled_part)
 
             # add parts of resampled class to master table
             logger.debug("Update master table with resampled parts.")
             self._master_table = pd.concat(
-                [self._master_table, pd.DataFrame(resampled_parts)], ignore_index=True
+                [self._master_table] + resampled_parts, ignore_index=True
             )
 
     def _get_small_classes(self) -> list[str]:
