@@ -57,13 +57,55 @@ class ChildSumTreeLSTMCell(nn.Module):
         h = o * torch.tanh(c)
         return {"h": h, "c": c}
 
-class STEPEncoder(nn.Module):
-    def __init__(self, x_size, h_size, num_classes, dropout):
-        super(STEPEncoder, self).__init__()
-        self.x_size = x_size
-        self.h_size = h_size
-        self.dropout = nn.Dropout(dropout)
-        self.cell = ChildSumTreeLSTMCell(x_size, h_size)
+class RootedInTreeEncoder(nn.Module):
+    """
+    Recursive neural network for tree-structured data.
+
+    Input data must be tree that is directed from leaves to root.
+    
+    Parameters
+    ----------
+    child_sum : bool
+        Whether to use the Child-Sum TreeLSTM cell. Default is True.
+    n_ary : bool
+        Whether to use n-ary trees. Default is False.
+    x_size : int
+        The size of the input features.
+    h_size : int
+        The size of the hidden state.
+    num_classes : int
+        The number of output classes.
+    dropout : float
+        The dropout rate.
+
+    Attributes
+    ----------
+    x_size : int
+        The size of the input features.
+    h_size : int
+        The size of the hidden state.
+    dropout : float
+        The dropout rate.
+    cell : ChildSumTreeLSTMCell
+        The Child-Sum TreeLSTM cell.
+
+    See Also
+    --------
+    Paper on treeLSTMs:
+    Improved semantic representations from tree-structured long short-term memory networks, Kai Sheng Tai et al., 2015
+    """
+    def __init__(self,input_size, encoding_size, child_sum=True, n_ary=False):
+        if child_sum == n_ary:
+            raise ValueError("Only one of child_sum and n_ary can be True")
+
+        super().__init__()
+        self.input_size = input_size
+        self.encoding_size = encoding_size
+
+        if child_sum:
+            self.cell = ChildSumTreeLSTMCell(input_size, encoding_size)
+        else:
+            raise NotImplementedError("n_ary trees are not supported yet")
 
     def forward(self, g):
         device = g.device
