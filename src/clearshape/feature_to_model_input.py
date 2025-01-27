@@ -82,14 +82,11 @@ class FeatureModelInputPipeline:
         """
         Initialises the `self._master_table` attribute with all data points availabel in `4_feature`. (Based on `trees` subfolder)
         """
+        #source_folder = cons.PATHS.DATA_RAW / "fabwave"
+        source_folder = cons.PATHS.DATA_FEATURE / "trees/fabwave"
         data = []
-        for path in iter((cons.PATHS.DATA_FEATURE / "trees/fabwave").rglob("*.stp")):
-            class_name = path.relative_to(
-                cons.PATHS.DATA_FEATURE / "trees/fabwave"
-            ).parent.as_posix()
-            relative_part_path = path.relative_to(
-                cons.PATHS.DATA_FEATURE / "trees/fabwave"
-            ).as_posix()
+        for path in iter(source_folder.rglob("*.stp")):
+            class_name = path.relative_to(source_folder).parent.as_posix()
             data.append((class_name, relative_part_path))
 
         self._master_table = pd.DataFrame(data, columns=["class", "path"])
