@@ -86,43 +86,6 @@ class STEPEncoder(nn.Module):
         root_h = g.ndata["h"][root_nodes]
         return root_h
 
-# TODO remove unused class?
-class Linears(nn.Module):
-    def __init__(
-        self,
-        activation_fn,
-        encoding_size,
-        layers_total,
-        neurons_per_layer,
-        output_neurons,
-        dropout,
-        node_encoding_size,
-    ) -> None:
-        super(Linears, self).__init__()
-        self.encoder = STEPEncoder(
-            node_encoding_size,
-            encoding_size,
-            output_neurons,
-            dropout,
-        )
-        layers = []
-        self.encoding_size = encoding_size
-        self.output_neurons = output_neurons
-        input_size = encoding_size
-        for _ in range(layers_total):
-            layers.append(nn.Linear(input_size, neurons_per_layer))
-            if activation_fn:
-                layers.append(type(activation_fn)())
-            layers.append(nn.Dropout(dropout))
-            input_size = neurons_per_layer
-        layers.append(nn.Linear(neurons_per_layer, output_neurons))
-        layers.append(nn.Softmax(1))
-        self.linears = nn.Sequential(*layers)
-
-    def forward(self, tree_batch):
-        root_h = self.encoder(tree_batch)
-        logits = self.linears(root_h)
-        return logits
 
 
 
