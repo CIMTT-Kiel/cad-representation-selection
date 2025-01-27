@@ -87,6 +87,7 @@ class FeatureModelInputPipeline:
         data = []
         for path in iter(source_folder.rglob("*.stp")):
             class_name = path.relative_to(source_folder).parent.as_posix()
+            relative_part_path = path.relative_to(source_folder).with_suffix("").as_posix()
             data.append((class_name, relative_part_path))
 
         self._master_table = pd.DataFrame(data, columns=["class", "path"])
