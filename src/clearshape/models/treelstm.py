@@ -18,9 +18,9 @@ __author__ = "Max Borm, Max Brede, Daniel Mansfeldt"
 import dgl
 import torch
 import torch.nn as nn
-import torch.nn.functional as nnf
 
 class ChildSumTreeLSTMCell(nn.Module):
+    # TODO add docstring
     def __init__(self, x_size, h_size):
         super(ChildSumTreeLSTMCell, self).__init__()
         self.W_iou = nn.Linear(x_size, 3 * h_size, bias=False)
@@ -108,6 +108,7 @@ class RootedInTreeEncoder(nn.Module):
             raise NotImplementedError("n_ary trees are not supported yet")
 
     def forward(self, g):
+        # TODO add docstring
         device = g.device
 
         g.ndata["x"] = g.ndata["node_classes"]
