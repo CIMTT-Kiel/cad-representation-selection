@@ -1,5 +1,16 @@
 """
-# TODO add module docstring
+Pytorch model classes implementing a TreeLSTM model for tree-structured data.
+
+Routine Listings
+----------------
+ChildSumTreeLSTMCell:
+    A PyTorch module implementing the Child-Sum TreeLSTM cell.
+STEPEncoder:
+    A PyTorch module implementing the STEPEncoder.
+FeedforwardMLP:
+    A PyTorch module implementing a feedforward multi-layer perceptron.
+MetaModel:
+    A PyTorch module that sequentially applies a list of models to the input data.
 """
 
 __author__ = "Max Borm, Max Brede"
