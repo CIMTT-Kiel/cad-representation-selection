@@ -116,17 +116,12 @@ class FeatureModelInputPipeline:
             resampled_parts = []
             for _ in range(self._class_size_min_required - class_sizes[class_name]):
                 resampled_part = original_parts.sample(n=1)
-                resampled_parts.append(
-                    {
-                        "class": resampled_part["class"].iloc[0],
-                        "path": resampled_part["path"],
-                    }
-                )
+                resampled_parts.append(resampled_part)
 
             # add parts of resampled class to master table
             logger.debug("Update master table with resampled parts.")
             self._master_table = pd.concat(
-                [self._master_table, pd.DataFrame(resampled_parts)], ignore_index=True
+                [self._master_table] + resampled_parts, ignore_index=True
             )
 
     def _get_small_classes(self) -> list[str]:
