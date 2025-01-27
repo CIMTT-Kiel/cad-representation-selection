@@ -164,22 +164,36 @@ class FeedforwardMLP(nn.Module):
         if self.task_type == 'classification':
             x = nnf.softmax(x, dim=1)
         return x
-    
-class EncoderHeaderModel(nn.Module):
+
+class MetaModel(nn.Module):
     """
-    Model constiting of two parts.
-    
-    The encoder gives an vector representation of the input data, while the header generates the desired output based on that vector representation.
+    MetaModel is a neural network module that sequentially applies a list of models to the input data.
+
+    Attributes
+    ----------
+    models : (list)
+        A list of models to be applied sequentially.
     """
 
-    def __init__(self, encoder, header):
+    def __init__(self, models: list):
         super().__init__()
-        # TODO rename STEPEncoder?
-        self.encoder = encoder
-        self.header = header
+        self.models = models
 
     def forward(self, x):
-        x = self.encoder(x)
-        x = self.header(x)
+        """
+        Applies the list of models sequentially to the input data.
+
+        Parameters
+        ----------
+        x : torch.Tensor
+            The input data tensor.
+
+        Returns
+        -------
+        torch.Tensor
+            The output data tensor. Output of the last model in `models`.
+        """
+        for model_index in range(len(self.models)):
+            x = self.models[model_index](x)
         return x
 
