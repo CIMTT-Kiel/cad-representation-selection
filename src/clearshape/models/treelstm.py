@@ -45,7 +45,7 @@ class ChildSumTreeLSTMCell(nn.Module):
         # equation (8)
         h = o * torch.tanh(c)
         return {"h": h, "c": c}
-    
+
 class STEPEncoder(nn.Module):
     def __init__(self, x_size, h_size, num_classes, dropout):
         super(STEPEncoder, self).__init__()
@@ -75,7 +75,7 @@ class STEPEncoder(nn.Module):
         root_h = g.ndata["h"][root_nodes]
         return root_h
 
-# TODO remove deprecated class? 
+# TODO remove unused class?
 class Linears(nn.Module):
     def __init__(
         self,
@@ -131,18 +131,27 @@ class FeedforwardMLP(nn.Module):
         The type of task, either 'classification' or 'regression'.
     """
 
-    def __init__(self, input_dim, hidden_layers, output_dim, activation=nnf.relu, task_type='regression'):
+    def __init__(
+        self,
+        input_dim,
+        hidden_layers,
+        output_dim,
+        activation=nnf.relu,
+        task_type="regression",
+    ):
         super(FeedforwardMLP, self).__init__()
         self.activation = activation
         self.task_type = task_type
-        
+
         # Define layers
         layer_dims = [input_dim] + hidden_layers + [output_dim]
-        self.layers = nn.ModuleList([
-            nn.Linear(layer_dims[i], layer_dims[i + 1])
-            for i in range(len(layer_dims) - 1)
-        ])
-    
+        self.layers = nn.ModuleList(
+            [
+                nn.Linear(layer_dims[i], layer_dims[i + 1])
+                for i in range(len(layer_dims) - 1)
+            ]
+        )
+
     def forward(self, x):
         """
         Forward pass through the network.
@@ -160,8 +169,8 @@ class FeedforwardMLP(nn.Module):
         for layer in self.layers[:-1]:
             x = self.activation(layer(x))
         x = self.layers[-1](x)  # No activation on output layer
-        
-        if self.task_type == 'classification':
+
+        if self.task_type == "classification":
             x = nnf.softmax(x, dim=1)
         return x
 
