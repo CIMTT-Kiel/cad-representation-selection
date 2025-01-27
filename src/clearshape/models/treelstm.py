@@ -13,7 +13,7 @@ MetaModel:
     A PyTorch module that sequentially applies a list of models to the input data.
 """
 
-__author__ = "Max Borm, Max Brede"
+__author__ = "Max Borm, Max Brede, Daniel Mansfeldt"
 
 import dgl
 import torch
