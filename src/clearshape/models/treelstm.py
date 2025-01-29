@@ -18,11 +18,11 @@ class ChildSumTreeLSTMCell(nn.Module):
         
         self.W_iou = nn.Linear(input_size, 3 * encoding_size, bias=False)
         self.U_iou = nn.Linear(encoding_size, 3 * encoding_size, bias=False)
-        self.b_iou = nn.Parameter(torch.zeros(1, 3 * encoding_size))
+        self.b_iou = nn.Parameter(torch.rand(1, 3 * encoding_size))
 
         self.W_f = nn.Linear(input_size, encoding_size, bias=False)
         self.U_f = nn.Linear(encoding_size, encoding_size, bias=False)
-        self.b_f = nn.Parameter(torch.zeros(1, encoding_size))
+        self.b_f = nn.Parameter(torch.rand(1, encoding_size))
 
     def message_func(self, edges):
         return {"h": edges.src["h"], "c": edges.src["c"]}
