@@ -13,6 +13,9 @@ class ChildSumTreeLSTMCell(nn.Module):
     # TODO add docstring
     def __init__(self, input_size, encoding_size):
         super(ChildSumTreeLSTMCell, self).__init__()
+        self.input_size = input_size
+        self.encoding_size = encoding_size
+        
         self.W_iou = nn.Linear(input_size, 3 * encoding_size, bias=False)
         self.U_iou = nn.Linear(encoding_size, 3 * encoding_size, bias=False)
         self.b_iou = nn.Parameter(torch.zeros(1, 3 * encoding_size))
