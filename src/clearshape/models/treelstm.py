@@ -47,7 +47,6 @@ class ChildSumTreeLSTMCell(nn.Module):
         h = o * torch.tanh(c)
         return {"h": h, "c": c}
 
-# FIXME model.parmeters() is empty
 class RootedInTreeEncoder(nn.Module):
     """
     Recursive neural network for tree-structured data.

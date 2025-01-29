@@ -12,7 +12,7 @@ class ModelStack(nn.Module):
 
     def __init__(self, models: list):
         super().__init__()
-        self.models = models
+        self.models = nn.ModuleList(models)
 
     def forward(self, x):
         """
