@@ -1,3 +1,4 @@
+# TODO implement tests
 """
 Pytorch model classes implementing a TreeLSTM models for tree-structured data.
 """
@@ -10,15 +11,15 @@ import torch.nn as nn
 
 class ChildSumTreeLSTMCell(nn.Module):
     # TODO add docstring
-    def __init__(self, x_size, h_size):
+    def __init__(self, input_size, encoding_size):
         super(ChildSumTreeLSTMCell, self).__init__()
-        self.W_iou = nn.Linear(x_size, 3 * h_size, bias=False)
-        self.U_iou = nn.Linear(h_size, 3 * h_size, bias=False)
-        self.b_iou = nn.Parameter(torch.zeros(1, 3 * h_size))
+        self.W_iou = nn.Linear(input_size, 3 * encoding_size, bias=False)
+        self.U_iou = nn.Linear(encoding_size, 3 * encoding_size, bias=False)
+        self.b_iou = nn.Parameter(torch.zeros(1, 3 * encoding_size))
 
-        self.W_f = nn.Linear(x_size, h_size, bias=False)
-        self.U_f = nn.Linear(h_size, h_size, bias=False)
-        self.b_f = nn.Parameter(torch.zeros(1, h_size))
+        self.W_f = nn.Linear(input_size, encoding_size, bias=False)
+        self.U_f = nn.Linear(encoding_size, encoding_size, bias=False)
+        self.b_f = nn.Parameter(torch.zeros(1, encoding_size))
 
     def message_func(self, edges):
         return {"h": edges.src["h"], "c": edges.src["c"]}
@@ -46,6 +47,7 @@ class ChildSumTreeLSTMCell(nn.Module):
         h = o * torch.tanh(c)
         return {"h": h, "c": c}
 
+# FIXME model.parmeters() is empty
 class RootedInTreeEncoder(nn.Module):
     """
     Recursive neural network for tree-structured data.
@@ -58,9 +60,9 @@ class RootedInTreeEncoder(nn.Module):
         Whether to use the Child-Sum TreeLSTM cell. Default is True.
     n_ary : bool
         Whether to use n-ary trees. Default is False.
-    x_size : int
+    input_size : int
         The size of the input features.
-    h_size : int
+    encoding_size : int
         The size of the hidden state.
     num_classes : int
         The number of output classes.
@@ -69,9 +71,9 @@ class RootedInTreeEncoder(nn.Module):
 
     Attributes
     ----------
-    x_size : int
+    input_size : int
         The size of the input features.
-    h_size : int
+    encoding_size : int
         The size of the hidden state.
     dropout : float
         The dropout rate.
@@ -101,8 +103,8 @@ class RootedInTreeEncoder(nn.Module):
         device = g.device
 
         g.ndata["x"] = g.ndata["node_classes"]
-        g.ndata["h"] = torch.zeros(g.number_of_nodes(), self.h_size).to(device)
-        g.ndata["c"] = torch.zeros(g.number_of_nodes(), self.h_size).to(device)
+        g.ndata["h"] = torch.zeros(g.number_of_nodes(), self.encoding_size).to(device)
+        g.ndata["c"] = torch.zeros(g.number_of_nodes(), self.encoding_size).to(device)
 
         dgl.prop_nodes_topo(
             g,
