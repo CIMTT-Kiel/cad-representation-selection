@@ -1,3 +1,7 @@
+"""
+Module implementing a flexible feedforward multi-layer perceptron (MLP) in PyTorch.
+"""
+
 import torch.nn as nn
 
 class FeedforwardMLP(nn.Module):
