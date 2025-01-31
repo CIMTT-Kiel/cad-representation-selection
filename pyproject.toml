@@ -7,8 +7,10 @@ name = "clearshape"
 version = "0.0.0"
 requires-python = ">=3.10"
 dependencies = [
-    "numpy",
+    "numpy==2.2.2",
     "pandas",
     "omegaconf",
     "scikit-learn",
+    "cadquery",
+    "steputils",
 ]
