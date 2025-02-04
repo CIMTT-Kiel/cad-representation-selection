@@ -159,6 +159,27 @@ class PrimaryFeaturePipeline:
         # save images
         # self._images.save()
 
+    def _save_targets(self):
+        """
+        Save the extracted regression features.
+        """
+        logger.debug("Saving targets")
+        targets = pd.DataFrame(self._targets)
+        targets.to_csv(
+            cons.PATHS.DATA_FEATURE / "fabwave_targets.csv", index=False
+        )
+
+    def _save_class_names(self):
+        """
+        Save the class names with their corresponding ids.
+        """
+        logger.debug("Saving class names")
+        targets = pd.read_csv(cons.PATHS.DATA_FEATURE / "fabwave_targets.csv")
+        class_names = targets[["class_name", "class_id"]].drop_duplicates()
+        class_names.to_csv(
+            cons.PATHS.DATA_REPORTING / "part_class_ids.csv", index=False
+        )
+
     def run(self):
         """
         Execute the entire pipeline.
@@ -166,6 +187,7 @@ class PrimaryFeaturePipeline:
         while True:
             try:
                 self._get_next_step_path()
+                logger.debug(f"Processing {self._file_to_process}")
             except StopIteration:
                 logger.info("All step files processed")
                 break
@@ -188,11 +210,10 @@ class PrimaryFeaturePipeline:
                 logger.error(f"Error processing {self._file_to_process}: {e}")
                 continue
 
-        regression_features = pd.DataFrame(self._regression_features)
-        regression_features.to_csv(
-            cons.PATHS.DATA_FEATURE / "regression_features_fabwave.csv", index=False
-        )
-
+        logger.info("Saving regression features and class names.")
+        self._save_targets()
+        logger.info("Saving pairs of class names and ids for easy reference.")
+        self._save_class_names()
 
 if __name__ == "__main__":
     pipeline = PrimaryFeaturePipeline()
