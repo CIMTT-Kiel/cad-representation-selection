@@ -100,7 +100,7 @@ class FeatureModelInputPipeline:
         classes : list[str]
             List of class name that are underrepresented in the data set.
         """
-        class_sizes = self._master_table.value_counts("class")
+        class_sizes = self._master_table.value_counts("class_id")
         for class_name in classes:
             original_parts = self._master_table.query(f"`class` == '{class_name}'")
 
@@ -121,7 +121,7 @@ class FeatureModelInputPipeline:
         """
         Return list of classes that are underrepresented in the data set.
         """
-        class_sizes = self._master_table.value_counts("class")
+        class_sizes = self._master_table.value_counts("class_id")
         small_classes = class_sizes.index[class_sizes < self._class_size_min_required]
         return small_classes.to_list()
 
@@ -131,7 +131,7 @@ class FeatureModelInputPipeline:
 
         The required class size is defined as `0.5 * median_class_size`.
         """
-        class_sizes = self._master_table.value_counts("class")
+        class_sizes = self._master_table.value_counts("class_id")
         class_size_median = class_sizes.median()
         class_size_min_required = int(class_size_median * 0.5)
         return class_size_min_required
@@ -148,7 +148,7 @@ class FeatureModelInputPipeline:
         train, val_and_test = train_test_split(
             self._master_table,
             train_size=self._conf.train_size,
-            stratify=self._master_table["class"],
+            stratify=self._master_table["class_id"],
             random_state=42,
         )
 
@@ -156,14 +156,14 @@ class FeatureModelInputPipeline:
             val_and_test,
             test_size=self._conf.test_size
             / (self._conf.test_size + self._conf.val_size),
-            stratify=val_and_test["class"],
+            stratify=val_and_test["class_id"],
             random_state=42,
         )
         return train, val, test
 
     def _verify_master_table_is_balanced(self):
         """ """
-        class_sizes = self._master_table.value_counts("class")
+        class_sizes = self._master_table.value_counts("class_id")
         if class_sizes.min() < self._class_size_min_required:
             logger.warning("The data set has not been balanced correctly!")
             return False
