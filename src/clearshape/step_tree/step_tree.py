@@ -43,8 +43,8 @@ import matplotlib.pyplot as plt
 import networkx as nx
 
 # application imports
-from treelstm.core.step_tree.node import Node
-import treelstm.core.step_tree.step_analysis as sta
+from clearshape.step_tree.node import Node
+import clearshape.step_tree.step_analysis as sta
 
 
 class StepTree:

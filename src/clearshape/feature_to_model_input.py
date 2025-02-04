@@ -78,21 +78,14 @@ class FeatureModelInputPipeline:
             cons.PATHS.CONFIG / "feature_to_model_input_pipeline.yaml"
         )
 
+    # load targets directly from feature csv
     def _get_master_table(self) -> None:
         """
-        Initialises the `self._master_table` attribute with all data points availabel in `4_feature`. (Based on `trees` subfolder)
+        Initialises the `self._master_table` attribute with all data points available in `fabwave_targets.csv`.
         """
-        #source_folder = cons.PATHS.DATA_RAW / "fabwave"
-        source_folder = cons.PATHS.DATA_FEATURE / "trees/fabwave"
-        data = []
-        for path in iter(source_folder.rglob("*.step")):
-            class_name = path.relative_to(source_folder).parent.as_posix()
-            relative_part_path = path.relative_to(source_folder).with_suffix("").as_posix()
-            data.append((class_name, relative_part_path))
-
-        self._master_table = pd.DataFrame(data, columns=["class", "path"])
-        # add numeric class IDs
-        self._master_table['class_ID'] = self._master_table.groupby('class').ngroup()
+        target_file = cons.PATHS.DATA_FEATURE / "fabwave_targets.csv"
+        self._master_table = pd.read_csv(target_file)
+        
 
     def _oversample(self, classes: list[str]) -> None:
         """

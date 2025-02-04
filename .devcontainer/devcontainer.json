@@ -8,7 +8,7 @@
     "--rm"
   ],
   //"onCreateCommand": "pip install -e .",
-  //"postCreateCommand": "pip install -e .",
+  "postCreateCommand": "apt-get update && apt-get install libgl1 -y && pip install numpy==1.26.4 cadquery",  // needed for cadquery
   "customizations": {
     "vscode": {
       "extensions": [
