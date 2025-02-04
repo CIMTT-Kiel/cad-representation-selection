@@ -11,14 +11,6 @@ Also, as part of the feature generation process, a table with regression featuer
 - Amount of Vertices
 """
 
-# IDEA
-# 
-# If a part shows up in the regression features table it has been successfully
-# converted into a all three representations. Thus that part can be skipped when
-# excecuting the pipeline again. But only if the conversion logic for any of the
-# representations has not changed.
-
-
 # standard libary imports
 import logging
 from pathlib import Path
@@ -46,23 +38,52 @@ logger.addHandler(stream_handler)
 
 class PrimaryFeaturePipeline:
     """
-    # TODO: Add class docstring
+    A pipeline for processing CAD models and extracting features.
+
+    This class implements a singleton pattern to ensure only one instance of the pipeline exists.
+    It processes STEP files from a primary data set, converts them to various representations,
+    extracts regression features and part classes and saves the processed data.
+
+    Parameters
+    ----------
+    None
+
+    Attributes
+    ----------
+    _instance : PrimaryFeaturePipeline
+        The singleton instance of the class.
+    _conf : OmegaConf
+        Configuration loaded from a YAML file.
+    _step_path_generator : generator
+        Generator for iterating over STEP files in the primary data set.
+    _targets : list
+        List to store extracted regression features.
+    _known_classes : list
+        List to store known class names.
+    _file_to_process : Path
+        Path to the current STEP file being processed.
+    _step_tree : DGLGraph
+        Tree representation of the current STEP file.
     """
 
     _instance = None
 
     def __new__(cls):
         """
-        Method ensures that only one instance of the pipeline class can exist.
+        Create a new instance of the class if one does not already exist.
+
+        This method ensures that only one instance of the pipeline class can exist
+        (Singleton pattern). If an instance already exists, it returns the existing
+        instance. Otherwise, it creates a new instance and returns it.
+
+        Returns:
+            cls: The single instance of the class.
         """
         if cls._instance is None:
             cls._instance = super().__new__(cls)
         return cls._instance
 
     def __init__(self):
-        """
-        # TODO: Add method docstring
-        """
         self._conf = OmegaConf.load(
             cons.PATHS.CONFIG / "primary_to_feature_pipeline.yaml"
         )
@@ -73,18 +94,42 @@ class PrimaryFeaturePipeline:
         self._targets= []
         self._known_classes = []
 
-    def _get_next_step_path(self):
+    def _get_next_step_path(self) -> None:
         """
-        Get the next step file from the primary data set.
+        Retrieve the path to the next step file from the primary data set.
+
+        This method uses a step path generator to obtain the path to the next file
+        that needs to be processed. It updates the instance variable `_file_to_process`
+        with the path to this file.
+
+        Returns
+        -------
+        None
+
+        Raises
+        ------
+        StopIteration: If the step path generator has no more files to process.
         """
         # get path to next step file
         logger.debug("Getting next step file")
         self._file_to_process = next(self._step_path_generator)
 
-    def _get_targets(self):
+    def _get_targets(self) -> None:
         """
-        Extract regression features from the CAD part and the classifiction
-        target. from the file path.
+        Extract regression features from the CAD part and the classification
+        target from the file path.
+
+        This method performs the following steps:
+        1. Loads the CAD part from the file path using the `cq.importers.importStep` method.
+        2. Determines the class name from the parent directory of the file path.
+        3. Adds the class name to the list of known classes if it is not already present.
+        4. Retrieves the class ID based on the index of the class name in the list of known classes.
+        5. Extracts regression features from the CAD part, including volume, number of faces, edges, and vertices.
+        6. Constructs the relative path of the part. (without the file extension)
+        7. Appends a dictionary containing the part path, class name, class ID, and extracted features to the `_targets` list.
+
+        Returns:
+            None
         """
         logger.debug("Extracting regression features")
         # load the CAD part
@@ -118,7 +163,11 @@ class PrimaryFeaturePipeline:
 
     def _convert_to_tree(self):
         """
-        Convert the step file to a tree representation.
+        Convert the STEP file to a tree representation as a DGL graph.
+
+        This method reads a STEP file, converts it into a tree structure using the StepTree class,
+        and then transforms that tree into a DGL (Deep Graph Library) graph. The resulting graph
+        is stored in the instance variable `_step_tree`.
         """
         logger.debug("Converting CAD model to tree representation")
         # create a DGL graph from the step file
