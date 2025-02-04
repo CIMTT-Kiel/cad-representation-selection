@@ -70,7 +70,8 @@ class PrimaryFeaturePipeline:
         self._step_path_generator = (
             cons.PATHS.DATA_PRIMARY / "fabwave/Pipe_Fittings"
         ).rglob("*.step")
-        self._regression_features = []
+        self._targets= []
+        self._known_classes = []
 
     def _get_next_step_path(self):
         """
@@ -80,13 +81,19 @@ class PrimaryFeaturePipeline:
         logger.debug("Getting next step file")
         self._file_to_process = next(self._step_path_generator)
 
-    def _get_regression_features(self):
+    def _get_targets(self):
         """
-        Extract regression features from the CAD part.
+        Extract regression features from the CAD part and the classifiction
+        target. from the file path.
         """
         logger.debug("Extracting regression features")
-        # load the step file
+        # load the CAD part
         part = cq.importers.importStep(self._file_to_process.as_posix())
+        # class target
+        class_name = self._file_to_process.parent.name
+        if class_name not in self._known_classes:
+            self._known_classes.append(class_name)
+        class_id = self._known_classes.index(class_name)
         # extract regression features
         volume = part.val().Volume()
         faces = len(part.val().Faces())
@@ -95,11 +102,13 @@ class PrimaryFeaturePipeline:
 
         part_path = self._file_to_process.relative_to(
             cons.PATHS.DATA_PRIMARY / "fabwave"
-        ).as_posix()
+        ).with_suffix("").as_posix()
 
-        self._regression_features.append(
+        self._targets.append(
             {
                 "path": part_path,
+                "class_name": class_name,
+                "class_id": class_id,
                 "volume": volume,
                 "faces": faces,
                 "edges": edges,
@@ -170,7 +179,7 @@ class PrimaryFeaturePipeline:
                 # self._convert_to_invariant()
 
                 # Extract regression features
-                self._get_regression_features()
+                self._get_targets()
 
                 # Save all data representations only if all conversions are successful
                 self._save_data()
