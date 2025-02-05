@@ -1,4 +1,4 @@
-"""
+        """
 Pipeline to convert 'primary' data to 'feature' data.
 
 The `.step` files from the 'primary' data set are converted into the three representaiton formats: 'images', 'invariants' and 'trees'.
@@ -9,11 +9,17 @@ Also, as part of the feature generation process, a table with regression featuer
 - Amount of Faces
 - Amount of Edges
 - Amount of Vertices
+
+Notes
+-----
+The excecution of the pipeline may be interrupted and resumed at any time. The pipeline will skip files that have already been processed.
 """
 
 # standard libary imports
 import logging
 from pathlib import Path
+from tqdm import tqdm
+import time
 
 # third party imports
 import pandas as pd
@@ -29,7 +35,7 @@ from clearshape.step_tree.step_tree import StepTree
 logging_level = logging.INFO
 logger = logging.getLogger(__name__)
 logger.setLevel(logging_level)
-formatter = logging.Formatter("%(levelname)s %(asctime)s - %(message)s")
+formatter = logging.Formatter("%(asctime)s %(levelname)8s - %(message)s")
 stream_handler = logging.StreamHandler()
 stream_handler.setLevel(logging_level)
 stream_handler.setFormatter(formatter)
@@ -93,6 +99,14 @@ class PrimaryFeaturePipeline:
         ).rglob("*.step")
         self._targets= []
         self._known_classes = []
+
+        # get list of files already processed
+        try:
+            self._files_already_processed = pd.read_csv(cons.PATHS.DATA_FEATURE / "fabwave_targets.csv")["path"].values
+        except pd.errors.EmptyDataError:
+            self._files_already_processed = None
+        except FileNotFoundError:
+            self._files_already_processed = None
 
     def _get_next_step_path(self) -> None:
         """
@@ -213,8 +227,13 @@ class PrimaryFeaturePipeline:
         Save the extracted regression features.
         """
         logger.debug("Saving targets")
-        targets = pd.DataFrame(self._targets)
-        targets.to_csv(
+        if self._files_already_processed is not None:
+            targets_already_processed = pd.read_csv(cons.PATHS.DATA_FEATURE / "fabwave_targets.csv")
+        else:
+            targets_already_processed = None
+        new_targets = pd.DataFrame(self._targets)
+        targets_all = pd.concat([targets_already_processed, new_targets], ignore_index=True)
+        targets_all.to_csv(
             cons.PATHS.DATA_FEATURE / "fabwave_targets.csv", index=False
         )
 
@@ -233,36 +252,51 @@ class PrimaryFeaturePipeline:
         """
         Execute the entire pipeline.
         """
-        while True:
-            try:
-                self._get_next_step_path()
-                logger.debug(f"Processing {self._file_to_process}")
-            except StopIteration:
-                logger.info("All step files processed")
-                break
 
-            try:
-                # Convert to tree representation
-                self._convert_to_tree()
+        # process all step files
+        logger.info("Starting processing of step files.")
+        progress_bar = tqdm(desc="Files processed: ",total=len(list(Path(cons.PATHS.DATA_PRIMARY / "fabwave").rglob("*.step"))), ncols=100)
 
-                # TODO: Implement image and invariant conversion
-                # self._convert_to_image()
-                # self._convert_to_invariant()
+        try:
+            while True:
+                try:
+                    self._get_next_step_path()
+                    # skip if file already processed 
+                    relative_path = self._file_to_process.relative_to(
+                        cons.PATHS.DATA_PRIMARY / "fabwave"
+                    ).with_suffix("").as_posix()
+                    if self._files_already_processed is not None and relative_path in self._files_already_processed:
+                        logger.debug(f"Skipping already processed file {self._file_to_process}")
+                        progress_bar.update(1)
+                        continue
 
-                # Extract regression features
-                self._get_targets()
+                    logger.debug(f"Processing {self._file_to_process}")
+                except StopIteration:
+                    logger.info("All step files processed")
+                    break
 
-                # Save all data representations only if all conversions are successful
-                self._save_data()
+                try:
 
-            except Exception as e:
-                logger.error(f"Error processing {self._file_to_process}: {e}")
-                continue
+                    # Convert to tree representation
+                    self._convert_to_tree()
 
-        logger.info("Saving regression features and class names.")
-        self._save_targets()
-        logger.info("Saving pairs of class names and ids for easy reference.")
-        self._save_class_names()
+                    # TODO: Implement image and invariant conversion
+                    # self._convert_to_image()
+                    # self._convert_to_invariant()
+
+                    # Save all data representations only if all conversions are successful
+                    self._save_data()
+                    
+                    self._get_targets()  # Extract regression features and class labels
+
+                    progress_bar.update(1)
+
+                except Exception as e:
+                    logger.warning(f"Error processing {self._file_to_process}: {e}")
+                    continue
+        finally:
+            self._save_targets()
+            self._save_class_names()
 
 if __name__ == "__main__":
     pipeline = PrimaryFeaturePipeline()
