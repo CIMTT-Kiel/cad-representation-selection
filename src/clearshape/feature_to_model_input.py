@@ -4,14 +4,13 @@ Pipeline to generated balanced data splits. (Feature -> Model Input)
 
 # standard libary
 import logging
-from pathlib import Path
-from time import sleep
+import pickle
 
 # third party packages
-import numpy as np
 import pandas as pd
 from omegaconf import OmegaConf
 from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import MinMaxScaler
 
 # custom packages
 import clearshape.constants as cons
@@ -199,6 +198,14 @@ class FeatureModelInputPipeline:
         # generate data splits
         logger.info("Generating stratified data splits.")
         train, val, test = self._get_data_splits()
+
+        # fit and save scaler
+        logger.info("Fitting and saving scaler.")
+        scaler = MinMaxScaler()
+        scaler.fit(train[["volume", "faces", "edges", "vertices"]])
+        scaler_path = cons.PATHS.DATA_MODEL_INPUT / "min_max_scaler.pkl"
+        with open(scaler_path, "wb") as f:
+            pickle.dump(scaler, f)
 
         # save data splits
         logger.info("Saving data splits.")
