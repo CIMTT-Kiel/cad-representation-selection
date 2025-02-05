@@ -1,0 +1,114 @@
+"""
+
+"""
+
+# standard libary
+import typing
+from typing import Union
+from pathlib import Path
+import pickle
+
+# third party libaries
+import torch
+from torch.utils.data import Dataset
+import pandas as pd
+import numpy as np
+from PIL import Image
+import dgl
+
+# custom packages
+import clearshape.constants as cons
+
+class FabwaveDataset(Dataset):
+    """
+    A PyTorch dataset class to load data from a CSV file containing
+    classification and regression features.
+
+    Parameters
+    ----------
+    csv_file : str
+        Path to the CSV file containing the entries for the data split to be used.
+    data_type : str
+        "images", "trees" or "invariants" to specify the data type.
+    task_type : str, optional
+        The type of task ('classification' or 'regression'). Default is
+        'classification'.
+    transform : callable, optional
+        Optional transform to be applied on a sample.
+    """
+
+    def __init__(self, csv_file, data_type: str, task_type='classification', transform=None):
+        assert task_type == "classification" or task_type == "regression", "Is the tasks type spelled correctly?"
+        assert data_type in ["images", "trees", "invariants"], "Is the data type spelled correctly?"
+
+        self.data = pd.read_csv(csv_file)  # Load CSV file into a DataFrame
+        self.data_type = data_type
+        self.task_type = task_type
+        self.transform = transform  # Store optional transform
+
+    def __len__(self):
+        """
+        Returns the total number of samples.
+
+        Returns
+        -------
+        int
+            Number of samples in the dataset.
+        """
+        return len(self.data)  # Return the number of rows in the DataFrame
+
+    def __getitem__(self, idx):
+        """
+        Retrieves a sample at the given index.
+
+        Parameters
+        ----------
+        idx : int
+            Index of the sample to retrieve.
+
+        Returns
+        -------
+        dict
+            A dictionary containing the features and label.
+        """
+        row = self.data.iloc[idx]
+
+        # Determine the correct folder based on the extracted folder name
+        
+        file_paths = {
+            'images': cons.PATHS.DATA_FEATURE / 'images/fabwave' / f"{row['path']}.png",
+            'trees': cons.PATHS.DATA_FEATURE  / 'trees/fabwave' / f"{row['path']}.bin",
+            'invariants': cons.PATHS.DATA_FEATURE / 'invariants/fabwave' / f"{row['path']}.pkl"
+        }
+
+        if self.data_type not in file_paths:
+            raise ValueError(f"Unknown data category in path: {row['path']}")
+
+        file_path = file_paths[self.data_type]
+
+        # Load the CAD model representation; images, trees or invariants
+        if self.data_type == 'trees':
+            data_representation = dgl.load_graphs(file_path.as_posix())[0][0]
+        elif self.data_type == 'invariants':
+            with open(file_path.as_posix(), 'rb') as f:
+                raise NotImplementedError("Invariants data type not implemented yet.")
+                # data_representation = 
+        elif self.data_type == 'images':
+            raise NotImplementedError("Image data type not implemented yet.")
+            # data_representation = 
+        else:
+            raise ValueError(f"Unsupported file type: {file_path.suffix}")  # Raise error for unsupported formats
+        
+        # get task-specific targets
+        if self.task_type == 'classification':
+            num_classes = self.data['class_id'].nunique()
+            target = torch.zeros(num_classes, dtype=torch.float32)
+            target[row['class_id']] = 1.0
+        elif self.task_type == "regression":
+            target = torch.tensor([row['volume'], row['faces'], row['edges'], row['vertices']], dtype=torch.float32)  # Convert class label to float for regression
+        
+        # Apply transformation if provided
+        if self.transform:
+            sample = self.transform(sample)
+
+        return data_representation, target

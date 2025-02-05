@@ -93,9 +93,8 @@ class PrimaryFeaturePipeline:
         self._conf = OmegaConf.load(
             cons.PATHS.CONFIG / "primary_to_feature_pipeline.yaml"
         )
-        # TODO remove "Gears". Just for testing
         self._step_path_generator = (
-            cons.PATHS.DATA_PRIMARY / "fabwave/Pipe_Fittings"
+            cons.PATHS.DATA_PRIMARY / "fabwave"
         ).rglob("*.step")
         self._targets= []
         self._known_classes = []
