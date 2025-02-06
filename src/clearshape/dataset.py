@@ -37,14 +37,14 @@ class FabwaveDataset(Dataset):
         Optional transform to be applied on a sample.
     """
 
-    def __init__(self, csv_file, data_type: str, task_type='classification', transform=None):
+    def __init__(self, csv_file, data_type: str, task_type='classification', scaler=None):
         assert task_type == "classification" or task_type == "regression", "Is the tasks type spelled correctly?"
         assert data_type in ["images", "trees", "invariants"], "Is the data type spelled correctly?"
 
-        self.data = pd.read_csv(csv_file)  # Load CSV file into a DataFrame
+        self.data = pd.read_csv(csv_file, index_col=0)  # Load CSV file into a DataFrame
         self.data_type = data_type
         self.task_type = task_type
-        self.transform = transform  # Store optional transform
+        self.scaler = scaler  # Store optional transform
 
     def __len__(self):
         """
@@ -108,7 +108,7 @@ class FabwaveDataset(Dataset):
             target = torch.tensor([row['volume'], row['faces'], row['edges'], row['vertices']], dtype=torch.float32)  # Convert class label to float for regression
         
         # Apply transformation if provided
-        if self.transform:
-            sample = self.transform(sample)
+        if self.scaler:
+            sample = self.scaler.transform(target)
 
         return data_representation, target
