@@ -16,10 +16,10 @@ from sklearn.preprocessing import MinMaxScaler
 import clearshape.constants as cons
 
 # set up logger
-logging_level = logging.INFO
+logging_level = logging.DEBUG
 logger = logging.getLogger(__name__)
 logger.setLevel(logging_level)
-formatter = logging.Formatter("%(levelname)s %(asctime)s - %(message)s")
+formatter = logging.Formatter("%(asctime)s %(levelname)8s - %(message)s")
 stream_handler = logging.StreamHandler()
 stream_handler.setLevel(logging_level)
 stream_handler.setFormatter(formatter)
@@ -99,9 +99,11 @@ class FeatureModelInputPipeline:
         classes : list[str]
             List of class name that are underrepresented in the data set.
         """
-        class_sizes = self._master_table.value_counts("class_id")
+        logger.debug("Oversampling small classes.")
+        class_sizes = self._master_table.value_counts("class_name")
         for class_name in classes:
-            original_parts = self._master_table.query(f"`class` == '{class_name}'")
+            logger.debug(f"Resampling {class_name}")
+            original_parts = self._master_table.query(f"`class_name` == '{class_name}'")
 
             # resample class randomly until rquired class size is achived
             logger.debug(f"Resample {class_name}.")
@@ -118,9 +120,9 @@ class FeatureModelInputPipeline:
 
     def _get_small_classes(self) -> list[str]:
         """
-        Return list of classes that are underrepresented in the data set.
+        Return list of class names that are underrepresented in the data set.
         """
-        class_sizes = self._master_table.value_counts("class_id")
+        class_sizes = self._master_table.value_counts("class_name")
         small_classes = class_sizes.index[class_sizes < self._class_size_min_required]
         return small_classes.to_list()
 
