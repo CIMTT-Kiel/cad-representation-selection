@@ -1,10 +1,13 @@
 ---
 n_trials: 2  # number of trials per stage
-stages: [train, val, test]  # list of stages to run if possibel. (valid: train, val, test)
-n_epochs: 100
+n_jobs: 2  # number of parallel jobs
+stages: [train,]  # list of stages to run if possibel. (valid: train, val, test)
+n_epochs: 200
 input_size: 32
 classes_total: 42
 features_total: 4
+loss_function: mean_squared_error
+test_metric: mean_squared_error
 
 # Hyperparameters to optimize on training data
 # Focus on model size and learning ability
