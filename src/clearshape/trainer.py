@@ -12,7 +12,7 @@ import mlflow
 # custom packages
 
 # set up logger
-logging_level = logging.DEBUG
+logging_level = logging.INFO
 logger = logging.getLogger(__name__)
 logger.setLevel(logging_level)
 formatter = logging.Formatter("%(asctime)s %(levelname)8s - %(message)s")
@@ -85,14 +85,15 @@ class Trainer:
             accuracy = correct / total  # This is a placeholder, adjust based on your regression accuracy metric
 
         return train_loss / len(self.train_loader), accuracy
-    
+
     def train(self, n_epochs):
         for epoch in range(n_epochs):
             train_loss, train_acc = self.train_one_epoch()
             self._epochs_trained += 1
-            mlflow.log_metric(str(self.loss_fn)[:-2], train_loss, step=self.epochs_trained)
-            print(f"Epoch {epoch} Train Loss: {train_loss:.3f} Train Acc: {train_acc:.2f}")
+            logger.debug(f"Epoch {self.epochs_trained} completed")
+            
 
+    
     def test(self):
         logger.debug("Starting testing.")
         self.model.eval()
@@ -105,4 +106,3 @@ class Trainer:
                 test_score_total += test_score.item()
 
         return test_score_total / len(self.test_loader)
-            
