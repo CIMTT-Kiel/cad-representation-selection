@@ -326,6 +326,7 @@ class TreeLSTMRegressorPipeline(TreeLSTMTuningPipeline):
             # hyperparameters on model size
             parameter = self._get_parameters(trial)
             parameter.update(self.best_parameter)
+            mlflow.log_params(parameter)
             # prepare next training
             model = self._build_model(parameter)
             logger.debug(parameter["batch_size"])
