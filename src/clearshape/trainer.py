@@ -22,8 +22,54 @@ stream_handler.setFormatter(formatter)
 logger.addHandler(stream_handler)
 
 class Trainer:
+    """
+    A class to train a PyTorch model.
 
+    Parameters
+    ----------
+    model : torch.nn.Module
+        The model to be trained.
+    train_loader : torch.utils.data.DataLoader
+        The training data loader.
+    test_loader : torch.utils.data.DataLoader
+        The test data loader.
+    loss_fn : torch.nn.Module
+        The loss function to be used.
+    optimizer : torch.optim.Optimizer
+        The optimizer class to be used.
+    device : str
+        The device to train the model on.
+    task_type : str
+        The type of task ('classification' or 'regression').
+    test_metric : callable
+        The metric to evaluate the model on the test set.
+    
+    Attributes
+    ----------
+    epochs_trained : int
+        The number of epochs the model has been trained for.
+    optimizer : torch.optim.Optimizer
+        The optimizer instance used for training.
+    model : torch.nn.Module
+        The model to be trained.
+    train_loader : torch.utils.data.DataLoader
+        The training data loader.
+    test_loader : torch.utils.data.DataLoader
+        The test data loader.
+    loss_fn : torch.nn.Module
+        The loss function to be used.
+    device : str
+        The device to train the model on.
+    task_type : str
+        The type of task ('classification' or 'regression').
+    test_metric : callable
+        The metric to evaluate the model on the test set.
+    """
+    
     def __init__(self, model, train_loader, test_loader, loss_fn, optimizer, device,task_type, test_metric):
+        """
+        Initializes the Trainer class.
+        """
         self._model = model.to(device)
         self.train_loader = train_loader
         self.test_loader = test_loader
@@ -57,6 +103,14 @@ class Trainer:
         self._optimizer = self.optimizer(self.model.parameters())
 
     def train_one_epoch(self):
+        """
+        Trains the model for one epoch.
+
+        Returns
+        -------
+        float
+            Average training loss for the epoch.
+        """
         logger.debug("Starting training one epoch.")
         self.model.train()
         train_loss = 0
@@ -86,15 +140,36 @@ class Trainer:
 
         return train_loss / len(self.train_loader), accuracy
 
-    def train(self, n_epochs):
+    def train(self, n_epochs) -> None:
+        """
+        Trains the model for a given number of epochs.
+
+        Parameters
+        ----------
+        n_epochs : int
+            Number of epochs to train the model for.
+        
+        Returns
+        -------
+        None
+        """
         for epoch in range(n_epochs):
             train_loss, train_acc = self.train_one_epoch()
             self._epochs_trained += 1
+            mlflow.log_metric()
             logger.debug(f"Epoch {self.epochs_trained} completed")
             
 
     
-    def test(self):
+    def test(self) -> float:
+        """
+        Returns the average test score for a batch.
+
+        Returns
+        -------
+        float
+            Average test score for a batch.
+        """
         logger.debug("Starting testing.")
         self.model.eval()
         test_score_total = 0
