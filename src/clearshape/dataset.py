@@ -7,6 +7,7 @@ import typing
 from typing import Union
 from pathlib import Path
 import pickle
+import logging
 
 # third party libaries
 import torch
@@ -18,6 +19,16 @@ import dgl
 
 # custom packages
 import clearshape.constants as cons
+
+# set up logger
+logging_level = logging.INFO
+logger = logging.getLogger(__name__)
+logger.setLevel(logging_level)
+formatter = logging.Formatter("%(asctime)s %(levelname)8s - %(message)s")
+stream_handler = logging.StreamHandler()
+stream_handler.setLevel(logging_level)
+stream_handler.setFormatter(formatter)
+logger.addHandler(stream_handler)
 
 class FabwaveDataset(Dataset):
     """
