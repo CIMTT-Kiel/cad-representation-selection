@@ -52,10 +52,19 @@ class FabwaveDataset(Dataset):
         assert task_type == "classification" or task_type == "regression", "Is the tasks type spelled correctly?"
         assert data_type in ["images", "trees", "invariants"], "Is the data type spelled correctly?"
 
-        self.data = pd.read_csv(csv_file, index_col=0)  # Load CSV file into a DataFrame
+        assert task_type != "classification", "No scaler needed for classification task"
+        self.scaler = scaler  
+        self.data = self._get_scaled_data(csv_file) if self.scaler else self._load_data(csv_file) # Load CSV file into a DataFrame
         self.data_type = data_type
         self.task_type = task_type
-        self.scaler = scaler  # Store optional transform
+
+    def _load_data(self, csv_file: Union[str, Path]) -> pd.DataFrame:
+        return pd.read_csv(csv_file, index_col=0)
+    
+    def _get_scaled_data(self, csv_file: Union[str, Path]) -> pd.DataFrame:
+        data = self._load_data(csv_file)
+        data[["volume", "faces", "edges", "vertices"]] = self.scaler.transform(data[["volume", "faces", "edges", "vertices"]])
+        return data
 
     def __len__(self):
         """
@@ -118,8 +127,4 @@ class FabwaveDataset(Dataset):
         elif self.task_type == "regression":
             target = torch.tensor([row['volume'], row['faces'], row['edges'], row['vertices']], dtype=torch.float32)  # Convert class label to float for regression
         
-        # Apply transformation if provided
-        if self.scaler:
-            sample = self.scaler.transform(target)
-
         return data_representation, target
