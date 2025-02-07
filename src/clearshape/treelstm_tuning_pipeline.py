@@ -73,6 +73,7 @@ class TreeLSTMTuningPipeline(ABC):
             case "train":
                 return optuna.create_study(
                     direction="minimize",
+                    pruner=optuna.pruners.MedianPruner(n_startup_trials=self._conf.n_jobs, n_warmup_steps=20),
                 )
             case "validation":
                 return optuna.create_study(
@@ -325,12 +326,23 @@ class TreeLSTMRegressorPipeline(TreeLSTMTuningPipeline):
                 task_type=self.TASK_TYPE,
             )
 
-            # train model
-            trainer.train(n_epochs=self._conf.n_epochs)
+            training_loss = trainer.test()  # initial test of model
+            trial.report(training_loss, trainer.epochs_trained)
+            mlflow.log_metric(str(self._conf.loss_function), training_loss, step=trainer.epochs_trained)
 
-            # validate model
-            training_loss = trainer.test()
-            logger.debug(f"Epochs trained: {trainer.epochs_trained}")
+            # train model
+            epochs_to_train_in_a_row = 10
+            for epoch in range(self._conf.n_epochs // epochs_to_train_in_a_row):
+                trainer.train(n_epochs=epochs_to_train_in_a_row)
+
+                training_loss = trainer.test()
+                mlflow.log_metric(str(self._conf.loss_function), training_loss, step=trainer.epochs_trained)
+                trial.report(training_loss, trainer.epochs_trained)
+                logger.debug(f"Epochs trained: {trainer.epochs_trained}")
+
+                if trial.should_prune():
+                    raise optuna.TrialPruned()
+            
             return training_loss
 
     def run(self):
