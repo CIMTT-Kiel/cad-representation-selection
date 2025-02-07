@@ -166,8 +166,8 @@ class TreeLSTMTuningPipeline(ABC):
                 return {
                     "batch_size": trial.suggest_int(
                         "batch_size",
-                        self._conf.train.batch_size_min,
-                        self._conf.train.batch_size_max,
+                        self._conf.train.batch_size,
+                        self._conf.train.batch_size,
                     ),
                     "encoding_size": trial.suggest_int(
                         "encoding_size",
