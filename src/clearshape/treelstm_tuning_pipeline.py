@@ -183,6 +183,9 @@ class TreeLSTMTuningPipeline(ABC):
                         )
                         for i in range(layer_total)
                     ],
+                    "optimizer": trial.suggest_categorical(
+                        "optimizer", self._conf.train.optimizer
+                    ),
                 }
             case "validation":
                 return {}
@@ -195,6 +198,18 @@ class TreeLSTMTuningPipeline(ABC):
         """
         with open(cons.PATHS.DATA_REPORTING / config_file) as f:
             return yaml.safe_load(f) or {}
+        
+    def _get_optimizer(self, optimizer: str):
+        """
+        # TODO add docstring
+        """
+        match optimizer:
+            case "adam":
+                return optim.Adam
+            case "sgd":
+                return optim.SGD
+            case "rmsprop":
+                return optim.RMSprop
 
     # @abstractmethod
     # def _optimize_loss_on_training_data(self, trial: optuna.Trial):
@@ -317,7 +332,7 @@ class TreeLSTMRegressorPipeline(TreeLSTMTuningPipeline):
             self._set_data_loader(parameter["batch_size"])
             trainer = Trainer(
                 model=model,
-                optimizer=optim.Adam,
+                optimizer=self._get_optimizer(parameter["optimizer"]),
                 train_loader=self._train_data_loader,
                 test_loader=self._train_data_loader,  # yes train data twice!
                 loss_fn=self._get_loss_function(),
