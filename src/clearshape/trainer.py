@@ -156,7 +156,6 @@ class Trainer:
         for epoch in range(n_epochs):
             train_loss, train_acc = self.train_one_epoch()
             self._epochs_trained += 1
-            mlflow.log_metric()
             logger.debug(f"Epoch {self.epochs_trained} completed")
             
 
