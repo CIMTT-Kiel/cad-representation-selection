@@ -427,7 +427,7 @@ class TreeLSTMTuningPipeline(ABC):
         )
         best_params = study.best_params
         # TODO move saving command to run method
-        torch.save(self.best_model["model"], cons.PATHS.DATA_MODELS / "best_model.pth")
+        torch.save(self.best_model["model"], cons.PATHS.DATA_MODELS / "tree-lstm-regressor.pth")
         return best_params
 
     def _get_loss_function(self):
