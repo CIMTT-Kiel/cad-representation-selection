@@ -7,6 +7,8 @@
 /data/7_model_output
 /data/8_reporting
 
+/mlruns
+
 # === Boiler Plate entries ===
 
 # Byte-compiled / optimized / DLL files

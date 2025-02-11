@@ -11,4 +11,6 @@ dependencies = [
     "omegaconf",
     "scikit-learn",
     "steputils",
+    "optuna",
+    "mlflow",
 ]

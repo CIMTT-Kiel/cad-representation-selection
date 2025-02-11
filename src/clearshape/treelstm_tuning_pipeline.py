@@ -1,0 +1,554 @@
+# TODO add all docstrings
+# TODO sort imports
+# TODO finish all remaining TODOs
+
+"""
+****************
+Quick notes:
+- the hyperparamerters used for each stage of the pipeline should be different
+"""
+
+# Standard Library
+import logging
+import yaml
+import pickle
+from abc import ABC, abstractmethod
+
+# Third Party Libraries
+from omegaconf import OmegaConf
+import optuna
+import mlflow
+import pandas as pd
+import torch
+import torch.nn as nn
+import torch.optim as optim
+from torch.utils.data import DataLoader
+import dgl
+from sklearn.preprocessing import MinMaxScaler
+
+# custom packages
+from clearshape.models.feedforward_mlp import FeedforwardMLP
+from clearshape.models.treelstm import RootedInTreeEncoder
+from clearshape.models.modelstack import ModelStack
+from clearshape.trainer import Trainer
+import clearshape.constants as cons
+from clearshape.dataset import FabwaveDataset
+
+# set up logger
+logging_level = logging.DEBUG
+logger = logging.getLogger(__name__)
+logger.setLevel(logging_level)
+formatter = logging.Formatter("%(asctime)s %(levelname)8s - %(message)s")
+stream_handler = logging.StreamHandler()
+stream_handler.setLevel(logging_level)
+stream_handler.setFormatter(formatter)
+logger.addHandler(stream_handler)
+
+device = "cuda" if torch.cuda.is_available() else "cpu"
+
+logger.info(f"Using device: {device}")
+
+
+class TreeLSTMTuningPipeline(ABC):
+    """
+    # TODO add docstring
+    """
+
+    _instance = None
+
+    def __new__(cls, *args, **kwargs):
+        """
+        Singleton pattern to ensure only one instance of the class is created.
+        """
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+        return cls._instance
+
+    def __init__(self, config_file: str):
+        """
+        # TODO add docstring
+        """
+        self._conf = OmegaConf.load(cons.PATHS.CONFIG / config_file)
+        self._current_stage = None
+        self.best_model = {"model": None, "loss": None}
+
+    def _get_study(self) -> optuna.study.Study:
+        """
+        # TODO add docstring
+        """
+        match self._current_stage:
+            case "train":
+                return optuna.create_study(
+                    direction="minimize",
+                    pruner=optuna.pruners.MedianPruner(
+                        n_startup_trials=self._conf.n_jobs, n_warmup_steps=20
+                    ),
+                )
+            case "validation":
+                return optuna.create_study(
+                    direction="minimize",
+                )
+            case "test":
+                return optuna.create_study(
+                    direction="minimize",
+                )
+
+    def _load_scaler(self):
+        """
+        # TODO add docstring
+        """
+        with open(cons.PATHS.DATA_MODEL_INPUT / "min_max_scaler.pkl", "rb") as f:
+            return pickle.load(f)
+
+    def _load_data_sets(self, task_type: str):
+        """
+        Loads the training data set and the validation or test data set if the optimization stage requires it.
+        """
+        logger.debug(f"Loading data set for {self._current_stage} stage.")
+        if task_type == "regression":
+            scaler = self._load_scaler()
+        # train data is the same for all stages
+        self._train_data_set = FabwaveDataset(
+            csv_file=cons.PATHS.DATA_MODEL_INPUT / "train.csv",
+            data_type="trees",
+            task_type=task_type,
+            scaler=scaler,
+        )
+        match self._current_stage:
+            case "validation":
+                self._val_data_set = FabwaveDataset(
+                    csv_file=cons.PATHS.DATA_MODEL_INPUT / "validation.csv",
+                    data_type="trees",
+                    task_type=task_type,
+                    scaler=scaler,
+                )
+            case "test":
+                self._test_data_set = FabwaveDataset(
+                    csv_file=cons.PATHS.DATA_MODEL_INPUT / "test.csv",
+                    data_type="trees",
+                    task_type=task_type,
+                    scaler=scaler,
+                )
+
+    def _set_data_loader(self, batch_size: int):
+        logger.debug(f"Setting up data loader for {self._current_stage} data.")
+        self._load_data_sets()
+        # Train data loader is the same for each optimization stage
+        self._train_data_loader = dgl.dataloading.GraphDataLoader(
+            self._train_data_set, batch_size=batch_size, shuffle=True
+        )
+        match self._current_stage:
+            case "train":
+                self._test_data_loader = dgl.dataloading.GraphDataLoader(
+                    self._train_data_set, batch_size=batch_size, shuffle=True
+                )
+            case "validation":
+                self._test_data_loader = dgl.dataloading.GraphDataLoader(
+                    self._val_data_set, batch_size=batch_size, shuffle=True
+                )
+            case "test":
+                self._test_data_loader = dgl.dataloading.GraphDataLoader(
+                    self._test_data_set, batch_size=batch_size, shuffle=True
+                )
+
+    def _build_model(self, params: dict):
+        logger.debug("Building model.")
+        encoder = RootedInTreeEncoder(
+            child_sum=True,
+            input_size=self._conf.input_size,
+            encoding_size=params["encoding_size"],
+        )
+        predictor = FeedforwardMLP(
+            input_shape=params["encoding_size"],
+            hidden_layers=params["hidden_layers"],
+            output_shape=self._conf.output_shape,
+            task_type="regression",
+        )
+        model = ModelStack([encoder, predictor])
+        return model
+
+    def _get_parameters_to_tune(self, trial: optuna.Trial):
+        match self._current_stage:
+            case "train":
+                layers_total = trial.suggest_int(
+                    "layers_total",
+                    self._conf.train.predictor.layers_total_min,
+                    self._conf.train.predictor.layers_total_max,
+                )
+                return {
+                    "encoding_size": (
+                        trial.suggest_int(
+                            "encoding_size",
+                            self._conf.train.encoder.encoding_size_min,
+                            self._conf.train.encoder.encoding_size_max,
+                            step=self._conf.train.encoder.encoding_size_step,
+                        )
+                    ),
+                    "hidden_layers": [
+                        trial.suggest_int(
+                            f"layer_{i}",
+                            self._conf.train.predictor.units_per_layer_min,
+                            self._conf.train.predictor.units_per_layer_max,
+                        )
+                        for i in range(layers_total)
+                    ],
+                }
+            case "validation":
+                return {
+                    "learning_rate": trial.suggest_float(
+                        "learning_rate",
+                        self._conf.validation.learning_rate_min,
+                        self._conf.validation.learning_rate_max,
+                    ),
+                    "dropout_rate": trial.suggest_float(
+                        "dropout_rate",
+                        self._conf.validation.encoder.dropout_rate_min,
+                        self._conf.validation.encoder.dropout_rate_max,
+                    ),
+                }
+            case "test":
+                return {
+                    "batch_size": trial.suggest_int(
+                        "batch_size",
+                        self._conf.test.batch_size_min,
+                        self._conf.test.batch_size_max,
+                        step=self._conf.test.batch_size_step,
+                    )
+                }
+
+    def _get_fixed_parameters(self):
+        match self._current_stage:
+            case "train":
+                return {
+                    "batch_size": self._conf.train.batch_size,
+                    "optimizer": self._conf.train.optimizer,
+                }
+            case "validation":
+                return {
+                    "batch_size": self._conf.validation.batch_size,
+                    "optimizer": self._conf.train.optimizer,
+                }
+            case "test":
+                return {
+                    "optimizer": self._conf.train.optimizer,
+                }
+
+    # TODO
+    def _get_parameters(self, trial: optuna.Trial) -> dict:
+        """
+        Get parameters for an Optuna trial.
+
+        This method retrieves a set of parameters consisting of:
+        - Hyperparameters to tune in the current stage.
+        - Tuned hyperparameters from previous stages.
+        - Fixed hyperparameters for the current stage.
+
+        It ensures that there are no overlapping keys among the sets of parameters.
+
+        Parameters
+        ----------
+        trial : optuna.Trial
+            The Optuna trial object for which parameters are being retrieved.
+
+        Returns
+        -------
+        dict
+            A dictionary containing the combined set of parameters for the trial.
+        """
+        logger.debug(f"Getting parameters for trial {trial.number}")
+        parameters_for_trial = {}
+        # get best parameters for previous stages
+        parameters_to_tune = self._get_parameters_to_tune(trial)
+        fixed_parameters = self._get_fixed_parameters()
+        best_parameters = self._load_best_parameter()
+
+        # assert the set of parameters do not overlap
+        assert not set(parameters_to_tune.keys()).intersection(
+            set(fixed_parameters.keys())
+        )
+        assert not set(parameters_to_tune.keys()).intersection(
+            set(best_parameters.keys())
+        )
+        assert not set(fixed_parameters.keys()).intersection(
+            set(best_parameters.keys())
+        )
+
+        parameters_for_trial.update(best_parameters)
+        parameters_for_trial.update(parameters_to_tune)
+        parameters_for_trial.update(fixed_parameters)
+        return parameters_for_trial
+
+    def _load_best_parameter(self):
+        """
+        Load the best parameter configuration from a YAML file.
+
+        Returns
+        -------
+        dict
+            A dictionary containing the best parameter configuration.
+        """
+        with open(cons.PATHS.DATA_REPORTING / self._conf.file_best_parameter) as f:
+            return yaml.safe_load(f) or {}
+
+    def _get_optimizer(self, optimizer: str):
+        """
+        # TODO add docstring
+        """
+        match optimizer:
+            case "adam":
+                return optim.Adam
+            case "sgd":
+                return optim.SGD
+            case "rmsprop":
+                return optim.RMSprop
+
+    def _optimize_loss_on_training_data(self, trial: optuna.Trial):
+        """
+        # TODO add docstring
+        """
+        with mlflow.start_run():
+            parameter = self._get_parameters(trial)
+            logger.debug(parameter)
+            mlflow.log_params(parameter)
+
+            model, trainer = self._initialize_model_and_trainer(parameter)
+
+            self._test_and_log(trainer, trial)
+
+            self._train_model(trainer, trial)
+
+            loss = self._test_and_log(trainer, trial)
+
+            return loss
+
+    def _optimize_loss_on_validation_data(self, trial: optuna.Trial):
+        """
+        # TODO add docstring
+        """
+        with mlflow.start_run():
+            parameter = self._get_parameters(trial)
+            logger.debug(parameter)
+            mlflow.log_params(parameter)
+
+            model, trainer = self._initialize_model_and_trainer(parameter)
+
+            self._test_and_log(trainer, trial)
+
+            self._train_model(trainer, trial)
+
+            loss = self._test_and_log(trainer, trial)
+
+            return loss
+
+    def _optimize_loss_on_test_data(self, trial: optuna.Trial):
+        """
+        # TODO add docstring
+        """
+        with mlflow.start_run():
+            parameter = self._get_parameters(trial)
+            logger.debug(parameter)
+            mlflow.log_params(parameter)
+
+            model, trainer = self._initialize_model_and_trainer(parameter)
+
+            self._test_and_log(trainer, trial)
+
+            self._train_model(trainer, trial)
+
+            loss = self._test_and_log(trainer, trial)
+
+            if self.best_model is None or loss < self.best_model["loss"]:
+                self.best_model["model"] = model
+                self.best_model["loss"] = loss
+
+            return loss
+
+    def _train_model(self, trainer: Trainer, trial: optuna.Trial):
+        epochs_to_train_in_a_row = 10
+        for _ in range(self._conf.n_epochs // epochs_to_train_in_a_row):
+            trainer.train(n_epochs=epochs_to_train_in_a_row)
+
+            training_loss = trainer.test()
+            mlflow.log_metric(
+                str(self._conf.loss_function),
+                training_loss,
+                step=trainer.epochs_trained,
+            )
+            trial.report(training_loss, trainer.epochs_trained)
+            logger.debug(f"Epochs trained: {trainer.epochs_trained}")
+
+            # TODO check if trial could get pruned after only 10 warmup epochs
+            if trial.should_prune():
+                raise optuna.TrialPruned()
+
+    def _test_and_log(self, trainer: Trainer, trial: optuna.Trial):
+        training_loss = trainer.test()  # initial test of model
+        trial.report(training_loss, trainer.epochs_trained)
+        mlflow.log_metric(
+            str(self._conf.loss_function),
+            training_loss,
+            step=trainer.epochs_trained,
+        )
+        return training_loss
+
+    def _initialize_model_and_trainer(self, parameter: dict):
+        model = self._build_model(parameter)
+        self._set_data_loader(parameter["batch_size"])
+        trainer = Trainer(
+            model=model,
+            optimizer=self._get_optimizer(parameter["optimizer"]),
+            train_loader=self._train_data_loader,
+            test_loader=self._test_data_loader,
+            loss_fn=self._get_loss_function(),
+            test_metric=self._get_test_metric(),
+            device=device,
+            task_type=self.TASK_TYPE,
+        )
+        return model, trainer
+
+    def _optimize_model(self):
+        """
+        # TODO add docstring
+        """
+        logger.debug("Entering optimization function.")
+        study = self._get_study()
+        self.best_parameter = self._load_best_parameter()
+        # set objective function based on current stage
+        match self._current_stage:
+            case "train":
+                objective = self._optimize_loss_on_training_data
+            case "validation":
+                objective = self._optimize_loss_on_validation_data
+            case "test":
+                objective = self._optimize_loss_on_test_data
+
+        study.optimize(
+            objective, n_trials=self._conf.n_trials, n_jobs=self._conf.n_jobs
+        )
+        best_params = study.best_params
+        # TODO move saving command to run method
+        torch.save(self.best_model["model"], cons.PATHS.DATA_MODELS / "tree-lstm-regressor.pth")
+        return best_params
+
+    def _get_loss_function(self):
+        """
+        # TODO add docstring
+        """
+        match self._conf.loss_function:
+            case "mean_squared_error":
+                return nn.MSELoss()
+
+    def _get_test_metric(self):
+        """
+        # TODO add docstring
+        """
+        match self._conf.test_metric:
+            case "mean_squared_error":
+                return nn.MSELoss()
+
+    def _save_best_tuned_parameters(self, best_tuned_parameter: dict):
+        """
+
+        Parameters
+        ----------
+        best_params : dict
+            A dictionary containing the best tuned parameters. Returned by optuna.
+        """
+        logger.debug("Saving best tuned parameters.")
+        try:
+            # put layer sizes in a list
+            best_tuned_parameter["hidden_layers"] = [
+                best_tuned_parameter[f"layer_{i}"]
+                for i in range(best_tuned_parameter["layers_total"])
+            ]
+            # remove individual layer sizes
+            for i in range(best_tuned_parameter["layers_total"]):
+                del best_tuned_parameter[f"layer_{i}"]
+
+            # remove redundant entries
+            del best_tuned_parameter["layers_total"]
+        except KeyError:
+            logger.info(
+                f"No hidden layers to save for this stage. Current stage: {self._current_stage}"
+            )
+
+        best_parameter = self._load_best_parameter()
+        best_parameter.update(best_tuned_parameter)
+        logger.debug(f"best parameter before saving: {best_parameter}")
+        best_parameter_path = cons.PATHS.DATA_REPORTING / self._conf.file_best_parameter
+        with open(best_parameter_path, "w") as f:
+            yaml.dump(best_parameter, f)
+
+    @abstractmethod
+    def run(self):
+        pass
+
+
+class TreeLSTMClassifierPipeline(TreeLSTMTuningPipeline):
+    """
+    # TODO add docstring
+    """
+
+    def __init__(self):
+        super().__init__("classification")
+
+    def _load_data_set(self):
+        return super()._load_data_set("classification")
+
+    def _load_best_parameters(self):
+        return super()._load_best_parameters("tree-lstm-classifier-best-parameter.yaml")
+
+    def run(self):
+        pass
+
+
+class TreeLSTMRegressorPipeline(TreeLSTMTuningPipeline):
+    """
+    # TODO add docstring
+    """
+
+    TASK_TYPE = "regression"
+
+    def __init__(self):
+        config_file = "treelstm_regressor_tuning_pipeline.yaml"
+        super().__init__(config_file)
+
+    def _load_data_sets(
+        self,
+    ):
+        return super()._load_data_sets(self.TASK_TYPE)
+
+    def run(self):
+        logger.info("Setting up mlflow.")
+        mlflow.set_tracking_uri("http://localhost:5000")
+
+        if "train" in self._conf.stages:
+            logger.info("Starting optimization on train data.")
+            mlflow.set_experiment("optimize_on_training_data")
+            self._current_stage = "train"
+            best_params = self._optimize_model()
+
+            self._save_best_tuned_parameters(best_params)
+
+        if "validation" in self._conf.stages:
+            logger.info("Starting optimization on validation data.")
+            mlflow.set_experiment("optimize_on_validation_data")
+            self._current_stage = "validation"
+            best_params = self._optimize_model()
+
+            self._save_best_tuned_parameters(best_params)
+
+        if "test" in self._conf.stages:
+            logger.info("Starting optimization on test data.")
+            mlflow.set_experiment("optimize_on_test_data")
+            self._current_stage = "test"
+            best_params = self._optimize_model()
+
+            self._save_best_tuned_parameters(best_params)
+
+        logger.info("Pipeline completed.")
+
+
+if __name__ == "__main__":
+    pipeline = TreeLSTMRegressorPipeline()
+    pipeline.run()

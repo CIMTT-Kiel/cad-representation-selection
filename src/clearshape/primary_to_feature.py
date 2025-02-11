@@ -1,4 +1,4 @@
-        """
+"""
 Pipeline to convert 'primary' data to 'feature' data.
 
 The `.step` files from the 'primary' data set are converted into the three representaiton formats: 'images', 'invariants' and 'trees'.
