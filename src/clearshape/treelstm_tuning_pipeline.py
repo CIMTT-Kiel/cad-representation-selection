@@ -64,13 +64,16 @@ class TreeLSTMTuningPipeline(ABC):
             cls._instance = super().__new__(cls)
         return cls._instance
 
-    def __init__(self, config_file: str):
+    def __init__(self, config_file: str, regression:bool=False, classification: bool=False):
         """
         # TODO add docstring
         """
         self._conf = OmegaConf.load(cons.PATHS.CONFIG / config_file)
         self._current_stage = None
         self.best_model = {"model": None, "loss": None}
+        assert regression ^ classification, "Choose either regression or classification task"
+        self.regression = regression
+        self.classification = classification
 
     def _get_study(self) -> optuna.study.Study:
         """
@@ -479,76 +482,40 @@ class TreeLSTMTuningPipeline(ABC):
         with open(best_parameter_path, "w") as f:
             yaml.dump(best_parameter, f)
 
-    @abstractmethod
     def run(self):
-        pass
+            logger.info("Setting up mlflow.")
+            mlflow.set_tracking_uri("http://localhost:5000")
+
+            if "train" in self._conf.stages:
+                logger.info("Starting optimization on train data.")
+                mlflow.set_experiment("optimize_on_training_data")
+                self._current_stage = "train"
+                best_params = self._optimize_model()
+
+                self._save_best_tuned_parameters(best_params)
+
+            if "validation" in self._conf.stages:
+                logger.info("Starting optimization on validation data.")
+                mlflow.set_experiment("optimize_on_validation_data")
+                self._current_stage = "validation"
+                best_params = self._optimize_model()
+
+                self._save_best_tuned_parameters(best_params)
+
+            if "test" in self._conf.stages:
+                logger.info("Starting optimization on test data.")
+                mlflow.set_experiment("optimize_on_test_data")
+                self._current_stage = "test"
+                best_params = self._optimize_model()
+
+                self._save_best_tuned_parameters(best_params)
+
+            logger.info("Pipeline completed.")
 
 
-class TreeLSTMClassifierPipeline(TreeLSTMTuningPipeline):
-    """
-    # TODO add docstring
-    """
-
-    def __init__(self):
-        super().__init__("classification")
-
-    def _load_data_set(self):
-        return super()._load_data_set("classification")
-
-    def _load_best_parameters(self):
-        return super()._load_best_parameters("tree-lstm-classifier-best-parameter.yaml")
-
-    def run(self):
-        pass
-
-
-class TreeLSTMRegressorPipeline(TreeLSTMTuningPipeline):
-    """
-    # TODO add docstring
-    """
-
-    TASK_TYPE = "regression"
-
-    def __init__(self):
-        config_file = "treelstm_regressor_tuning_pipeline.yaml"
-        super().__init__(config_file)
-
-    def _load_data_sets(
-        self,
-    ):
-        return super()._load_data_sets(self.TASK_TYPE)
-
-    def run(self):
-        logger.info("Setting up mlflow.")
-        mlflow.set_tracking_uri("http://localhost:5000")
-
-        if "train" in self._conf.stages:
-            logger.info("Starting optimization on train data.")
-            mlflow.set_experiment("optimize_on_training_data")
-            self._current_stage = "train"
-            best_params = self._optimize_model()
-
-            self._save_best_tuned_parameters(best_params)
-
-        if "validation" in self._conf.stages:
-            logger.info("Starting optimization on validation data.")
-            mlflow.set_experiment("optimize_on_validation_data")
-            self._current_stage = "validation"
-            best_params = self._optimize_model()
-
-            self._save_best_tuned_parameters(best_params)
-
-        if "test" in self._conf.stages:
-            logger.info("Starting optimization on test data.")
-            mlflow.set_experiment("optimize_on_test_data")
-            self._current_stage = "test"
-            best_params = self._optimize_model()
-
-            self._save_best_tuned_parameters(best_params)
-
-        logger.info("Pipeline completed.")
+    
 
 
 if __name__ == "__main__":
-    pipeline = TreeLSTMRegressorPipeline()
+    pipeline = TreeLSTMTuningPipeline("treelstm_regressor_tuning_pipeline.yaml", regression=True)
     pipeline.run()
