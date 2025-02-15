@@ -12,7 +12,7 @@ Quick notes:
 import logging
 import yaml
 import pickle
-from abc import ABC, abstractmethod
+
 
 # Third Party Libraries
 from omegaconf import OmegaConf
@@ -49,7 +49,7 @@ device = "cuda" if torch.cuda.is_available() else "cpu"
 logger.info(f"Using device: {device}")
 
 
-class TreeLSTMTuningPipeline(ABC):
+class TreeLSTMTuningPipeline():
     """
     # TODO add docstring
     """
