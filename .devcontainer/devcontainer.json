@@ -15,7 +15,8 @@
         "ms-python.python",
         "ms-toolsai.jupyter",
         "gruntfuggly.todo-tree",
-        "ms-python.black-formatter"
+        "ms-python.black-formatter",
+        "mechatroner.rainbow-csv"
       ]
     }
   }
