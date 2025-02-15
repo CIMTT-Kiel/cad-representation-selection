@@ -66,17 +66,19 @@ class Trainer:
         The metric to evaluate the model on the test set.
     """
     
-    def __init__(self, model, train_loader, test_loader, loss_fn, optimizer, device,task_type, test_metric):
+    def __init__(self, model, train_loader, test_loader, loss_fn, optimizer, device,test_metric,regression:bool=False, classification:bool=False, ):
         """
         Initializes the Trainer class.
         """
+        assert regression ^ classification, "Please specify the task type: 'classification' or 'regression'."
         self._model = model.to(device)
         self.train_loader = train_loader
         self.test_loader = test_loader
         self.loss_fn = loss_fn
         self.device = device
         self.optimizer = optimizer
-        self.task_type = task_type
+        self.regression = regression
+        self.classification = classification
         self.test_metric = test_metric
         self._epochs_trained = 0
 
@@ -125,17 +127,17 @@ class Trainer:
             self.optimizer.step()
             train_loss += loss.item()
             
-            if self.task_type == 'classification':
+            if self.classification:
                 _, predicted = outputs.max(1)
                 total += targets.size(0)
                 correct += predicted.eq(targets).sum().item()
-            elif self.task_type == 'regression':
+            elif self.regression:
                 total += targets.size(0)
                 correct += torch.sum(torch.abs(outputs - targets) < 0.5).item()  # Example threshold for regression accuracy
 
-        if self.task_type == 'classification':
+        if self.classification:
             accuracy = 100. * correct / total
-        elif self.task_type == 'regression':
+        elif self.regression:
             accuracy = correct / total  # This is a placeholder, adjust based on your regression accuracy metric
 
         return train_loss / len(self.train_loader), accuracy

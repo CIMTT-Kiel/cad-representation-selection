@@ -103,18 +103,19 @@ class TreeLSTMTuningPipeline(ABC):
         with open(cons.PATHS.DATA_MODEL_INPUT / "min_max_scaler.pkl", "rb") as f:
             return pickle.load(f)
 
-    def _load_data_sets(self, task_type: str):
+    def _load_data_sets(self):
         """
         Loads the training data set and the validation or test data set if the optimization stage requires it.
         """
         logger.debug(f"Loading data set for {self._current_stage} stage.")
-        if task_type == "regression":
+        if self.regression:
             scaler = self._load_scaler()
         # train data is the same for all stages
         self._train_data_set = FabwaveDataset(
             csv_file=cons.PATHS.DATA_MODEL_INPUT / "train.csv",
             data_type="trees",
-            task_type=task_type,
+            regression=self.regression,
+            classification=self.classification,
             scaler=scaler,
         )
         match self._current_stage:
@@ -122,14 +123,16 @@ class TreeLSTMTuningPipeline(ABC):
                 self._val_data_set = FabwaveDataset(
                     csv_file=cons.PATHS.DATA_MODEL_INPUT / "validation.csv",
                     data_type="trees",
-                    task_type=task_type,
+                    regression=self.regression,
+                    classification=self.classification,
                     scaler=scaler,
                 )
             case "test":
                 self._test_data_set = FabwaveDataset(
                     csv_file=cons.PATHS.DATA_MODEL_INPUT / "test.csv",
                     data_type="trees",
-                    task_type=task_type,
+                    regression=self.regression,
+                    classification=self.classification,
                     scaler=scaler,
                 )
 
@@ -405,7 +408,8 @@ class TreeLSTMTuningPipeline(ABC):
             loss_fn=self._get_loss_function(),
             test_metric=self._get_test_metric(),
             device=device,
-            task_type=self.TASK_TYPE,
+            regression=self.regression,
+            classification=self.classification,
         )
         return model, trainer
 
