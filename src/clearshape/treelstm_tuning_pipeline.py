@@ -630,7 +630,8 @@ class TreeLSTMTuningPipeline():
         match self._conf.loss_function:
             case "mean_squared_error":
                 return nn.MSELoss()
-            
+            case "cross_entropy":
+                return nn.CrossEntropyLoss() 
             case _ :
                 raise ValueError(f"Loss function {self._conf.loss_function} not recognized.")
 
@@ -651,6 +652,8 @@ class TreeLSTMTuningPipeline():
         match self._conf.test_metric:
             case "mean_squared_error":
                 return nn.MSELoss()
+            case "cross_entropy":
+                return nn.CrossEntropyLoss()
             case _:
                 raise ValueError(f"Test metric {self._conf.test_metric} not recognized.")
 
