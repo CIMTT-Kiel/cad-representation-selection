@@ -1,11 +1,5 @@
-# TODO add all docstrings
-# TODO sort imports
-# TODO finish all remaining TODOs
-
 """
-****************
-Quick notes:
-- the hyperparamerters used for each stage of the pipeline should be different
+A class to optimize hyperparameters for a Tree-LSTM model using Optuna.
 """
 
 # Standard Library
