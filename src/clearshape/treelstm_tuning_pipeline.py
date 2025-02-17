@@ -608,8 +608,6 @@ class TreeLSTMTuningPipeline():
             objective, n_trials=self._conf.n_trials, n_jobs=self._conf.n_jobs
         )
         best_params = study.best_params
-        # TODO move saving command to run method
-        torch.save(self.best_model["model"], cons.PATHS.DATA_MODELS / "tree-lstm-regressor.pth")
         return best_params
 
     def _get_loss_function(self):
@@ -728,6 +726,10 @@ class TreeLSTMTuningPipeline():
             best_params = self._optimize_model()
 
             self._save_best_tuned_parameters(best_params)
+
+            # save best model (classifier or regressor)
+            model_type = "classifier" if self.classification else "regressor"
+            torch.save(self.best_model["model"], cons.PATHS.DATA_MODELS / f"tree-lstm-{model_type}.pth")
 
         logger.info("Pipeline completed.")
 
