@@ -738,5 +738,6 @@ class TreeLSTMTuningPipeline():
 
 
 if __name__ == "__main__":
+    #pipeline = TreeLSTMTuningPipeline("treelstm_classifier_tuning_pipeline.yaml", classification=True)
     pipeline = TreeLSTMTuningPipeline("treelstm_regressor_tuning_pipeline.yaml", regression=True)
     pipeline.run()
