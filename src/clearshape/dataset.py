@@ -48,15 +48,14 @@ class FabwaveDataset(Dataset):
         Optional transform to be applied on a sample.
     """
 
-    def __init__(self, csv_file, data_type: str, task_type='classification', scaler=None):
-        assert task_type == "classification" or task_type == "regression", "Is the tasks type spelled correctly?"
+    def __init__(self, csv_file, data_type: str, regression:bool=False, classification:bool=False, scaler=None):
         assert data_type in ["images", "trees", "invariants"], "Is the data type spelled correctly?"
-
-        assert task_type != "classification", "No scaler needed for classification task"
+        assert regression ^ classification, "Please specify the task type: 'classification' or 'regression'."
         self.scaler = scaler  
         self.data = self._get_scaled_data(csv_file) if self.scaler else self._load_data(csv_file) # Load CSV file into a DataFrame
         self.data_type = data_type
-        self.task_type = task_type
+        self.regression = regression
+        self.classification = classification
 
     def _load_data(self, csv_file: Union[str, Path]) -> pd.DataFrame:
         return pd.read_csv(csv_file, index_col=0)
@@ -120,11 +119,11 @@ class FabwaveDataset(Dataset):
             raise ValueError(f"Unsupported file type: {file_path.suffix}")  # Raise error for unsupported formats
         
         # get task-specific targets
-        if self.task_type == 'classification':
+        if self.classification:
             num_classes = self.data['class_id'].nunique()
             target = torch.zeros(num_classes, dtype=torch.float32)
             target[row['class_id']] = 1.0
-        elif self.task_type == "regression":
+        elif self.regression:
             target = torch.tensor([row['volume'], row['faces'], row['edges'], row['vertices']], dtype=torch.float32)  # Convert class label to float for regression
         
         return data_representation, target

@@ -1,38 +1,31 @@
-# TODO add all docstrings
-# TODO sort imports
-# TODO finish all remaining TODOs
-
 """
-****************
-Quick notes:
-- the hyperparamerters used for each stage of the pipeline should be different
+A class to optimize hyperparameters for a Tree-LSTM model using Optuna.
 """
 
 # Standard Library
 import logging
-import yaml
 import pickle
-from abc import ABC, abstractmethod
+import yaml
 
 # Third Party Libraries
-from omegaconf import OmegaConf
-import optuna
+import dgl
 import mlflow
+import optuna
 import pandas as pd
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from torch.utils.data import DataLoader
-import dgl
+from omegaconf import OmegaConf
 from sklearn.preprocessing import MinMaxScaler
+from torch.utils.data import DataLoader
 
 # custom packages
-from clearshape.models.feedforward_mlp import FeedforwardMLP
-from clearshape.models.treelstm import RootedInTreeEncoder
-from clearshape.models.modelstack import ModelStack
-from clearshape.trainer import Trainer
 import clearshape.constants as cons
 from clearshape.dataset import FabwaveDataset
+from clearshape.models.feedforward_mlp import FeedforwardMLP
+from clearshape.models.modelstack import ModelStack
+from clearshape.models.treelstm import RootedInTreeEncoder
+from clearshape.trainer import Trainer
 
 # set up logger
 logging_level = logging.DEBUG
@@ -49,9 +42,31 @@ device = "cuda" if torch.cuda.is_available() else "cpu"
 logger.info(f"Using device: {device}")
 
 
-class TreeLSTMTuningPipeline(ABC):
+class TreeLSTMTuningPipeline():
     """
-    # TODO add docstring
+    A class to optimize hyperparameters for a Tree-LSTM model using Optuna.
+
+    Parameters
+    ----------
+    config_file : str
+        The name of the configuration file.
+    regression : bool
+        Whether the task is a regression task.
+    classification : bool
+        Whether the task is a classification task.
+    
+    Attributes
+    ----------
+    _conf : OmegaConf
+        The configuration object.
+    _current_stage : str    
+        The current stage of the optimization pipeline.
+    best_model : dict   
+        A dictionary containing the best model and its loss.
+    regression : bool
+        Whether the task is a regression task.
+    classification : bool   
+        Whether the task is a classification
     """
 
     _instance = None
@@ -64,17 +79,26 @@ class TreeLSTMTuningPipeline(ABC):
             cls._instance = super().__new__(cls)
         return cls._instance
 
-    def __init__(self, config_file: str):
+    def __init__(self, config_file: str, regression:bool=False, classification: bool=False):
         """
-        # TODO add docstring
+        Initializes the TreeLSTMTuningPipeline class.
         """
         self._conf = OmegaConf.load(cons.PATHS.CONFIG / config_file)
+        # TODO verify that the configuration file has valid entries
         self._current_stage = None
         self.best_model = {"model": None, "loss": None}
+        assert regression ^ classification, "Choose either regression or classification task"
+        self.regression = regression
+        self.classification = classification
 
     def _get_study(self) -> optuna.study.Study:
         """
-        # TODO add docstring
+        Get an Optuna study object based on the current stage of the optimization pipeline.
+
+        Returns
+        -------
+        optuna.study.Study
+            An Optuna study object.
         """
         match self._current_stage:
             case "train":
@@ -95,23 +119,35 @@ class TreeLSTMTuningPipeline(ABC):
 
     def _load_scaler(self):
         """
-        # TODO add docstring
+        Load the MinMaxScaler object from a pickle file.
+
+        Returns
+        -------
+        MinMaxScaler
+            The MinMaxScaler object.
         """
         with open(cons.PATHS.DATA_MODEL_INPUT / "min_max_scaler.pkl", "rb") as f:
             return pickle.load(f)
 
-    def _load_data_sets(self, task_type: str):
+    def _load_data_sets(self):
         """
         Loads the training data set and the validation or test data set if the optimization stage requires it.
+
+        The data sets are set as attributes of the class.
+
+        Returns
+        -------
+        None
         """
         logger.debug(f"Loading data set for {self._current_stage} stage.")
-        if task_type == "regression":
+        if self.regression:
             scaler = self._load_scaler()
         # train data is the same for all stages
         self._train_data_set = FabwaveDataset(
             csv_file=cons.PATHS.DATA_MODEL_INPUT / "train.csv",
             data_type="trees",
-            task_type=task_type,
+            regression=self.regression,
+            classification=self.classification,
             scaler=scaler,
         )
         match self._current_stage:
@@ -119,18 +155,32 @@ class TreeLSTMTuningPipeline(ABC):
                 self._val_data_set = FabwaveDataset(
                     csv_file=cons.PATHS.DATA_MODEL_INPUT / "validation.csv",
                     data_type="trees",
-                    task_type=task_type,
+                    regression=self.regression,
+                    classification=self.classification,
                     scaler=scaler,
                 )
             case "test":
                 self._test_data_set = FabwaveDataset(
                     csv_file=cons.PATHS.DATA_MODEL_INPUT / "test.csv",
                     data_type="trees",
-                    task_type=task_type,
+                    regression=self.regression,
+                    classification=self.classification,
                     scaler=scaler,
                 )
 
     def _set_data_loader(self, batch_size: int):
+        """
+        Set the data loader for the current stage of the optimization pipeline.
+        
+        Parameters
+        ----------
+        batch_size : int
+            The batch size for the data loader.
+
+        Returns
+        -------
+        None
+        """
         logger.debug(f"Setting up data loader for {self._current_stage} data.")
         self._load_data_sets()
         # Train data loader is the same for each optimization stage
@@ -152,6 +202,19 @@ class TreeLSTMTuningPipeline(ABC):
                 )
 
     def _build_model(self, params: dict):
+        """
+        Build a model based on the parameters provided.
+
+        Parameters
+        ----------
+        params : dict
+            A dictionary containing the parameters to build the model.
+        
+        Returns
+        -------
+        ModelStack
+            The built model.
+        """
         logger.debug("Building model.")
         encoder = RootedInTreeEncoder(
             child_sum=True,
@@ -168,6 +231,19 @@ class TreeLSTMTuningPipeline(ABC):
         return model
 
     def _get_parameters_to_tune(self, trial: optuna.Trial):
+        """
+        Get the hyperparameters to tune for the current stage of the optimization pipeline.
+        
+        Parameters
+        ----------
+        trial : optuna.Trial
+            The Optuna trial object for which parameters are being retrieved.
+        
+        Returns
+        -------
+        dict
+            A dictionary containing the hyperparameters to tune.
+        """
         match self._current_stage:
             case "train":
                 layers_total = trial.suggest_int(
@@ -217,6 +293,14 @@ class TreeLSTMTuningPipeline(ABC):
                 }
 
     def _get_fixed_parameters(self):
+        """
+        Get the fixed hyperparameters for the current stage of the optimization pipeline.
+
+        Returns
+        -------
+        dict
+            A dictionary containing the fixed hyperparameters.
+        """
         match self._current_stage:
             case "train":
                 return {
@@ -233,7 +317,6 @@ class TreeLSTMTuningPipeline(ABC):
                     "optimizer": self._conf.train.optimizer,
                 }
 
-    # TODO
     def _get_parameters(self, trial: optuna.Trial) -> dict:
         """
         Get parameters for an Optuna trial.
@@ -292,7 +375,27 @@ class TreeLSTMTuningPipeline(ABC):
 
     def _get_optimizer(self, optimizer: str):
         """
-        # TODO add docstring
+        Get the optimizer for the model.
+
+        Parameters
+        ----------
+        optimizer : str
+            The name of the optimizer.
+
+        Returns
+        -------
+        torch.optim.Optimizer
+            The optimizer instance.
+
+        Raises
+        ------
+        ValueError
+            If the optimizer is not recognized.
+
+        Returns
+        -------
+        torch.optim.Optimizer
+            The optimizer instance.
         """
         match optimizer:
             case "adam":
@@ -304,7 +407,17 @@ class TreeLSTMTuningPipeline(ABC):
 
     def _optimize_loss_on_training_data(self, trial: optuna.Trial):
         """
-        # TODO add docstring
+        Optimize the loss on the training data.
+
+        Parameters
+        ----------
+        trial : optuna.Trial
+            The Optuna trial object.
+        
+        Returns
+        -------
+        float
+            The loss on the training data.
         """
         with mlflow.start_run():
             parameter = self._get_parameters(trial)
@@ -323,7 +436,17 @@ class TreeLSTMTuningPipeline(ABC):
 
     def _optimize_loss_on_validation_data(self, trial: optuna.Trial):
         """
-        # TODO add docstring
+        Optimize the loss on the validation data.
+
+        Parameters
+        ----------
+        trial : optuna.Trial
+            The Optuna trial object.
+        
+        Returns
+        -------
+        float
+            The loss on the validation data.
         """
         with mlflow.start_run():
             parameter = self._get_parameters(trial)
@@ -342,7 +465,17 @@ class TreeLSTMTuningPipeline(ABC):
 
     def _optimize_loss_on_test_data(self, trial: optuna.Trial):
         """
-        # TODO add docstring
+        Optimize the loss on the test data.
+
+        Parameters
+        ----------
+        trial : optuna.Trial
+            The Optuna trial object.
+
+        Returns
+        -------
+        float
+            The loss on the test data.
         """
         with mlflow.start_run():
             parameter = self._get_parameters(trial)
@@ -364,6 +497,18 @@ class TreeLSTMTuningPipeline(ABC):
             return loss
 
     def _train_model(self, trainer: Trainer, trial: optuna.Trial):
+        """
+        Train the model for a number of epochs.
+
+        Parameters
+        ----------
+        trainer : Trainer
+            The Trainer object to train the model. Also defines the number of epochs to train.
+
+        Returns
+        -------
+        None
+        """
         epochs_to_train_in_a_row = 10
         for _ in range(self._conf.n_epochs // epochs_to_train_in_a_row):
             trainer.train(n_epochs=epochs_to_train_in_a_row)
@@ -377,11 +522,25 @@ class TreeLSTMTuningPipeline(ABC):
             trial.report(training_loss, trainer.epochs_trained)
             logger.debug(f"Epochs trained: {trainer.epochs_trained}")
 
-            # TODO check if trial could get pruned after only 10 warmup epochs
             if trial.should_prune():
                 raise optuna.TrialPruned()
 
     def _test_and_log(self, trainer: Trainer, trial: optuna.Trial):
+        """
+        Test the model and log the loss via MLflow.
+
+        Parameters
+        ----------
+        trainer : Trainer
+            The Trainer object to test the model.
+        trial : optuna.Trial
+            The Optuna trial object.
+
+        Returns
+        -------
+        float
+            The loss on the test data.
+        """
         training_loss = trainer.test()  # initial test of model
         trial.report(training_loss, trainer.epochs_trained)
         mlflow.log_metric(
@@ -392,6 +551,19 @@ class TreeLSTMTuningPipeline(ABC):
         return training_loss
 
     def _initialize_model_and_trainer(self, parameter: dict):
+        """
+        Initialize the model and the trainer with the given parameters.
+
+        Parameters
+        ----------
+        parameter : dict
+            A dictionary containing the parameters to initialize the model and trainer.
+
+        Returns
+        -------
+        ModelStack, Trainer
+            The initialized model and trainer. 
+        """
         model = self._build_model(parameter)
         self._set_data_loader(parameter["batch_size"])
         trainer = Trainer(
@@ -402,13 +574,24 @@ class TreeLSTMTuningPipeline(ABC):
             loss_fn=self._get_loss_function(),
             test_metric=self._get_test_metric(),
             device=device,
-            task_type=self.TASK_TYPE,
+            regression=self.regression,
+            classification=self.classification,
         )
         return model, trainer
 
     def _optimize_model(self):
         """
-        # TODO add docstring
+        Optimize the model based on the current stage of the optimization pipeline.
+
+        Returns
+        -------
+        dict
+            A dictionary containing the best tuned parameters.
+
+        Raises
+        ------
+        ValueError
+            If the current stage is not recognized.
         """
         logger.debug("Entering optimization function.")
         study = self._get_study()
@@ -432,27 +615,57 @@ class TreeLSTMTuningPipeline(ABC):
 
     def _get_loss_function(self):
         """
-        # TODO add docstring
+        Instantiate the loss function based on the configuration.
+
+        Returns
+        -------
+        callable
+            The loss function.
+
+        Raises
+        ------
+        ValueError
+            If the loss function is not recognized.
         """
         match self._conf.loss_function:
             case "mean_squared_error":
                 return nn.MSELoss()
+            
+            case _ :
+                raise ValueError(f"Loss function {self._conf.loss_function} not recognized.")
 
     def _get_test_metric(self):
         """
-        # TODO add docstring
+        Instantiate the test metric based on the configuration.
+
+        Returns
+        -------
+        callable
+            The test metric.
+        
+        Raises
+        ------
+        ValueError
+            If the test metric is not recognized.
         """
         match self._conf.test_metric:
             case "mean_squared_error":
                 return nn.MSELoss()
+            case _:
+                raise ValueError(f"Test metric {self._conf.test_metric} not recognized.")
 
     def _save_best_tuned_parameters(self, best_tuned_parameter: dict):
         """
+        Save the best tuned parameters to a YAML file.
 
         Parameters
         ----------
         best_params : dict
             A dictionary containing the best tuned parameters. Returned by optuna.
+
+        Returns
+        -------
+        None
         """
         logger.debug("Saving best tuned parameters.")
         try:
@@ -479,46 +692,14 @@ class TreeLSTMTuningPipeline(ABC):
         with open(best_parameter_path, "w") as f:
             yaml.dump(best_parameter, f)
 
-    @abstractmethod
     def run(self):
-        pass
+        """
+        Run the optimization pipeline.
 
-
-class TreeLSTMClassifierPipeline(TreeLSTMTuningPipeline):
-    """
-    # TODO add docstring
-    """
-
-    def __init__(self):
-        super().__init__("classification")
-
-    def _load_data_set(self):
-        return super()._load_data_set("classification")
-
-    def _load_best_parameters(self):
-        return super()._load_best_parameters("tree-lstm-classifier-best-parameter.yaml")
-
-    def run(self):
-        pass
-
-
-class TreeLSTMRegressorPipeline(TreeLSTMTuningPipeline):
-    """
-    # TODO add docstring
-    """
-
-    TASK_TYPE = "regression"
-
-    def __init__(self):
-        config_file = "treelstm_regressor_tuning_pipeline.yaml"
-        super().__init__(config_file)
-
-    def _load_data_sets(
-        self,
-    ):
-        return super()._load_data_sets(self.TASK_TYPE)
-
-    def run(self):
+        Returns
+        -------
+        None
+        """
         logger.info("Setting up mlflow.")
         mlflow.set_tracking_uri("http://localhost:5000")
 
@@ -549,6 +730,9 @@ class TreeLSTMRegressorPipeline(TreeLSTMTuningPipeline):
         logger.info("Pipeline completed.")
 
 
+    
+
+
 if __name__ == "__main__":
-    pipeline = TreeLSTMRegressorPipeline()
+    pipeline = TreeLSTMTuningPipeline("treelstm_regressor_tuning_pipeline.yaml", regression=True)
     pipeline.run()

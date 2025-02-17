@@ -20,6 +20,7 @@ import logging
 from pathlib import Path
 from tqdm import tqdm
 import time
+import threading
 
 # third party imports
 import pandas as pd
@@ -32,7 +33,7 @@ import clearshape.constants as cons
 from clearshape.step_tree.step_tree import StepTree
 
 # set up logger
-logging_level = logging.INFO
+logging_level = logging.DEBUG
 logger = logging.getLogger(__name__)
 logger.setLevel(logging_level)
 formatter = logging.Formatter("%(asctime)s %(levelname)8s - %(message)s")
@@ -192,7 +193,8 @@ class PrimaryFeaturePipeline:
         # TODO: Add method docstring
         """
         # self._images =
-        return NotImplemented
+        #return NotImplemented
+        print("runing image conversion")
 
     # TODO: Implement invariant conversion
     def _convert_to_invariants(self):
@@ -200,7 +202,8 @@ class PrimaryFeaturePipeline:
         # TODO: Add method docstring
         """
         # self._invariants =
-        return NotImplemented
+        #return NotImplemented
+        print("runing invariants conversion")
 
     # TODO add saving code for images and invariants
     def _save_data(self):
@@ -275,13 +278,24 @@ class PrimaryFeaturePipeline:
                     break
 
                 try:
-
-                    # Convert to tree representation
-                    self._convert_to_tree()
-
+                    tree_thread = threading.Thread(target=self._convert_to_tree)
                     # TODO: Implement image and invariant conversion
                     # self._convert_to_image()
                     # self._convert_to_invariant()
+                    image_thread = threading.Thread(target=self._convert_to_image)
+                    invariant_thread = threading.Thread(target=self._convert_to_invariants)
+
+                    logger.debug("Starting threads")
+                    tree_thread.start()
+                    image_thread.start()
+                    invariant_thread.start()
+
+                    tree_thread.join()
+                    image_thread.join()
+                    invariant_thread.join()
+
+                    logger.debug("Threads finished")
+
 
                     # Save all data representations only if all conversions are successful
                     self._save_data()
