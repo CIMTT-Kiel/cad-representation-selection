@@ -115,9 +115,6 @@ class Trainer:
         """
         logger.debug("Starting training one epoch.")
         self.model.train()
-        train_loss = 0
-        correct = 0
-        total = 0
         for batch_idx, (inputs, targets) in enumerate(self.train_loader):
             inputs, targets = inputs.to(self.device), targets.to(self.device)
             self.optimizer.zero_grad()
@@ -125,22 +122,6 @@ class Trainer:
             loss = self.loss_fn(outputs, targets)
             loss.backward()
             self.optimizer.step()
-            train_loss += loss.item()
-            
-            if self.classification:
-                _, predicted = outputs.max(1)
-                total += targets.size(0)
-                correct += predicted.eq(targets).sum().item()
-            elif self.regression:
-                total += targets.size(0)
-                correct += torch.sum(torch.abs(outputs - targets) < 0.5).item()  # Example threshold for regression accuracy
-
-        if self.classification:
-            accuracy = 100. * correct / total
-        elif self.regression:
-            accuracy = correct / total  # This is a placeholder, adjust based on your regression accuracy metric
-
-        return train_loss / len(self.train_loader), accuracy
 
     def train(self, n_epochs) -> None:
         """
@@ -156,7 +137,7 @@ class Trainer:
         None
         """
         for epoch in range(n_epochs):
-            train_loss, train_acc = self.train_one_epoch()
+            self.train_one_epoch()
             self._epochs_trained += 1
             logger.debug(f"Epoch {self.epochs_trained} completed")
             
