@@ -10,29 +10,28 @@ Quick notes:
 
 # Standard Library
 import logging
-import yaml
 import pickle
-
+import yaml
 
 # Third Party Libraries
-from omegaconf import OmegaConf
-import optuna
+import dgl
 import mlflow
+import optuna
 import pandas as pd
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from torch.utils.data import DataLoader
-import dgl
+from omegaconf import OmegaConf
 from sklearn.preprocessing import MinMaxScaler
+from torch.utils.data import DataLoader
 
 # custom packages
-from clearshape.models.feedforward_mlp import FeedforwardMLP
-from clearshape.models.treelstm import RootedInTreeEncoder
-from clearshape.models.modelstack import ModelStack
-from clearshape.trainer import Trainer
 import clearshape.constants as cons
 from clearshape.dataset import FabwaveDataset
+from clearshape.models.feedforward_mlp import FeedforwardMLP
+from clearshape.models.modelstack import ModelStack
+from clearshape.models.treelstm import RootedInTreeEncoder
+from clearshape.trainer import Trainer
 
 # set up logger
 logging_level = logging.DEBUG
@@ -324,7 +323,6 @@ class TreeLSTMTuningPipeline():
                     "optimizer": self._conf.train.optimizer,
                 }
 
-    # TODO
     def _get_parameters(self, trial: optuna.Trial) -> dict:
         """
         Get parameters for an Optuna trial.
@@ -530,7 +528,6 @@ class TreeLSTMTuningPipeline():
             trial.report(training_loss, trainer.epochs_trained)
             logger.debug(f"Epochs trained: {trainer.epochs_trained}")
 
-            # TODO check if trial could get pruned after only 10 warmup epochs
             if trial.should_prune():
                 raise optuna.TrialPruned()
 
