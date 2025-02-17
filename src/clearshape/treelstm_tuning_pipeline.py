@@ -140,8 +140,7 @@ class TreeLSTMTuningPipeline():
         None
         """
         logger.debug(f"Loading data set for {self._current_stage} stage.")
-        if self.regression:
-            scaler = self._load_scaler()
+        scaler = self._load_scaler() if self.regression else None
         # train data is the same for all stages
         self._train_data_set = FabwaveDataset(
             csv_file=cons.PATHS.DATA_MODEL_INPUT / "train.csv",
