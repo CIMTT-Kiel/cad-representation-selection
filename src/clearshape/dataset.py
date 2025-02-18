@@ -120,9 +120,7 @@ class FabwaveDataset(Dataset):
         
         # get task-specific targets
         if self.classification:
-            num_classes = self.data['class_id'].nunique()
-            target = torch.zeros(num_classes, dtype=torch.float32)
-            target[row['class_id']] = 1.0
+            target = torch.tensor(row['class_id'])
         elif self.regression:
             target = torch.tensor([row['volume'], row['faces'], row['edges'], row['vertices']], dtype=torch.float32)  # Convert class label to float for regression
         
