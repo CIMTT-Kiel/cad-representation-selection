@@ -94,7 +94,7 @@ class TreeLSTMTuningPipeline():
         self._conf = OmegaConf.load(cons.PATHS.CONFIG / config_file)
         # TODO verify that the configuration file has valid entries
         self._current_stage = None
-        self.best_model = {"model": None, "loss": 0}
+        self.best_model = {"model": None, "test_score": 0}
         assert regression ^ classification, "Choose either regression or classification task"
         self.regression = regression
         self.classification = classification
@@ -470,6 +470,7 @@ class TreeLSTMTuningPipeline():
 
             return loss
 
+    # TODO rename this function. The model is not nessarily optimized on training loss.
     def _optimize_loss_on_test_data(self, trial: optuna.Trial):
         """
         Optimize the loss on the test data.
@@ -491,17 +492,45 @@ class TreeLSTMTuningPipeline():
 
             model, trainer = self._initialize_model_and_trainer(parameter)
 
-            self._test_and_log(trainer, trial)
+            # calculate training loss and test score before training
+            self._assess_initial_model(trainer, trial)
 
-            self._train_model(trainer, trial)
+            test_score = self._train_model(trainer, trial)
 
-            loss = self._test_and_log(trainer, trial)
-
-            if loss < self.best_model["loss"]:
+            if test_score < self.best_model["test_score"]:
                 self.best_model["model"] = model
-                self.best_model["loss"] = loss
+                self.best_model["test_score"] = test_score
 
-            return loss
+            return test_score
+        
+    def _assess_initial_model(self, trainer: Trainer, trial: optuna.Trial):
+        """
+        Assess the initial model before training.
+
+        Parameters
+        ----------
+        trainer : Trainer
+            The Trainer object to assess the model.
+
+        Returns
+        -------
+        float
+            The loss on the test data.
+        """
+        training_loss = trainer.get_loss_on_train_set()
+        test_score = trainer.test()
+        mlflow.log_metric(
+            f"{str(self._conf.loss_function)} on training data",
+            training_loss,
+            step=trainer.epochs_trained,
+        )
+        mlflow.log_metric(
+            f"{str(self._conf.test_metric)} on test data of stage",
+            test_score,
+            step=trainer.epochs_trained,
+        )
+        trial.report(training_loss, trainer.epochs_trained)
+        trial.report(test_score, trainer.epochs_trained)
 
     def _train_model(self, trainer: Trainer, trial: optuna.Trial):
         """
@@ -518,44 +547,30 @@ class TreeLSTMTuningPipeline():
         """
         epochs_to_train_in_a_row = 10
         for _ in range(self._conf.n_epochs // epochs_to_train_in_a_row):
-            trainer.train(n_epochs=epochs_to_train_in_a_row)
+            training_loss = trainer.train(n_epochs=epochs_to_train_in_a_row)
+            test_score = trainer.test()
 
-            training_loss = trainer.test()
+            # log training loss
             mlflow.log_metric(
-                str(self._conf.loss_function),
+                f"{str(self._conf.loss_function)} on training data",
                 training_loss,
                 step=trainer.epochs_trained,
             )
+            # log test loss
+            mlflow.log_metric(
+                f"{str(self._conf.test_metric)} on test data of stage",
+                test_score,
+                step=trainer.epochs_trained,
+            )
+
             trial.report(training_loss, trainer.epochs_trained)
+            trial.report(test_score, trainer.epochs_trained)
             logger.debug(f"Epochs trained: {trainer.epochs_trained}")
 
             if trial.should_prune():
                 raise optuna.TrialPruned()
+        return test_score
 
-    def _test_and_log(self, trainer: Trainer, trial: optuna.Trial):
-        """
-        Test the model and log the loss via MLflow.
-
-        Parameters
-        ----------
-        trainer : Trainer
-            The Trainer object to test the model.
-        trial : optuna.Trial
-            The Optuna trial object.
-
-        Returns
-        -------
-        float
-            The loss on the test data.
-        """
-        training_loss = trainer.test()  # initial test of model
-        trial.report(training_loss, trainer.epochs_trained)
-        mlflow.log_metric(
-            str(self._conf.loss_function),
-            training_loss,
-            step=trainer.epochs_trained,
-        )
-        return training_loss
 
     def _initialize_model_and_trainer(self, parameter: dict):
         """
@@ -713,7 +728,8 @@ class TreeLSTMTuningPipeline():
         -------
         None
         """
-        logger.info("Setting up mlflow.")
+        logger.info(f"Starting pipeline. Tuning {'classifier' if self.classification else 'regressor'} model.")
+        logger.info("Setting up mlflow. Tracking URI: http://localhost:5000")
         mlflow.set_tracking_uri("http://localhost:5000")
 
         if "train" in self._conf.stages:
@@ -751,6 +767,6 @@ class TreeLSTMTuningPipeline():
 
 
 if __name__ == "__main__":
-    #pipeline = TreeLSTMTuningPipeline("treelstm_classifier_tuning_pipeline.yaml", classification=True)
-    pipeline = TreeLSTMTuningPipeline("treelstm_regressor_tuning_pipeline.yaml", regression=True)
+    pipeline = TreeLSTMTuningPipeline("treelstm_classifier_tuning_pipeline.yaml", classification=True)
+    #pipeline = TreeLSTMTuningPipeline("treelstm_regressor_tuning_pipeline.yaml", regression=True)
     pipeline.run()
