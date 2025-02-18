@@ -7,6 +7,7 @@ import logging
 import torch
 import torch.nn as nn
 import torch.optim as optim
+from torcheval.metrics import MulticlassF1Score
 import mlflow
 
 # custom packages
@@ -179,7 +180,13 @@ class Trainer:
             for inputs, targets in self.test_loader:
                 inputs, targets = inputs.to(self.device), targets.to(self.device)
                 outputs = self.model(inputs)
-                test_score = self.test_metric(outputs, targets)
-                test_score_total += test_score.item()
+                try:
+                    test_score = self.test_metric(outputs, targets)
+                    test_score_total += test_score.item()
+                except TypeError:
+                    test_score = self.test_metric.update(outputs, targets)
+
+        if isinstance(self.test_metric, MulticlassF1Score):
+            return self.test_metric.compute()
 
         return test_score_total / len(self.test_loader)
