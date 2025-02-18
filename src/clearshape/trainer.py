@@ -1,5 +1,6 @@
 """
 """
+
 # standard libary
 import logging
 
@@ -21,6 +22,7 @@ stream_handler = logging.StreamHandler()
 stream_handler.setLevel(logging_level)
 stream_handler.setFormatter(formatter)
 logger.addHandler(stream_handler)
+
 
 class Trainer:
     """
@@ -44,7 +46,7 @@ class Trainer:
         The type of task ('classification' or 'regression').
     test_metric : callable
         The metric to evaluate the model on the test set.
-    
+
     Attributes
     ----------
     epochs_trained : int
@@ -66,12 +68,25 @@ class Trainer:
     test_metric : callable
         The metric to evaluate the model on the test set.
     """
-    
-    def __init__(self, model, train_loader, test_loader, loss_fn, optimizer, device,test_metric,regression:bool=False, classification:bool=False, ):
+
+    def __init__(
+        self,
+        model,
+        train_loader,
+        test_loader,
+        loss_fn,
+        optimizer,
+        device,
+        test_metric,
+        regression: bool = False,
+        classification: bool = False,
+    ):
         """
         Initializes the Trainer class.
         """
-        assert regression ^ classification, "Please specify the task type: 'classification' or 'regression'."
+        assert (
+            regression ^ classification
+        ), "Please specify the task type: 'classification' or 'regression'."
         self._model = model.to(device)
         self.train_loader = train_loader
         self.test_loader = test_loader
@@ -99,7 +114,7 @@ class Trainer:
     @property
     def model(self):
         return self._model
-    
+
     @model.setter
     def model(self, model):
         self._model = model
@@ -137,7 +152,7 @@ class Trainer:
         ----------
         n_epochs : int
             Number of epochs to train the model for.
-        
+
         Returns
         -------
         float
@@ -171,7 +186,7 @@ class Trainer:
                 loss_total += loss.item()
 
         return loss_total / len(self.train_loader)
-    
+
     def test(self) -> float:
         """
         Returns the average test score for a batch.
