@@ -13,4 +13,5 @@ dependencies = [
     "steputils",
     "optuna",
     "mlflow",
+    "torcheval",
 ]
