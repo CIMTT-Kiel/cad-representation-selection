@@ -1,5 +1,12 @@
 """
 A class to optimize hyperparameters for a Tree-LSTM model using Optuna.
+
+Examples
+--------
+Start MLFlow tracking via `mlflow ui` then run the pipeline:
+
+>>> pipeline = TreeLSTMTuningPipeline("treelstm_classifier_tuning_pipeline.yaml", classification=True)
+>>> pipeline.run()
 """
 
 # Standard Library
