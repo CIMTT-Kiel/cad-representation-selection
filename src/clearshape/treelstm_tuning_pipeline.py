@@ -25,6 +25,7 @@ import torch.optim as optim
 from omegaconf import OmegaConf
 from sklearn.preprocessing import MinMaxScaler
 from torch.utils.data import DataLoader
+from torcheval.metrics import MulticlassF1Score
 
 # custom packages
 import clearshape.constants as cons
@@ -617,6 +618,7 @@ class TreeLSTMTuningPipeline():
         best_params = study.best_params
         return best_params
 
+    # TODO refactor get_loss_function and get_test_metric. WET code!
     def _get_loss_function(self):
         """
         Instantiate the loss function based on the configuration.
@@ -635,7 +637,9 @@ class TreeLSTMTuningPipeline():
             case "mean_squared_error":
                 return nn.MSELoss()
             case "cross_entropy":
-                return nn.CrossEntropyLoss() 
+                return nn.CrossEntropyLoss()
+            case "f1":
+                return MulticlassF1Score(num_classes=self._conf.output_shape)
             case _ :
                 raise ValueError(f"Loss function {self._conf.loss_function} not recognized.")
 
@@ -658,6 +662,8 @@ class TreeLSTMTuningPipeline():
                 return nn.MSELoss()
             case "cross_entropy":
                 return nn.CrossEntropyLoss()
+            case "f1":
+                return MulticlassF1Score(num_classes=self._conf.output_shape)
             case _:
                 raise ValueError(f"Test metric {self._conf.test_metric} not recognized.")
 
