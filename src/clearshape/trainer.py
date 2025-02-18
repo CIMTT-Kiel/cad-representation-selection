@@ -142,6 +142,26 @@ class Trainer:
             logger.debug(f"Epoch {self.epochs_trained} completed")
             
 
+    def get_loss_on_train_set(self) -> float:
+        """
+        Returns the average loss on the training set.
+
+        Returns
+        -------
+        float
+            Average loss on the training set.
+        """
+        logger.debug("Starting to calculate loss on training set.")
+        self.model.eval()
+        loss_total = 0
+        with torch.no_grad():
+            for inputs, targets in self.train_loader:
+                inputs, targets = inputs.to(self.device), targets.to(self.device)
+                outputs = self.model(inputs)
+                loss = self.loss_fn(outputs, targets)
+                loss_total += loss.item()
+
+        return loss_total / len(self.train_loader)
     
     def test(self) -> float:
         """
