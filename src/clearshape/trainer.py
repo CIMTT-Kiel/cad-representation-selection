@@ -112,10 +112,11 @@ class Trainer:
         Returns
         -------
         float
-            Average training loss for the epoch.
+            Training loss for the average batch.
         """
         logger.debug("Starting training one epoch.")
         self.model.train()
+        loss_total = 0
         for batch_idx, (inputs, targets) in enumerate(self.train_loader):
             inputs, targets = inputs.to(self.device), targets.to(self.device)
             self.optimizer.zero_grad()
@@ -123,6 +124,10 @@ class Trainer:
             loss = self.loss_fn(outputs, targets)
             loss.backward()
             self.optimizer.step()
+
+            loss_total += loss.item()
+        loss_per_batch_avg = loss_total / len(self.train_loader)
+        return loss_per_batch_avg
 
     def train(self, n_epochs) -> None:
         """
@@ -135,13 +140,16 @@ class Trainer:
         
         Returns
         -------
-        None
+        float
+            Average training loss for a batch in the last epoch.
         """
+        loss_per_batch_avg = 0
         for epoch in range(n_epochs):
-            self.train_one_epoch()
+            loss_per_batch_avg = self.train_one_epoch()
             self._epochs_trained += 1
             logger.debug(f"Epoch {self.epochs_trained} completed")
-            
+
+        return loss_per_batch_avg
 
     def get_loss_on_train_set(self) -> float:
         """
