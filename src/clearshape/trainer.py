@@ -1,5 +1,6 @@
 """
 """
+
 # standard libary
 import logging
 
@@ -7,6 +8,7 @@ import logging
 import torch
 import torch.nn as nn
 import torch.optim as optim
+from torcheval.metrics import MulticlassF1Score
 import mlflow
 
 # custom packages
@@ -20,6 +22,7 @@ stream_handler = logging.StreamHandler()
 stream_handler.setLevel(logging_level)
 stream_handler.setFormatter(formatter)
 logger.addHandler(stream_handler)
+
 
 class Trainer:
     """
@@ -43,7 +46,7 @@ class Trainer:
         The type of task ('classification' or 'regression').
     test_metric : callable
         The metric to evaluate the model on the test set.
-    
+
     Attributes
     ----------
     epochs_trained : int
@@ -65,12 +68,25 @@ class Trainer:
     test_metric : callable
         The metric to evaluate the model on the test set.
     """
-    
-    def __init__(self, model, train_loader, test_loader, loss_fn, optimizer, device,test_metric,regression:bool=False, classification:bool=False, ):
+
+    def __init__(
+        self,
+        model,
+        train_loader,
+        test_loader,
+        loss_fn,
+        optimizer,
+        device,
+        test_metric,
+        regression: bool = False,
+        classification: bool = False,
+    ):
         """
         Initializes the Trainer class.
         """
-        assert regression ^ classification, "Please specify the task type: 'classification' or 'regression'."
+        assert (
+            regression ^ classification
+        ), "Please specify the task type: 'classification' or 'regression'."
         self._model = model.to(device)
         self.train_loader = train_loader
         self.test_loader = test_loader
@@ -98,7 +114,7 @@ class Trainer:
     @property
     def model(self):
         return self._model
-    
+
     @model.setter
     def model(self, model):
         self._model = model
@@ -111,13 +127,11 @@ class Trainer:
         Returns
         -------
         float
-            Average training loss for the epoch.
+            Training loss for the average batch.
         """
         logger.debug("Starting training one epoch.")
         self.model.train()
-        train_loss = 0
-        correct = 0
-        total = 0
+        loss_total = 0
         for batch_idx, (inputs, targets) in enumerate(self.train_loader):
             inputs, targets = inputs.to(self.device), targets.to(self.device)
             self.optimizer.zero_grad()
@@ -125,22 +139,10 @@ class Trainer:
             loss = self.loss_fn(outputs, targets)
             loss.backward()
             self.optimizer.step()
-            train_loss += loss.item()
-            
-            if self.classification:
-                _, predicted = outputs.max(1)
-                total += targets.size(0)
-                correct += predicted.eq(targets).sum().item()
-            elif self.regression:
-                total += targets.size(0)
-                correct += torch.sum(torch.abs(outputs - targets) < 0.5).item()  # Example threshold for regression accuracy
 
-        if self.classification:
-            accuracy = 100. * correct / total
-        elif self.regression:
-            accuracy = correct / total  # This is a placeholder, adjust based on your regression accuracy metric
-
-        return train_loss / len(self.train_loader), accuracy
+            loss_total += loss.item()
+        loss_per_batch_avg = loss_total / len(self.train_loader)
+        return loss_per_batch_avg
 
     def train(self, n_epochs) -> None:
         """
@@ -150,18 +152,41 @@ class Trainer:
         ----------
         n_epochs : int
             Number of epochs to train the model for.
-        
+
         Returns
         -------
-        None
+        float
+            Average training loss for a batch in the last epoch.
         """
+        loss_per_batch_avg = 0
         for epoch in range(n_epochs):
-            train_loss, train_acc = self.train_one_epoch()
+            loss_per_batch_avg = self.train_one_epoch()
             self._epochs_trained += 1
             logger.debug(f"Epoch {self.epochs_trained} completed")
-            
 
-    
+        return loss_per_batch_avg
+
+    def get_loss_on_train_set(self) -> float:
+        """
+        Returns the average loss on the training set.
+
+        Returns
+        -------
+        float
+            Average loss on the training set.
+        """
+        logger.debug("Starting to calculate loss on training set.")
+        self.model.eval()
+        loss_total = 0
+        with torch.no_grad():
+            for inputs, targets in self.train_loader:
+                inputs, targets = inputs.to(self.device), targets.to(self.device)
+                outputs = self.model(inputs)
+                loss = self.loss_fn(outputs, targets)
+                loss_total += loss.item()
+
+        return loss_total / len(self.train_loader)
+
     def test(self) -> float:
         """
         Returns the average test score for a batch.
@@ -178,7 +203,13 @@ class Trainer:
             for inputs, targets in self.test_loader:
                 inputs, targets = inputs.to(self.device), targets.to(self.device)
                 outputs = self.model(inputs)
-                test_score = self.test_metric(outputs, targets)
-                test_score_total += test_score.item()
+                try:
+                    test_score = self.test_metric(outputs, targets)
+                    test_score_total += test_score.item()
+                except TypeError:
+                    test_score = self.test_metric.update(outputs, targets)
+
+        if isinstance(self.test_metric, MulticlassF1Score):
+            return self.test_metric.compute()
 
         return test_score_total / len(self.test_loader)
