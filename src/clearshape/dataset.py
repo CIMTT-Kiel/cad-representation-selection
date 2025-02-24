@@ -48,7 +48,7 @@ class FabwaveDataset(Dataset):
         Optional transform to be applied on a sample.
     """
 
-    def __init__(self, csv_file, data_type: str, regression:bool=False, classification:bool=False, scaler=None):
+    def __init__(self, csv_file: Union[str, Path], data_type: str, regression:bool=False, classification:bool=False, scaler=None):
         assert data_type in ["images", "trees", "invariants"], "Is the data type spelled correctly?"
         assert regression ^ classification, "Please specify the task type: 'classification' or 'regression'."
         self.scaler = scaler  
