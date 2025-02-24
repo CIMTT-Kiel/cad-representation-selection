@@ -77,15 +77,6 @@ class TreeLSTMTuningPipeline():
         Whether the task is a classification
     """
 
-    _instance = None
-
-    def __new__(cls, *args, **kwargs):
-        """
-        Singleton pattern to ensure only one instance of the class is created.
-        """
-        if cls._instance is None:
-            cls._instance = super().__new__(cls)
-        return cls._instance
 
     def __init__(self, config_file: str, regression:bool=False, classification: bool=False):
         """
