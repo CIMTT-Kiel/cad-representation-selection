@@ -84,7 +84,7 @@ class TreeLSTMTuningPipeline():
         self._conf = OmegaConf.load(cons.PATHS.CONFIG / config_file)
         # TODO verify that the configuration file has valid entries
         self._current_stage = None
-        self.best_model = {"model": None, "test_score": 0}
+        self.best_model = {"model": None, "test_score": float("inf")}
         assert regression ^ classification, "Choose either regression or classification task"
         self.regression = regression
         self.classification = classification
