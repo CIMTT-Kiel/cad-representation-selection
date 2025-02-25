@@ -539,7 +539,7 @@ class TreeLSTMTuningPipeline():
         for _ in range(self._conf.n_epochs // epochs_to_train_in_a_row):
             training_loss = trainer.train(n_epochs=epochs_to_train_in_a_row)
             test_score = trainer.test()
-
+            logger.debug(f"Test score: {test_score}")
             # log training loss
             mlflow.log_metric(
                 f"{str(self._conf.loss_function)} on training data",
@@ -749,7 +749,10 @@ class TreeLSTMTuningPipeline():
 
             # save best model (classifier or regressor)
             model_type = "classifier" if self.classification else "regressor"
-            torch.save(self.best_model["model"], cons.PATHS.DATA_MODELS / f"tree-lstm-{model_type}.pth")
+
+            assert self.best_model["model"].state_dict() is not None, "No model to save."
+            
+            torch.save(self.best_model["model"].state_dict(), cons.PATHS.DATA_MODELS / f"trees-{model_type}.pth")
 
         logger.info("Pipeline completed.")
 
