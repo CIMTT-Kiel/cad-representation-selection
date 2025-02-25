@@ -46,7 +46,6 @@ stream_handler.setFormatter(formatter)
 logger.addHandler(stream_handler)
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
-
 logger.info(f"Using device: {device}")
 
 
@@ -554,9 +553,10 @@ class TreeLSTMTuningPipeline():
                 step=trainer.epochs_trained,
             )
 
+            logger.debug("Reporting training loss and test score to Optuna.")
             trial.report(training_loss, trainer.epochs_trained)
             trial.report(test_score, trainer.epochs_trained)
-            logger.debug(f"Epochs trained: {trainer.epochs_trained}")
+            logger.info(f"Epochs trained: {trainer.epochs_trained}")
 
             if trial.should_prune():
                 raise optuna.TrialPruned()
@@ -758,6 +758,6 @@ class TreeLSTMTuningPipeline():
 
 
 if __name__ == "__main__":
-    pipeline = TreeLSTMTuningPipeline("treelstm_classifier_tuning_pipeline.yaml", classification=True)
-    #pipeline = TreeLSTMTuningPipeline("treelstm_regressor_tuning_pipeline.yaml", regression=True)
+    #pipeline = TreeLSTMTuningPipeline("treelstm_classifier_tuning_pipeline.yaml", classification=True)
+    pipeline = TreeLSTMTuningPipeline("treelstm_regressor_tuning_pipeline.yaml", regression=True)
     pipeline.run()
