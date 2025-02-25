@@ -46,7 +46,6 @@ stream_handler.setFormatter(formatter)
 logger.addHandler(stream_handler)
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
-
 logger.info(f"Using device: {device}")
 
 
@@ -77,15 +76,6 @@ class TreeLSTMTuningPipeline():
         Whether the task is a classification
     """
 
-    _instance = None
-
-    def __new__(cls, *args, **kwargs):
-        """
-        Singleton pattern to ensure only one instance of the class is created.
-        """
-        if cls._instance is None:
-            cls._instance = super().__new__(cls)
-        return cls._instance
 
     def __init__(self, config_file: str, regression:bool=False, classification: bool=False):
         """
@@ -94,7 +84,7 @@ class TreeLSTMTuningPipeline():
         self._conf = OmegaConf.load(cons.PATHS.CONFIG / config_file)
         # TODO verify that the configuration file has valid entries
         self._current_stage = None
-        self.best_model = {"model": None, "test_score": 0}
+        self.best_model = {"model": None, "test_score": float("inf")}
         assert regression ^ classification, "Choose either regression or classification task"
         self.regression = regression
         self.classification = classification
@@ -563,9 +553,10 @@ class TreeLSTMTuningPipeline():
                 step=trainer.epochs_trained,
             )
 
+            logger.debug("Reporting training loss and test score to Optuna.")
             trial.report(training_loss, trainer.epochs_trained)
             trial.report(test_score, trainer.epochs_trained)
-            logger.debug(f"Epochs trained: {trainer.epochs_trained}")
+            logger.info(f"Epochs trained: {trainer.epochs_trained}")
 
             if trial.should_prune():
                 raise optuna.TrialPruned()
@@ -767,6 +758,6 @@ class TreeLSTMTuningPipeline():
 
 
 if __name__ == "__main__":
-    pipeline = TreeLSTMTuningPipeline("treelstm_classifier_tuning_pipeline.yaml", classification=True)
-    #pipeline = TreeLSTMTuningPipeline("treelstm_regressor_tuning_pipeline.yaml", regression=True)
+    #pipeline = TreeLSTMTuningPipeline("treelstm_classifier_tuning_pipeline.yaml", classification=True)
+    pipeline = TreeLSTMTuningPipeline("treelstm_regressor_tuning_pipeline.yaml", regression=True)
     pipeline.run()
