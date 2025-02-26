@@ -218,11 +218,21 @@ class TreeLSTMTuningPipeline():
             input_size=self._conf.input_size,
             encoding_size=params["encoding_size"],
         )
+        if self.classification:
+            output_activation = nn.Softmax(dim=1)
+        elif self.regression:
+            output_activation = nn.ReLU()
+        else:
+            output_activation = None
+
         predictor = FeedforwardMLP(
             input_shape=params["encoding_size"],
             hidden_layers=params["hidden_layers"],
             output_shape=self._conf.output_shape,
-            task_type="regression",
+            activation=nn.ReLU(),
+            # Use ReLU for regression, because regression targets are non-negative
+            output_activation= output_activation,
+            dropout_rate=params["dropout_rate"],
         )
         model = ModelStack([encoder, predictor])
         return model
@@ -275,8 +285,8 @@ class TreeLSTMTuningPipeline():
                     ),
                     "dropout_rate": trial.suggest_float(
                         "dropout_rate",
-                        self._conf.validation.encoder.dropout_rate_min,
-                        self._conf.validation.encoder.dropout_rate_max,
+                        self._conf.validation.predictor.dropout_rate_min,
+                        self._conf.validation.predictor.dropout_rate_max,
                     ),
                 }
             case "test":
@@ -303,6 +313,7 @@ class TreeLSTMTuningPipeline():
                 return {
                     "batch_size": self._conf.train.batch_size,
                     "optimizer": self._conf.train.optimizer,
+                    "dropout_rate": self._conf.train.dropout_rate,
                 }
             case "validation":
                 return {
