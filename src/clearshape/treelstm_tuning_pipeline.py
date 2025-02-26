@@ -423,13 +423,11 @@ class TreeLSTMTuningPipeline():
 
             model, trainer = self._initialize_model_and_trainer(parameter)
 
-            self._test_and_log(trainer, trial)
+            self._assess_initial_model(trainer, trial)
 
-            self._train_model(trainer, trial)
+            test_score = self._train_model(trainer, trial)
 
-            loss = self._test_and_log(trainer, trial)
-
-            return loss
+            return test_score
 
     def _optimize_loss_on_validation_data(self, trial: optuna.Trial):
         """
@@ -452,13 +450,11 @@ class TreeLSTMTuningPipeline():
 
             model, trainer = self._initialize_model_and_trainer(parameter)
 
-            self._test_and_log(trainer, trial)
+            self._assess_initial_model(trainer, trial)
 
-            self._train_model(trainer, trial)
+            test_score = self._train_model(trainer, trial)
 
-            loss = self._test_and_log(trainer, trial)
-
-            return loss
+            return test_score
 
     # TODO rename this function. The model is not nessarily optimized on training loss.
     def _optimize_loss_on_test_data(self, trial: optuna.Trial):
