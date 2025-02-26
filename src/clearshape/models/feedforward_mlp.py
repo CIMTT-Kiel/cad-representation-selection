@@ -18,8 +18,10 @@ class FeedforwardMLP(nn.Module):
         The number of output units.
     activation : callable, optional
         The activation function to use between layers (default is ReLU).
-    task_type : str, optional
-        The type of task, either 'classification' or 'regression'.
+    output_activation : callable, optional
+        The activation function to use on the output layer. If `None` the output layer will be linear.
+    dropout_rate : float, optional
+        The dropout rate applied after each hidden layer (default is 0.0).
     """
 
     def __init__(
@@ -28,20 +30,32 @@ class FeedforwardMLP(nn.Module):
         hidden_layers,
         output_shape,
         activation=nn.ReLU(),
-        task_type="classification",
+        output_activation=None,
+        dropout_rate=0.0,
     ):
         super(FeedforwardMLP, self).__init__()
         self.activation = activation
-        self.task_type = task_type
+        self.output_activation = output_activation
 
-        # Define layers
-        layer_dims = [input_shape] + hidden_layers + [output_shape]
-        self.layers = nn.ModuleList(
-            [
-                nn.Linear(layer_dims[i], layer_dims[i + 1])
-                for i in range(len(layer_dims) - 1)
-            ]
-        )
+        # Define the network layers
+        # A dropout layer is applied after the input layer and each hidden layer
+        layers = [nn.Dropout(dropout_rate)] if dropout_rate > 0.0 else []
+        input_dim = input_shape
+
+        for hidden_dim in hidden_layers:
+            layers.append(nn.Linear(input_dim, hidden_dim))
+            layers.append(self.activation)
+            if dropout_rate > 0.0:
+                layers.append(nn.Dropout(dropout_rate))
+            input_dim = hidden_dim
+
+        layers.append(nn.Linear(input_dim, output_shape))
+        if output_activation is not None:
+            layers.append(output_activation)
+
+        self.layers = nn.ModuleList(layers)
+
+       
 
     def forward(self, x):
         """
@@ -57,10 +71,6 @@ class FeedforwardMLP(nn.Module):
         torch.Tensor
             Output tensor of shape (batch_size, output_dim).
         """
-        for layer in self.layers[:-1]:
-            x = self.activation(layer(x))
-        x = self.layers[-1](x)  # No activation on output layer
-
-        if self.task_type == "classification":
-            x = nn.Softmax(dim=1)(x)
+        for layer in self.layers:
+            x = layer(x)
         return x
