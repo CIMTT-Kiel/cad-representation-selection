@@ -68,8 +68,6 @@ class RootedInTreeEncoder(nn.Module):
         The size of the hidden state.
     num_classes : int
         The number of output classes.
-    dropout : float
-        The dropout rate.
 
     Attributes
     ----------
@@ -77,8 +75,6 @@ class RootedInTreeEncoder(nn.Module):
         The size of the input features.
     encoding_size : int
         The size of the hidden state.
-    dropout : float
-        The dropout rate.
     cell : ChildSumTreeLSTMCell
         The Child-Sum TreeLSTM cell.
 
