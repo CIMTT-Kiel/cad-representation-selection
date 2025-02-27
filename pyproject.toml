@@ -7,11 +7,13 @@ name = "clearshape"
 version = "0.0.0"
 requires-python = ">=3.10"
 dependencies = [
-    "pandas",
-    "omegaconf",
-    "scikit-learn",
-    "steputils",
-    "optuna",
+    "matplotlib",
     "mlflow",
+    "omegaconf",
+    "optuna",
+    "pandas",
+    "scikit-learn",
+    "seaborn",
+    "steputils",
     "torcheval",
 ]
