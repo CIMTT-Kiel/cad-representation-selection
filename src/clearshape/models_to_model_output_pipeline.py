@@ -93,16 +93,17 @@ class ModelsModelOutputPipeline():
         logger.info(f"Initializing TreeLSTM model")
         
         model_parameter = OmegaConf.load(cons.PATHS.DATA_REPORTING/ f"tree-lstm-{self.model_type}-best-parameter.yaml")
+        tuning_pipeline_config = OmegaConf.load(cons.PATHS.CONFIG / f"treelstm_{self.model_type}_tuning_pipeline.yaml")
            
         encoder = RootedInTreeEncoder(
-            input_size=32,
-            encoding_size=model_parameter.encoding_size,
+            input_size=tuning_pipeline_config.input_size,   
+            encoding_size=model_parameter.encoding_size,                                
             child_sum=True,
         )
         predictor = FeedforwardMLP(
             input_shape=model_parameter.encoding_size,
             hidden_layers=model_parameter.hidden_layers,
-            output_shape=6,
+            output_shape=tuning_pipeline_config.output_shape,
             task_type=self.model_type,
         )
         model = ModelStack([encoder, predictor])
@@ -144,9 +145,7 @@ class ModelsModelOutputPipeline():
         -------
         None
         """
-        with open(cons.PATHS.DATA_MODEL_INPUT / "min_max_scaler.pkl", "rb") as f:
-            scaler = pickle.load(f)
-        data_set = FabwaveDataset(cons.PATHS.DATA_MODEL_INPUT / "test.csv", data_type=self.data_type, classification=True, scaler=scaler)
+        data_set = FabwaveDataset(cons.PATHS.DATA_MODEL_INPUT / "test.csv", data_type=self.data_type, classification=True, scaler=None)
         match self.data_type:
             case "images":
                 data_loader = DataLoader(data_set, batch_size=32, shuffle=False)
