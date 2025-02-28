@@ -18,16 +18,11 @@ import yaml
 
 # Third Party Libraries
 import dgl
-import mlflow
-import optuna
 import pandas as pd
 import torch
-import torch.nn as nn
-import torch.optim as optim
 from omegaconf import OmegaConf
 from sklearn.preprocessing import MinMaxScaler
 from torch.utils.data import DataLoader
-from torcheval.metrics import MulticlassF1Score
 
 # custom packages
 import clearshape.constants as cons
@@ -35,7 +30,6 @@ from clearshape.dataset import FabwaveDataset
 from clearshape.models.feedforward_mlp import FeedforwardMLP
 from clearshape.models.modelstack import ModelStack
 from clearshape.models.treelstm import RootedInTreeEncoder
-from clearshape.trainer import Trainer
 
 # set up logger
 logging_level = logging.DEBUG
