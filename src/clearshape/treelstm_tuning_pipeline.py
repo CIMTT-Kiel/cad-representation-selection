@@ -103,7 +103,7 @@ class TreeLSTMTuningPipeline():
                 return optuna.create_study(
                     direction="minimize",
                     pruner=optuna.pruners.MedianPruner(
-                        n_startup_trials=self._conf.n_jobs, n_warmup_steps=20
+                        n_startup_trials=3, n_warmup_steps=30
                     ),
                 )
             case "validation":
