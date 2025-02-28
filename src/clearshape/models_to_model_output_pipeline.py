@@ -174,18 +174,26 @@ class ModelsModelOutputPipeline():
             predictions.append(prediction)
         match self.model_type:
             case "classifier":
-                predictions = torch.cat(predictions, dim=0).argmax(dim=1).cpu().numpy()
+                predictions = torch.cat(predictions, dim=0).argmax(dim=1).cpu().detach.numpy()
                 predictions = pd.DataFrame(predictions, columns=["pred_class_id"])
                 assert predictions.shape[1] == 1
             case "regressor":
-                columns = self.data_loader.data.columns[-4:]
-                predictions = torch.cat(predictions, dim=0).cpu().numpy()
-                predictions = pd.DataFrame(predictions, columns=columns)
+                columns = self.data_loader.dataset.data.columns[-4:]
+                predictions = torch.cat(predictions, dim=0).cpu().detach().numpy()
+                # scale predictions
+                self._load_scaler()
+                predictions = self.scaler.inverse_transform(predictions)
+                predictions = pd.DataFrame(predictions, columns=[f"pred_{column}" for column in columns])
                 assert predictions.shape[1] == 4
 
         return predictions
 
-
+    def _load_scaler(self):
+        scaler_path = cons.PATHS.DATA_MODEL_INPUT / "min_max_scaler.pkl"
+        with open(scaler_path, "rb") as scaler_file:
+            scaler = pickle.load(scaler_file)
+        self.scaler = scaler 
+        
     def _update_for_next_model(self):
         """
         Set up the pipeline for the next model in the `data/models` directory.
@@ -199,7 +207,7 @@ class ModelsModelOutputPipeline():
         self.data_type = self.model_path.stem.split("-")[0]
         self.model_type = self.model_path.stem.split("-")[-1]
         self._load_model()
-        self._set_data_loader(self.data_type)
+        self._set_data_loader()
 
     def _get_targets(self) -> pd.DataFrame:
         """
