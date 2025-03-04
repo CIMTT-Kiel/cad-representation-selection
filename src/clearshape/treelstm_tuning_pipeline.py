@@ -514,6 +514,7 @@ class TreeLSTMTuningPipeline():
         float
             The loss on the test data.
         """
+        logger.info("Assessing initial model.")
         training_loss = trainer.get_loss_on_train_set()
         test_score = trainer.test()
         mlflow.log_metric(
@@ -526,7 +527,6 @@ class TreeLSTMTuningPipeline():
             test_score,
             step=trainer.epochs_trained,
         )
-        trial.report(training_loss, trainer.epochs_trained)
         trial.report(test_score, trainer.epochs_trained)
 
     def _train_model(self, trainer: Trainer, trial: optuna.Trial):
@@ -542,7 +542,7 @@ class TreeLSTMTuningPipeline():
         -------
         None
         """
-        epochs_to_train_in_a_row = 10
+        epochs_to_train_in_a_row = 2
         for _ in range(self._conf.n_epochs // epochs_to_train_in_a_row):
             training_loss = trainer.train(n_epochs=epochs_to_train_in_a_row)
             test_score = trainer.test()
@@ -561,7 +561,6 @@ class TreeLSTMTuningPipeline():
             )
 
             logger.debug("Reporting training loss and test score to Optuna.")
-            trial.report(training_loss, trainer.epochs_trained)
             trial.report(test_score, trainer.epochs_trained)
             logger.info(f"Epochs trained: {trainer.epochs_trained}")
 
