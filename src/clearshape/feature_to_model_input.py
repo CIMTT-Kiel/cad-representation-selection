@@ -10,7 +10,7 @@ import pickle
 import pandas as pd
 from omegaconf import OmegaConf
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import MinMaxScaler
+from sklearn.preprocessing import RobustScaler
 
 # custom packages
 import clearshape.constants as cons
@@ -203,9 +203,9 @@ class FeatureModelInputPipeline:
 
         # fit and save scaler
         logger.info("Fitting and saving scaler.")
-        scaler = MinMaxScaler()
+        scaler = RobustScaler()
         scaler.fit(train[["volume", "faces", "edges", "vertices"]])
-        scaler_path = cons.PATHS.DATA_MODEL_INPUT / "min_max_scaler.pkl"
+        scaler_path = cons.PATHS.DATA_MODEL_INPUT / "robust_scaler.pkl"
         with open(scaler_path, "wb") as f:
             pickle.dump(scaler, f)
 
