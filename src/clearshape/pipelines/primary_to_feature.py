@@ -29,8 +29,9 @@ import cadquery as cq
 import dgl
 
 # custom imports
-import clearshape.constants as cons
+import constants as cons
 from clearshape.step_tree.step_tree import StepTree
+from clearshape.invariants.invariant import InvariantCalculator
 
 # set up logger
 logging_level = logging.DEBUG
@@ -92,7 +93,7 @@ class PrimaryFeaturePipeline:
 
     def __init__(self):
         self._conf = OmegaConf.load(
-            cons.PATHS.CONFIG / "primary_to_feature_pipeline.yaml"
+           cons.PATHS.CONFIG / "primary_to_feature_pipeline.yaml"
         )
         self._step_path_generator = (
             cons.PATHS.DATA_PRIMARY / "fabwave"
@@ -185,7 +186,7 @@ class PrimaryFeaturePipeline:
         """
         logger.debug("Converting CAD model to tree representation")
         # create a DGL graph from the step file
-        self._step_tree = StepTree.from_step_file(self._file_to_process).to_dgl_graph()
+        #self._step_tree = StepTree.from_step_file(self._file_to_process).to_dgl_graph()
 
     # TODO: Implement image conversion
     def _convert_to_image(self):
@@ -201,7 +202,8 @@ class PrimaryFeaturePipeline:
         """
         # TODO: Add method docstring
         """
-        # self._invariants =
+        logger.debug(self._file_to_process)
+        self._invariants = InvariantCalculator.calculate_invariants_from_step(self._file_to_process)
         #return NotImplemented
         print("runing invariants conversion")
 
@@ -215,11 +217,13 @@ class PrimaryFeaturePipeline:
         relative_path = self._file_to_process.relative_to(
             cons.PATHS.DATA_PRIMARY
         ).with_suffix(".bin")
+        
         tree_path = (cons.PATHS.DATA_FEATURE / "trees" / relative_path).as_posix()
         dgl.save_graphs(tree_path, [self._step_tree])
 
         # save invariants
-        # self._invariants.to_json()
+        invariants_path = (cons.PATHS.DATA_FEATURE / "invariants" / relative_path).with_suffix(".json")
+        self._invariants.to_json(invariants_path)
 
         # save images
         # self._images.save()
