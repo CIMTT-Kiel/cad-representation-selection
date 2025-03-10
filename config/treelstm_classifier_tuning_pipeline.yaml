@@ -62,4 +62,3 @@ test:
   batch_size_min: 16
   batch_size_max: 16
   batch_size_step: 16
-

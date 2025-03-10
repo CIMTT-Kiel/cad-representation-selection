@@ -64,4 +64,3 @@ test:
   batch_size_max: 256
   batch_size_step: 64
 
-
