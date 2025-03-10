@@ -1,0 +1,5 @@
+---
+balancing_factor: 3  # multiple and fraction of median class size for resampling
+train_size: 0.6
+val_size: 0.2
+test_size: 0.2

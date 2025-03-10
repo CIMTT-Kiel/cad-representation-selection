@@ -1,14 +1,13 @@
 ---
-n_trials: 20 # number of trials per stage
+n_trials: 1 # number of trials per stage
 n_jobs: 1  # number of parallel jobs
-stages: [train, validation, test]  # list of stages to run if possibel. (valid: train, validation, test)
-n_epochs: 60
+stages: [test]  # list of stages to run if possibel. (valid: train, validation, test)
+n_epochs: 20
 input_size: 32
-classes_total: 42
-output_shape: 4
-loss_function: mean_squared_error
-test_metric: mean_squared_error
-file_best_parameter: tree-lstm-regressor-best-parameter.yaml
+output_shape: 6  # number of classes or regression targets to predict
+loss_function: cross_entropy  # valid options: cross_entropy, mean_squared_error
+test_metric: cross_entropy  # TODO use f1_score for classification
+file_best_parameter: tree-lstm-classifier-best-parameter.yaml
 # ------------------------------------
 
 # Hyperparameters to optimize on training data
@@ -17,22 +16,22 @@ file_best_parameter: tree-lstm-regressor-best-parameter.yaml
 train:
 
   # fixed hyperparameters for training stage
-  batch_size: 512  # preferably high for faster training
+  batch_size: 256  # preferably high for faster training
   learning_rate: 0.04
   optimizer: adam
   
   # hyperparameters to tune during training stage
 
   encoder:
-    encoding_size_min: 100
-    encoding_size_max: 400
+    encoding_size_min: 250
+    encoding_size_max: 250
     encoding_size_step: 50
 
   predictor:
     layers_total_min: 3
-    layers_total_max: 10
-    units_per_layer_min: 32
-    units_per_layer_max: 512
+    layers_total_max: 3
+    units_per_layer_min: 256
+    units_per_layer_max: 256
 # ------------------------------------
 
 # Hyperparameters to optimize on validation data
@@ -40,7 +39,7 @@ train:
 validation:
 
   # fixed hyperparameters for validation stage
-  batch_size: 512  # preferably high for faster training
+  batch_size: 128  # preferably high for faster training
   optimizer: adam
 
   # hyperparameters to tune during validation stage
@@ -60,7 +59,6 @@ test:
   optimizer: adam
 
   # hyperparameters to tune during test stage
-  batch_size_min: 64
-  batch_size_max: 256
-  batch_size_step: 64
-
+  batch_size_min: 16
+  batch_size_max: 16
+  batch_size_step: 16
