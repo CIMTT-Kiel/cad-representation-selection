@@ -18,16 +18,11 @@ import yaml
 
 # Third Party Libraries
 import dgl
-import mlflow
-import optuna
 import pandas as pd
 import torch
-import torch.nn as nn
-import torch.optim as optim
 from omegaconf import OmegaConf
 from sklearn.preprocessing import MinMaxScaler
 from torch.utils.data import DataLoader
-from torcheval.metrics import MulticlassF1Score
 
 # custom packages
 import clearshape.constants as cons
@@ -35,7 +30,6 @@ from clearshape.dataset import FabwaveDataset
 from clearshape.models.feedforward_mlp import FeedforwardMLP
 from clearshape.models.modelstack import ModelStack
 from clearshape.models.treelstm import RootedInTreeEncoder
-from clearshape.trainer import Trainer
 
 # set up logger
 logging_level = logging.DEBUG
@@ -99,16 +93,17 @@ class ModelsModelOutputPipeline():
         logger.info(f"Initializing TreeLSTM model")
         
         model_parameter = OmegaConf.load(cons.PATHS.DATA_REPORTING/ f"tree-lstm-{self.model_type}-best-parameter.yaml")
+        tuning_pipeline_config = OmegaConf.load(cons.PATHS.CONFIG / f"treelstm_{self.model_type}_tuning_pipeline.yaml")
            
         encoder = RootedInTreeEncoder(
-            input_size=32,
-            encoding_size=model_parameter.encoding_size,
+            input_size=tuning_pipeline_config.input_size,   
+            encoding_size=model_parameter.encoding_size,                                
             child_sum=True,
         )
         predictor = FeedforwardMLP(
             input_shape=model_parameter.encoding_size,
             hidden_layers=model_parameter.hidden_layers,
-            output_shape=6,
+            output_shape=tuning_pipeline_config.output_shape,
             task_type=self.model_type,
         )
         model = ModelStack([encoder, predictor])
@@ -150,9 +145,7 @@ class ModelsModelOutputPipeline():
         -------
         None
         """
-        with open(cons.PATHS.DATA_MODEL_INPUT / "min_max_scaler.pkl", "rb") as f:
-            scaler = pickle.load(f)
-        data_set = FabwaveDataset(cons.PATHS.DATA_MODEL_INPUT / "test.csv", data_type=self.data_type, classification=True, scaler=scaler)
+        data_set = FabwaveDataset(cons.PATHS.DATA_MODEL_INPUT / "test.csv", data_type=self.data_type, classification=True, scaler=None)
         match self.data_type:
             case "images":
                 data_loader = DataLoader(data_set, batch_size=32, shuffle=False)
@@ -181,18 +174,26 @@ class ModelsModelOutputPipeline():
             predictions.append(prediction)
         match self.model_type:
             case "classifier":
-                predictions = torch.cat(predictions, dim=0).argmax(dim=1).cpu().numpy()
+                predictions = torch.cat(predictions, dim=0).argmax(dim=1).cpu().detach.numpy()
                 predictions = pd.DataFrame(predictions, columns=["pred_class_id"])
                 assert predictions.shape[1] == 1
             case "regressor":
-                columns = self.data_loader.data.columns[-4:]
-                predictions = torch.cat(predictions, dim=0).cpu().numpy()
-                predictions = pd.DataFrame(predictions, columns=columns)
+                columns = self.data_loader.dataset.data.columns[-4:]
+                predictions = torch.cat(predictions, dim=0).cpu().detach().numpy()
+                # scale predictions
+                self._load_scaler()
+                predictions = self.scaler.inverse_transform(predictions)
+                predictions = pd.DataFrame(predictions, columns=[f"pred_{column}" for column in columns])
                 assert predictions.shape[1] == 4
 
         return predictions
 
-
+    def _load_scaler(self):
+        scaler_path = cons.PATHS.DATA_MODEL_INPUT / "min_max_scaler.pkl"
+        with open(scaler_path, "rb") as scaler_file:
+            scaler = pickle.load(scaler_file)
+        self.scaler = scaler 
+        
     def _update_for_next_model(self):
         """
         Set up the pipeline for the next model in the `data/models` directory.
@@ -206,7 +207,7 @@ class ModelsModelOutputPipeline():
         self.data_type = self.model_path.stem.split("-")[0]
         self.model_type = self.model_path.stem.split("-")[-1]
         self._load_model()
-        self._set_data_loader(self.data_type)
+        self._set_data_loader()
 
     def _get_targets(self) -> pd.DataFrame:
         """
