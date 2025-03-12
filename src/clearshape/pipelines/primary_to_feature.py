@@ -200,9 +200,11 @@ class PrimaryFeaturePipeline:
     # TODO: Implement invariant conversion
     def _convert_to_invariants(self):
         """
-        # TODO: Add method docstring
+        Calculate invariants based on a STEP file.
+
+        This method reads a STEP file, converts the file to STL as an interim state and then try to mesh the geometry with tetraedons. Based on the meshed geometry the invariants are calculated and is stored in the instance variables _mues for the stat. moments and _pis for the invariants both as dictionaries with the permutations of p,q and r as keys in the form 'mue_{p}{q}{r}' and 'pi_{p}{q}{r}'. The permutations used for the calculation are stored in the class variable moment_permutations.  
         """
-        logger.debug(self._file_to_process)
+        logger.debug("Calculate the moments and invariants from the CAD model")
         self._invariants = InvariantCalculator.calculate_invariants_from_step(self._file_to_process)
         #return NotImplemented
         print("runing invariants conversion")
