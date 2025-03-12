@@ -6,8 +6,6 @@ from pathlib import Path
 # Third party libaries
 import gmsh
 
-# application imports
-#import clearshape.step_tree.step_analysis as sta
 
 class StepMesher:
     """

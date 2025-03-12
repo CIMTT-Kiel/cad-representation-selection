@@ -10,9 +10,7 @@ import quadpy
 from sklearn.decomposition import PCA 
 
 # application imports
-#import clearshape.invariants.mesher as StepMesher
-from invariants.mesher import StepMesher
-#from clearshape.invariants.mehser as StepMesher
+from clearshape.invariants.mesher import StepMesher
 
 
 class InvariantCalculator:
