@@ -16,4 +16,5 @@ dependencies = [
     "seaborn",
     "steputils",
     "torcheval",
+    "legacy-quadpy"
 ]
