@@ -4,8 +4,8 @@ FROM nvcr.io/nvidia/dgl:24.07-py3
 
 # Install packages for visualization of graphs
 RUN apt-get update && apt-get install -y \
-    graphviz \
-    graphviz-dev
+     graphviz \
+     graphviz-dev
 
 COPY pyproject.toml .
 COPY src ./src
