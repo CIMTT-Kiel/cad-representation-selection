@@ -201,21 +201,27 @@ class PrimaryFeaturePipeline:
         #return NotImplemented
         print("runing invariants conversion")
 
-    # TODO add saving code for images and invariants
-    def _save_data(self):
+    def _get_relative_path(self):
         """
-        Save the processed data and extracted features.
+        Get the relative path of the current file to process.
+
+        Returns
+        -------
+        Path
+            The relative path of the current file to process.
         """
-        logger.debug("Saving data")
-        # save tree representation
         relative_path = self._file_to_process.relative_to(
             cons.PATHS.DATA_PRIMARY
         ).with_suffix(".bin")
-        
+        return relative_path
+
+    def _save_tree(self):
+        relative_path = self._get_relative_path()
         tree_path = (cons.PATHS.DATA_FEATURE / "trees" / relative_path).as_posix()
         dgl.save_graphs(tree_path, [self._step_tree])
 
-        # save invariants
+    def _save_invariants(self):
+        relative_path = self._get_relative_path()
         invariants_path = (cons.PATHS.DATA_FEATURE / "invariants" / relative_path).with_suffix(".json")
         self._invariants.to_json(invariants_path)
 
