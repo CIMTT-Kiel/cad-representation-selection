@@ -2,6 +2,10 @@
 Pipeline to convert 'primary' data to 'feature' data.
 
 The `.step` files from the 'primary' data set are converted into the three representaiton formats: 'images', 'invariants' and 'trees'.
+Note that images are generated externally and manually stored  in the `data/4_feature/images` folder.
+
+Also note that different sets of step files may be converted to different representations. This is because of potential incompatibilities between the step files and the conversion methods.
+
 In each case case the representations are stored in a folder named after the representation type. The folder is located in the 'feature' folder.
 Also, as part of the feature generation process, a table with regression featuers is created. For each CAD-part it contains the following features:
 
