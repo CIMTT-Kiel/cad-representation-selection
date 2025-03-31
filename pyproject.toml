@@ -16,5 +16,7 @@ dependencies = [
     "seaborn",
     "steputils",
     "torcheval",
-    "legacy-quadpy"
+    "legacy-quadpy",
+    "meshio",
+    "gmsh",
 ]
