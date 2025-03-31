@@ -180,7 +180,7 @@ class PrimaryFeaturePipeline:
             }
         )
 
-    def _convert_to_tree(self):
+    def _convert_to_tree(self) -> None:
         """
         Convert the STEP file to a tree representation as a DGL graph.
 
@@ -192,9 +192,7 @@ class PrimaryFeaturePipeline:
         # create a DGL graph from the step file
         #self._step_tree = StepTree.from_step_file(self._file_to_process).to_dgl_graph()
 
-
-    # TODO: Implement invariant conversion
-    def _convert_to_invariants(self):
+    def _convert_to_invariants(self) -> None:
         """
         Calculate invariants based on a STEP file.
 
@@ -205,7 +203,7 @@ class PrimaryFeaturePipeline:
         #return NotImplemented
         print("runing invariants conversion")
 
-    def _get_relative_path(self):
+    def _get_relative_path(self) -> Path:
         """
         Get the relative path of the current file to process.
 
@@ -219,7 +217,7 @@ class PrimaryFeaturePipeline:
         ).with_suffix(".bin")
         return relative_path
 
-    def _save_tree(self):
+    def _save_tree(self) -> None:
         relative_path = self._get_relative_path()
         tree_path = (cons.PATHS.DATA_FEATURE / "trees" / relative_path).as_posix()
         dgl.save_graphs(tree_path, [self._step_tree])
