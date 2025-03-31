@@ -190,7 +190,7 @@ class PrimaryFeaturePipeline:
         """
         logger.debug("Converting CAD model to tree representation")
         # create a DGL graph from the step file
-        #self._step_tree = StepTree.from_step_file(self._file_to_process).to_dgl_graph()
+        self._step_tree = StepTree.from_step_file(self._file_to_process).to_dgl_graph()
 
     def _convert_to_invariants(self) -> None:
         """
