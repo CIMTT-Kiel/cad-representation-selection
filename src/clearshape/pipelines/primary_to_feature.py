@@ -188,14 +188,6 @@ class PrimaryFeaturePipeline:
         # create a DGL graph from the step file
         #self._step_tree = StepTree.from_step_file(self._file_to_process).to_dgl_graph()
 
-    # TODO: Implement image conversion
-    def _convert_to_image(self):
-        """
-        # TODO: Add method docstring
-        """
-        # self._images =
-        #return NotImplemented
-        print("runing image conversion")
 
     # TODO: Implement invariant conversion
     def _convert_to_invariants(self):
@@ -227,8 +219,6 @@ class PrimaryFeaturePipeline:
         invariants_path = (cons.PATHS.DATA_FEATURE / "invariants" / relative_path).with_suffix(".json")
         self._invariants.to_json(invariants_path)
 
-        # save images
-        # self._images.save()
 
     def _save_targets(self):
         """
@@ -285,19 +275,13 @@ class PrimaryFeaturePipeline:
 
                 try:
                     tree_thread = threading.Thread(target=self._convert_to_tree)
-                    # TODO: Implement image and invariant conversion
-                    # self._convert_to_image()
-                    # self._convert_to_invariant()
-                    image_thread = threading.Thread(target=self._convert_to_image)
                     invariant_thread = threading.Thread(target=self._convert_to_invariants)
 
                     logger.debug("Starting threads")
                     tree_thread.start()
-                    image_thread.start()
                     invariant_thread.start()
 
                     tree_thread.join()
-                    image_thread.join()
                     invariant_thread.join()
 
                     logger.debug("Threads finished")
