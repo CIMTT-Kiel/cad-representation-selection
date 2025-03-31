@@ -279,30 +279,26 @@ class PrimaryFeaturePipeline:
                     logger.info("All step files processed")
                     break
 
+                # convert step file to tree or invariants if possible
                 try:
-                    tree_thread = threading.Thread(target=self._convert_to_tree)
-                    invariant_thread = threading.Thread(target=self._convert_to_invariants)
-
-                    logger.debug("Starting threads")
-                    tree_thread.start()
-                    invariant_thread.start()
-
-                    tree_thread.join()
-                    invariant_thread.join()
-
-                    logger.debug("Threads finished")
-
-
-                    # Save all data representations only if all conversions are successful
-                    self._save_data()
-                    
-                    self._get_targets()  # Extract regression features and class labels
-
-                    progress_bar.update(1)
-
+                    self._convert_to_tree()
+                    self._save_tree()
                 except Exception as e:
-                    logger.warning(f"Error processing {self._file_to_process}: {e}")
-                    continue
+                    logger.warning(f"Error converting {self._file_to_process} to tree: {e}")
+                try:
+                    self._convert_to_invariants()
+                    self._save_invariants()
+                except Exception as e:
+                    logger.warning(f"Error converting {self._file_to_process} to invariants: {e}")
+                try:    
+                    self._get_targets()  # Extract regression features and class labels
+                except Exception as e:
+                    logger.warning(f"Error extracting targets from {self._file_to_process}: {e}")
+
+                progress_bar.update(1)
+
+                continue
+
         finally:
             self._save_targets()
             self._save_class_names()
