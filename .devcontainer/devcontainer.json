@@ -7,7 +7,7 @@
     "--gpus=all", // for GPU support - this line has to be removed on mac 
     "--rm"
   ],
-  "postCreateCommand": "apt-get update && apt-get install libgl1 -y && pip install numpy==1.26.4 cadquery",  // needed for cadquery
+  "postCreateCommand": "apt-get update && apt-get install libgl1 -y && pip install numpy==1.26.4 cadquery && apt-get install libglu1 && apt-get install libxft2",  // needed for cadquery
   "customizations": {
     "vscode": {
       "extensions": [
