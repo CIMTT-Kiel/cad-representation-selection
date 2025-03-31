@@ -33,7 +33,7 @@ import cadquery as cq
 import dgl
 
 # custom imports
-import constants as cons
+from clearshape import constants as cons
 from clearshape.step_tree.step_tree import StepTree
 from clearshape.invariants.invariant import InvariantCalculator
 
