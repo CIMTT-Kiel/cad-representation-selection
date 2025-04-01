@@ -1,18 +1,22 @@
 """
 Pipeline to convert 'primary' data to 'feature' data.
 
-The `.step` files from the 'primary' data set are converted into the three representaiton formats: 'images', 'invariants' and 'trees'.
-Note that images are generated externally and manually stored  in the `data/4_feature/images` folder.
+The images are generated externally and manually stored in the `data/4_feature/images` folder.
 
-Also note that different sets of step files may be converted to different representations. This is because of potential incompatibilities between the step files and the conversion methods.
+The `.step` files from the 'primary' data set are converted into 'invariants' and 'trees' representations.
+Each representation is stored if it is successfully created. Is not guaranteed that all representations are created for each step file.
 
 In each case case the representations are stored in a folder named after the representation type. The folder is located in the 'feature' folder.
+
 Also, as part of the feature generation process, a table with regression featuers is created. For each CAD-part it contains the following features:
 
 - Volume
 - Amount of Faces
 - Amount of Edges
 - Amount of Vertices
+
+This 'fabwave_targets.csv' file contains only entries for the parts for which all three representations are available.
+Thus it serves as the central reference for the feature_to_model_input pipeline.
 
 Notes
 -----
@@ -254,6 +258,23 @@ class PrimaryFeaturePipeline:
             cons.PATHS.DATA_REPORTING / "part_class_ids.csv", index=False
         )
 
+    def _images_available(self) -> bool:
+        """
+        Check if a folder exists for the part's images.
+
+        This method checks if a folder for the current part, specified by `_file_to_process`,
+        exists in the `data/4_feature/images/fabwave` directory. The folder is expected to have
+        the same name as the file to process (without the file extension).
+
+        Returns
+        -------
+        bool
+            True if the folder exists, False otherwise.
+        """
+        folder_name = self._file_to_process.stem
+        folder_path = cons.PATHS.DATA_FEATURE / "images" / "fabwave" / folder_name
+        return folder_path.is_dir()
+
     def run(self):
         """
         Execute the entire pipeline.
@@ -285,17 +306,23 @@ class PrimaryFeaturePipeline:
                 try:
                     self._convert_to_tree()
                     self._save_tree()
+                    tree_saved = True
                 except Exception as e:
                     logger.warning(f"Error converting {self._file_to_process} to tree: {e}")
                 try:
                     self._convert_to_invariants()
                     self._save_invariants()
+                    invariants_saved = True
                 except Exception as e:
                     logger.warning(f"Error converting {self._file_to_process} to invariants: {e}")
-                try:    
-                    self._get_targets()  # Extract regression features and class labels
-                except Exception as e:
-                    logger.warning(f"Error extracting targets from {self._file_to_process}: {e}")
+                
+                # only extract targets if tree, invariants and images are
+                # available
+                if tree_saved and invariants_saved and self._images_available():
+                    try:
+                        self._get_targets()
+                    except Exception as e:
+                        logger.warning(f"Error extracting targets from {self._file_to_process}: {e}")
 
                 progress_bar.update(1)
 
