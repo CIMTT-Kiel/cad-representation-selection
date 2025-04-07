@@ -10,7 +10,7 @@ services:
 
   devcontainer:
     build:
-      context: /Users/mkruse/Documents/repos/clear-shape/
+      context: ./
       dockerfile: .devcontainer/Dockerfile
     container_name: devcontainer
     volumes:
