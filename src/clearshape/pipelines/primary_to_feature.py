@@ -33,13 +33,13 @@ import threading
 # third party imports
 import pandas as pd
 from omegaconf import OmegaConf
-import cadquery as cq
 import dgl
 
 # custom imports
 from clearshape import constants as cons
 from clearshape.step_tree.step_tree import StepTree
 from clearshape.invariants.invariant import InvariantCalculator
+from clearshape.targets.STEP_Targets import RegressionTargetExtractor
 
 # set up logger
 logging_level = logging.DEBUG
@@ -162,11 +162,23 @@ class PrimaryFeaturePipeline:
         if class_name not in self._known_classes:
             self._known_classes.append(class_name)
         class_id = self._known_classes.index(class_name)
+
         # extract regression features
-        volume = part.val().Volume()
-        faces = len(part.val().Faces())
-        edges = len(part.val().Edges())
-        vertices = len(part.val().Vertices())
+        extractor, targets = RegressionTargetExtractor.analyze_step(self._file_to_process.as_posix())
+
+        volume = targets["volume"]
+        faces = targets["faces"]
+        edges = targets["edges"]
+        vertices = targets["vertices"]
+
+        # not used for now
+        #dx = targets["dx"]
+        #dy = targets["dy"]
+        #dz = targets["dz"]
+
+        # delete extractor and targets to free up memory
+        del extractor
+        del targets
 
         part_path = self._file_to_process.relative_to(
             cons.PATHS.DATA_PRIMARY / "fabwave"
