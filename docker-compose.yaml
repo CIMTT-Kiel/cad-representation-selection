@@ -1,0 +1,26 @@
+
+services:
+  step_api:
+    build: ./api
+    container_name: step_api
+    ports:
+      - "8000:8000"
+    networks:
+      - container_net
+
+  devcontainer:
+    build:
+      context: /Users/mkruse/Documents/repos/clear-shape/
+      dockerfile: .devcontainer/Dockerfile
+    container_name: devcontainer
+    volumes:
+      - .:/workspaces
+    networks:
+      - container_net
+    depends_on:
+      - step_api
+    tty: true
+
+networks:
+  container_net:
+    driver: bridge
