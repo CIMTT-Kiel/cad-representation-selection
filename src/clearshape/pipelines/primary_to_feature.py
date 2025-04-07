@@ -1,14 +1,22 @@
 """
 Pipeline to convert 'primary' data to 'feature' data.
 
-The `.step` files from the 'primary' data set are converted into the three representaiton formats: 'images', 'invariants' and 'trees'.
+The images are generated externally and manually stored in the `data/4_feature/images` folder.
+
+The `.step` files from the 'primary' data set are converted into 'invariants' and 'trees' representations.
+Each representation is stored if it is successfully created. Is not guaranteed that all representations are created for each step file.
+
 In each case case the representations are stored in a folder named after the representation type. The folder is located in the 'feature' folder.
+
 Also, as part of the feature generation process, a table with regression featuers is created. For each CAD-part it contains the following features:
 
 - Volume
 - Amount of Faces
 - Amount of Edges
 - Amount of Vertices
+
+This 'fabwave_targets.csv' file contains only entries for the parts for which all three representations are available.
+Thus it serves as the central reference for the feature_to_model_input pipeline.
 
 Notes
 -----
@@ -29,7 +37,7 @@ import cadquery as cq
 import dgl
 
 # custom imports
-import constants as cons
+from clearshape import constants as cons
 from clearshape.step_tree.step_tree import StepTree
 from clearshape.invariants.invariant import InvariantCalculator
 
@@ -176,7 +184,7 @@ class PrimaryFeaturePipeline:
             }
         )
 
-    def _convert_to_tree(self):
+    def _convert_to_tree(self) -> None:
         """
         Convert the STEP file to a tree representation as a DGL graph.
 
@@ -186,19 +194,9 @@ class PrimaryFeaturePipeline:
         """
         logger.debug("Converting CAD model to tree representation")
         # create a DGL graph from the step file
-        #self._step_tree = StepTree.from_step_file(self._file_to_process).to_dgl_graph()
+        self._step_tree = StepTree.from_step_file(self._file_to_process).to_dgl_graph()
 
-    # TODO: Implement image conversion
-    def _convert_to_image(self):
-        """
-        # TODO: Add method docstring
-        """
-        # self._images =
-        #return NotImplemented
-        print("runing image conversion")
-
-    # TODO: Implement invariant conversion
-    def _convert_to_invariants(self):
+    def _convert_to_invariants(self) -> None:
         """
         Calculate invariants based on a STEP file.
 
@@ -209,26 +207,30 @@ class PrimaryFeaturePipeline:
         #return NotImplemented
         print("runing invariants conversion")
 
-    # TODO add saving code for images and invariants
-    def _save_data(self):
+    def _get_relative_path(self) -> Path:
         """
-        Save the processed data and extracted features.
+        Get the relative path of the current file to process.
+
+        Returns
+        -------
+        Path
+            The relative path of the current file to process.
         """
-        logger.debug("Saving data")
-        # save tree representation
         relative_path = self._file_to_process.relative_to(
             cons.PATHS.DATA_PRIMARY
         ).with_suffix(".bin")
-        
+        return relative_path
+
+    def _save_tree(self) -> None:
+        relative_path = self._get_relative_path()
         tree_path = (cons.PATHS.DATA_FEATURE / "trees" / relative_path).as_posix()
         dgl.save_graphs(tree_path, [self._step_tree])
 
-        # save invariants
+    def _save_invariants(self):
+        relative_path = self._get_relative_path()
         invariants_path = (cons.PATHS.DATA_FEATURE / "invariants" / relative_path).with_suffix(".json")
         self._invariants.to_json(invariants_path)
 
-        # save images
-        # self._images.save()
 
     def _save_targets(self):
         """
@@ -255,6 +257,23 @@ class PrimaryFeaturePipeline:
         class_names.to_csv(
             cons.PATHS.DATA_REPORTING / "part_class_ids.csv", index=False
         )
+
+    def _images_available(self) -> bool:
+        """
+        Check if a folder exists for the part's images.
+
+        This method checks if a folder for the current part, specified by `_file_to_process`,
+        exists in the `data/4_feature/images/fabwave` directory. The folder is expected to have
+        the same name as the file to process (without the file extension).
+
+        Returns
+        -------
+        bool
+            True if the folder exists, False otherwise.
+        """
+        folder_name = self._file_to_process.stem
+        folder_path = cons.PATHS.DATA_FEATURE / "images" / "fabwave" / folder_name
+        return folder_path.is_dir()
 
     def run(self):
         """
@@ -283,36 +302,32 @@ class PrimaryFeaturePipeline:
                     logger.info("All step files processed")
                     break
 
+                # convert step file to tree or invariants if possible
                 try:
-                    tree_thread = threading.Thread(target=self._convert_to_tree)
-                    # TODO: Implement image and invariant conversion
-                    # self._convert_to_image()
-                    # self._convert_to_invariant()
-                    image_thread = threading.Thread(target=self._convert_to_image)
-                    invariant_thread = threading.Thread(target=self._convert_to_invariants)
-
-                    logger.debug("Starting threads")
-                    tree_thread.start()
-                    image_thread.start()
-                    invariant_thread.start()
-
-                    tree_thread.join()
-                    image_thread.join()
-                    invariant_thread.join()
-
-                    logger.debug("Threads finished")
-
-
-                    # Save all data representations only if all conversions are successful
-                    self._save_data()
-                    
-                    self._get_targets()  # Extract regression features and class labels
-
-                    progress_bar.update(1)
-
+                    self._convert_to_tree()
+                    self._save_tree()
+                    tree_saved = True
                 except Exception as e:
-                    logger.warning(f"Error processing {self._file_to_process}: {e}")
-                    continue
+                    logger.warning(f"Error converting {self._file_to_process} to tree: {e}")
+                try:
+                    self._convert_to_invariants()
+                    self._save_invariants()
+                    invariants_saved = True
+                except Exception as e:
+                    logger.warning(f"Error converting {self._file_to_process} to invariants: {e}")
+                
+                # only extract targets if tree, invariants and images are
+                # available
+                if tree_saved and invariants_saved and self._images_available():
+                    try:
+                        self._get_targets()
+                    except Exception as e:
+                        logger.warning(f"Error extracting targets from {self._file_to_process}: {e}")
+
+                progress_bar.update(1)
+
+                continue
+
         finally:
             self._save_targets()
             self._save_class_names()

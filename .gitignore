@@ -1,9 +1,11 @@
 # === Project  specific entries ===
 
+/data/1_raw
 /data/2_intermediate
 /data/3_primary
 /data/4_feature
 /data/5_model_input
+/data/6_models
 /data/7_model_output
 /data/8_reporting
 
