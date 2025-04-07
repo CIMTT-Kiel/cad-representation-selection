@@ -41,7 +41,7 @@ class RegressionTargetExtractor:
     
 if __name__ == "__main__":
     # Example usage
-    path_to_step = Path("/workspaces/data/1_raw/fabwave/geometry_00000010.STEP")
+    path_to_step = Path("{LOCAL_STEP_FILE}") # Hier zum testen eine lokale STEP-Datei angeben
     extractor, targets = RegressionTargetExtractor.analyze_step(path_to_step)
     print(targets)
 
