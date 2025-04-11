@@ -18,5 +18,4 @@ dependencies = [
     "torcheval",
     "legacy-quadpy",
     "meshio",
-    "gmsh",
 ]
