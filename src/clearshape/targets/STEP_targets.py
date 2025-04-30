@@ -6,7 +6,7 @@ from pathlib import Path
 
 class RegressionTargetExtractor:
 
-    API_URL = "http://step_api:8000/upload_step/"
+    API_URL = "http://step_api:8000/get_targets_from_step/"
 
 
     def __init__(self, path : Path):
@@ -41,7 +41,7 @@ class RegressionTargetExtractor:
     
 if __name__ == "__main__":
     # Example usage
-    path_to_step = Path("{LOCAL_STEP_FILE}") # Hier zum testen eine lokale STEP-Datei angeben
+    path_to_step = Path("/workspaces/data/1_raw/Bearings/00ed2536-3d80-4f07-8851-4f49f1606498.stp") # Hier zum testen eine lokale STEP-Datei angeben
     extractor, targets = RegressionTargetExtractor.analyze_step(path_to_step)
     print(targets)
 

@@ -2,9 +2,11 @@
 
 # standard libaries
 from pathlib import Path
+import base64
+import requests
 
-# Third party libaries
-import gmsh
+#custom libraries
+#from clearshape.constants import API_URL
 
 
 class StepMesher:
@@ -102,35 +104,25 @@ class StepMesher:
             Creates directories if they do not exist.
             Writes the generated mesh to a file.
         """
-        gmsh.initialize(interruptible=False)
-        gmsh.option.setNumber("General.Terminal", 1)
 
+        with open(self.path_to_step.as_posix(), "rb") as file:
+            base64_data = base64.b64encode(file.read()).decode("utf-8")
 
-        try:
-            gmsh.model.add("3DMesh")
-            gmsh.model.occ.importShapes(str(self.path_to_step))
-            gmsh.model.occ.synchronize()
+        payload = {
+            "filename": self.path_to_step.stem,
+            "filedata": base64_data
+        }
 
-            gmsh.option.setNumber("Geometry.OCCSewFaces", 1)
+        response = requests.post("http://step_api:8000/mesh_step_file/", json=payload)
 
-            gmsh.model.occ.synchronize()
-
-            gmsh.model.mesh.generate(3)  # 3D Vernetzung
-            
-            # Überprüfung, ob ein 3D-Netz generiert wurde
-            
-            elem_types, _, _ = gmsh.model.mesh.getElements(dim=3)
-
-            if not elem_types:
-                raise ValueError("Fehler: Kein 3D-Netz erzeugt! Möglicherweise wurde nur ein 2D-Netz erstellt.")
-            
-            #create dir if not exists
-            self.path_to_msh.parent.mkdir(parents=True, exist_ok=True)
-            gmsh.write(str(self.path_to_msh))
-        except Exception as e:
-            print(f"Error by meshing {self.path_to_step}: {e}")
-        finally:
-            gmsh.finalize()
+        print("Response status code:", response.status_code)
+        if response.status_code == 200:
+            mesh_data_dict =  response.json()
+            with open(str(self.path_to_msh), "wb") as f:
+                print("Decode the file data and write it to the file..")
+                f.write(base64.b64decode(mesh_data_dict["msh_filedata"]))
+        else:
+            print("Fehler:", response.text)
 
     def _bend_path(self, orig_path, element_to_replace, new_element):
         """
@@ -160,3 +152,11 @@ class StepMesher:
             Path: The modified path with the '3_primary' and '3_1_meshes' directories and a '.msh' file extension.
         """
         return self._bend_path(step_path, '3_primary', '3_1_meshes').with_suffix('.msh')
+    
+
+#check functionality
+if __name__ == "__main__":
+    # Example usage
+    path_to_step = Path("/workspaces/data/3_primary/fabwave/Boxes/0a9450c1-da70-4432-9b3b-12d1b7af8da5.step") # Hier zum testen eine lokale STEP-Datei angeben
+    mesher = StepMesher.mesh_from_step(path_to_step)
+    print(mesher.path_to_msh)
