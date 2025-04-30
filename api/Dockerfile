@@ -5,6 +5,7 @@ WORKDIR /app
 RUN conda install conda-forge::freecad
 RUN pip install uvicorn
 RUN pip install fastapi
+RUN conda install conda-forge::python-gmsh
 
 
 COPY main.py .

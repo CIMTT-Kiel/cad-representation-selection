@@ -15,6 +15,7 @@ services:
     container_name: devcontainer
     volumes:
       - .:/workspaces
+      - /Users/mkruse/Nextcloud/Ressourcen-KI-Gruppe/Datensätze/fabwave:/workspaces/data/ #Pfad entsprechend anpassen
     networks:
       - container_net
     depends_on:
