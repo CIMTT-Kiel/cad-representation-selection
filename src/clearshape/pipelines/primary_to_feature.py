@@ -39,7 +39,7 @@ import dgl
 from clearshape import constants as cons
 from clearshape.step_tree.step_tree import StepTree
 from clearshape.invariants.invariant import InvariantCalculator
-from clearshape.targets.STEP_Targets import RegressionTargetExtractor
+from clearshape.targets.STEP_targets import RegressionTargetExtractor
 
 # set up logger
 logging_level = logging.DEBUG
@@ -315,6 +315,7 @@ class PrimaryFeaturePipeline:
                     break
 
                 # convert step file to tree or invariants if possible
+                tree_saved = False
                 try:
                     self._convert_to_tree()
                     self._save_tree()

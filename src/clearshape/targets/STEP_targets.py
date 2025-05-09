@@ -6,7 +6,7 @@ from pathlib import Path
 
 class RegressionTargetExtractor:
 
-    API_URL = "http://step_api:8000/upload_step/"
+    API_URL = "http://step_api:8000/get_targets_from_step/"
 
 
     def __init__(self, path : Path):

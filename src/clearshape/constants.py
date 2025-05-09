@@ -10,6 +10,7 @@ Examples
 >>> constants.PATHS.ROOT
 """
 from pathlib import Path
+
 from collections import namedtuple
 
 
@@ -31,13 +32,20 @@ _path_dict = {
 
 }
 
+
+
 Paths = namedtuple("Paths", list(_path_dict.keys()))
 PATHS = Paths(**_path_dict)
+
+# API URL
+API_URL = "http://step_api:8000/"
+
 
 # clean up for paths constants
 del _path_dict
 del Paths
 del _ROOT
+
 
 # general clean up
 del namedtuple
