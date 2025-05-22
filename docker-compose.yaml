@@ -14,7 +14,6 @@ services:
       dockerfile: .devcontainer/Dockerfile
     container_name: devcontainer
     volumes:
-      - .:/workspaces
       - ${HOME}/Nextcloud/Ressourcen-KI-Gruppe/Datensätze/fabwave:/workspaces/data/ #Pfad entsprechend anpassen
     networks:
       - container_net
