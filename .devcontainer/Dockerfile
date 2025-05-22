@@ -1,6 +1,6 @@
 # Base image from nvidia contains compatable versions of cuda and dgl
 FROM nvcr.io/nvidia/dgl:24.07-py3  
-    WORKDIR /workspaces/clear-shape 
+WORKDIR /clear-shape 
 
 # Install packages for visualization of graphs
 RUN apt-get update && apt-get install -y \
