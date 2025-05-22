@@ -17,6 +17,6 @@ RUN apt-get update && apt-get install -y \
 # ENV PATH="/opt/gmsh/bin:$PATH"
 # ENV PYTHONPATH="/opt/gmsh/lib:$PYTHONPATH"
 
-COPY pyproject.toml .
-COPY src ./src
+COPY . .
+
 RUN pip install -e .
