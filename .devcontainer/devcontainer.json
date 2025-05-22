@@ -1,7 +1,7 @@
 {
   "name": "DevContainer",
   "dockerComposeFile": "../docker-compose.yaml",
-  "workspaceFolder": "/workspaces",
+  "workspaceFolder": "/clear-shape",
   "shutdownAction": "stopCompose",
   "service": "devcontainer",
 
