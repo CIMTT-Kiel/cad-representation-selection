@@ -14,7 +14,7 @@ services:
       dockerfile: .devcontainer/Dockerfile
     container_name: devcontainer
     volumes:
-      # set paths as needed
+      # mount volumes to data directories (at least to `1_raw`)
       
       # Daniel
       #- D:\3 Resources\Nextcloud FH Kiel\Ressourcen-KI-Gruppe\Datensätze\fabwave\1_raw:/clear-shape/data/1_raw/

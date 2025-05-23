@@ -20,3 +20,9 @@ RUN apt-get update && apt-get install -y \
 COPY . .
 
 RUN pip install -e .
+
+# == Add git completion ==
+# Download the git completion script and place it in the home directory
+RUN curl https://raw.githubusercontent.com/git/git/master/contrib/completion/git-completion.bash -o ~/.git-completion.bash
+# register the git completion script in the bashrc file
+RUN echo "if [ -f ~/.git-completion.bash ]; then . ~/.git-completion.bash; fi" >> ~/.bashrc
