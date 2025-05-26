@@ -1,26 +1,7 @@
 """
 Pipeline to convert 'primary' data to 'feature' data.
 
-The images are generated externally and manually stored in the `data/4_feature/images` folder.
-
-The `.step` files from the 'primary' data set are converted into 'invariants' and 'trees' representations.
-Each representation is stored if it is successfully created. Is not guaranteed that all representations are created for each step file.
-
-In each case case the representations are stored in a folder named after the representation type. The folder is located in the 'feature' folder.
-
-Also, as part of the feature generation process, a table with regression featuers is created. For each CAD-part it contains the following features:
-
-- Volume
-- Amount of Faces
-- Amount of Edges
-- Amount of Vertices
-
-This 'fabwave_targets.csv' file contains only entries for the parts for which all three representations are available.
-Thus it serves as the central reference for the feature_to_model_input pipeline.
-
-Notes
------
-The excecution of the pipeline may be interrupted and resumed at any time. The pipeline will skip files that have already been processed.
+See `PrimaryFeaturePipeline` for more details.
 """
 
 # standard libary imports
@@ -56,9 +37,28 @@ class PrimaryFeaturePipeline:
     """
     A pipeline for processing CAD models and extracting features.
 
-    This class implements a singleton pattern to ensure only one instance of the pipeline exists.
-    It processes STEP files from a primary data set, converts them to various representations,
-    extracts regression features and part classes and saves the processed data.
+    The images are generated externally and manually stored in the `data/4_feature/images` folder.
+
+    The `.step` files from the 'primary' data set are converted into 'invariants' and 'trees' representations.
+    Each representation is stored if it is successfully created. Is not guaranteed that all representations are created for each step file.
+
+    In each case case the representations are stored in a folder named after the representation type. The folder is located in the 'feature' folder.
+
+    Also, as part of the feature generation process, a table with regression and classification featuers is created. Each row of the table corresponds to a CAD part for which all three representations are available.
+    The table is stored in the `data/4_feature/fabwave_targets.csv` file. It contains the following columns:
+
+    - path, relative path to the part, without the file extension
+    - class_name, name of the class the part belongs to
+    - class_id, id of the class the part belongs to
+    - volume, volume of the part in mm^3
+    - faces, number of faces of the part
+    - edges, number of edges of the part
+    - vertices, number of vertices of the part
+
+    This 'fabwave_targets.csv' file contains only entries for the parts for which all three representations are available.
+    Thus it serves as the central reference for the feature_to_model_input pipeline.
+
+    The excecution of the pipeline may be interrupted and resumed at any time. The pipeline will skip files that have already been processed.
 
     Parameters
     ----------
@@ -80,6 +80,14 @@ class PrimaryFeaturePipeline:
         Path to the current STEP file being processed.
     _step_tree : DGLGraph
         Tree representation of the current STEP file.
+
+    Methods
+    -------
+    run()
+        Execute the entire pipeline, processing all STEP files and extracting features.
+
+    Notes
+    -----
     """
 
     _instance = None
