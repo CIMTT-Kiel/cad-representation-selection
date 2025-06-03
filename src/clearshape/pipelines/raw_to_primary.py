@@ -219,7 +219,7 @@ class RawPrimaryPipeline:
 
         #setup
         files_pool = files_pool_unfiltered.copy()
-        report_dir = constants.PATHS.ROOT / "reports/raw->primary"
+        report_dir = constants.PATHS.DATA_PRIMARY
         report_dir.mkdir(exist_ok=True, parents=True)
 
 
@@ -233,7 +233,7 @@ class RawPrimaryPipeline:
         cl_size = Counter(file.stem for file in processed_files_classes) #Size of each existing class
 
         #write cl sizes json to reports
-        with open(constants.PATHS.ROOT / f'reports/raw->primary/class_sizes_before_filter_{self.approx_timestamp}.json', 'w') as fp:
+        with open(constants.PATHS.DATA_PRIMARY / f'class_sizes_before_filter_{self.approx_timestamp}.json', 'w') as fp:
             json.dump(cl_size, fp)
 
         classes_to_exclude_due_to_size = [cl for cl in cl_size.keys() if cl_size[cl]<min_size]
@@ -242,7 +242,7 @@ class RawPrimaryPipeline:
             files_pool = self.exclude_classes(files_pool, classes_to_exclude_due_to_size)
 
         #write class sizes after filter to json
-        with open(constants.PATHS.ROOT / f'reports/raw->primary/class_sizes_after_filter_{self.approx_timestamp}.json', 'w') as fp:
+        with open(constants.PATHS.DATA_PRIMARY / f'class_sizes_after_filter_{self.approx_timestamp}.json', 'w') as fp:
             json.dump(Counter(file.parent.stem for file in files_pool), fp)
 
         #2. exclude classes manually if given
@@ -250,7 +250,7 @@ class RawPrimaryPipeline:
             files_pool = self.exclude_classes(files_pool, self.config["filter_criteria"]["classes_to_exclude"] )
 
         #3. remove files from duplicates file
-        duplicates_file = constants.PATHS.ROOT / f'reports/raw->primary/detected_duplicates.csv'
+        duplicates_file = constants.PATHS.DATA_PRIMARY / f'detected_duplicates.csv'
         if duplicates_file.exists():
             dplk = pd.read_csv(duplicates_file, header=None, names=['file', 'error'])
             for file in list(dplk.file):
@@ -312,7 +312,7 @@ class RawPrimaryPipeline:
         logging.info(f"Report: OK: {len(primary_files)}, failed or excluded: {len(self.error_files.keys())}, handled: {self.files_splited} CHECKSUM: {len(primary_files)-self.files_splited+len(self.error_files.keys())}")
         
     def export_error_file(self):
-        error_file = constants.PATHS.ROOT / f"reports/raw->primary/excluded_files_{self.approx_timestamp}.csv"
+        error_file = constants.PATHS.DATA_PRIMARY / f"excluded_files_{self.approx_timestamp}.csv"
         error_file.parent.mkdir(exist_ok=True, parents=True)
         with open(error_file.as_posix(), "w") as f:
             for key in self.error_files:
