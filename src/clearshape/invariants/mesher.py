@@ -7,6 +7,7 @@ import requests
 import logging
 
 #custom libraries
+import clearshape.constants as constants
 #from clearshape.constants import API_URL
 
 # set up logger
@@ -129,34 +130,26 @@ class StepMesher:
         else:
             logger.warning("Fehler:", response.text)
 
-    def _bend_path(self, orig_path, element_to_replace, new_element):
-        """
-        Replaces a specified element in the given path with a new element.
-
-        Args:
-            orig_path (Path): The original path object.
-            element_to_replace (str): The element in the path to be replaced.
-            new_element (str): The new element to replace the old element.
-
-        Returns:
-            Path: A new path object with the specified element replaced.
-        """
-        parts = list(orig_path.parts)
-        parts[parts.index(element_to_replace)] = new_element
-        return Path(*parts)
-
-
     def _build_target_path_for_msh(self, step_path):
         """
-        Builds the target file path for a mesh file (.msh) based on the given step path.
+        Constructs the target file path for the mesh file (.msh) based on the given STEP file path.
 
-        Args:
-            step_path (Path): The initial path of the step file.
+        This method takes the path of a STEP file and transforms it into the corresponding path for the mesh file.
+        It replaces the directory structure to point to the 'fabwave_meshes' directory and changes the file extension to '.msh'.
 
-        Returns:
-            Path: The modified path with the '3_primary' and '3_1_meshes' directories and a '.msh' file extension.
+        Parameters
+        ----------
+        step_path : Path
+            The original path of the STEP file.
+
+        Returns
+        -------
+        Path
+            The constructed path for the mesh file with the updated directory structure and '.msh' extension.
         """
-        return self._bend_path(step_path, '3_primary', '3_1_meshes').with_suffix('.msh')
+        relative_path = step_path.relative_to(constants.PATHS.DATA_PRIMARY / "fabwave")
+        target_path = (constants.PATHS.DATA_PRIMARY / "fabwave_meshes" / relative_path).with_suffix('.msh')
+        return target_path
     
 
 #check functionality
