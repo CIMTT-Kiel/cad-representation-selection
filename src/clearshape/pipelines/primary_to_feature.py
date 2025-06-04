@@ -26,7 +26,7 @@ from clearshape.targets.STEP_targets import RegressionTargetExtractor
 logging_level = logging.WARNING
 logger = logging.getLogger(__name__)
 logger.setLevel(logging_level)
-formatter = logging.Formatter("%(asctime)s %(levelname)8s - %(message)s")
+formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)8s - %(message)s")
 stream_handler = logging.StreamHandler()
 stream_handler.setLevel(logging_level)
 stream_handler.setFormatter(formatter)
@@ -142,7 +142,7 @@ class PrimaryFeaturePipeline:
         StopIteration: If the step path generator has no more files to process.
         """
         # get path to next step file
-        logger.debug("Getting next step file")
+        logger.info("Setting next step file")
         self._file_to_process = next(self._step_path_generator)
 
     def _get_targets(self) -> None:
@@ -254,10 +254,11 @@ class PrimaryFeaturePipeline:
         """
         Save the extracted regression features.
         """
-        logger.debug("Saving targets")
+        logger.info("Saving targets")
         if self._files_already_processed is not None:
             targets_already_processed = pd.read_csv(cons.PATHS.DATA_FEATURE / "fabwave_targets.csv")
         else:
+            logger.debug("No already processed targets found, creating new DataFrame")
             targets_already_processed = None
         new_targets = pd.DataFrame(self._targets)
         targets_all = pd.concat([targets_already_processed, new_targets], ignore_index=True)
@@ -269,8 +270,12 @@ class PrimaryFeaturePipeline:
         """
         Save the class names with their corresponding ids.
         """
-        logger.debug("Saving class names")
-        targets = pd.read_csv(cons.PATHS.DATA_FEATURE / "fabwave_targets.csv")
+        logger.info("Saving class names")
+        try:
+            targets = pd.read_csv(cons.PATHS.DATA_FEATURE / "fabwave_targets.csv")
+        except pd.errors.EmptyDataError:
+            logger.warning("No targets found, building new fabwave_targets.csv")
+            targets = pd.DataFrame(self._targets)
         class_names = targets[["class_name", "class_id"]].drop_duplicates()
 
 
@@ -291,6 +296,8 @@ class PrimaryFeaturePipeline:
         bool
             True if the folder exists, False otherwise.
         """
+        # TODO add folder name for part class to folder_path
+        logger.info("Checking if images are available for the current part")
         folder_name = self._file_to_process.stem
         folder_path = cons.PATHS.DATA_FEATURE / "images" / "fabwave" / folder_name
         return folder_path.is_dir()
@@ -339,7 +346,9 @@ class PrimaryFeaturePipeline:
                 
                 # only extract targets if tree, invariants and images are
                 # available
+                logger.debug(f"Tree saved: {tree_saved}, Invariants saved: {invariants_saved}, Images available: {self._images_available()}")
                 if tree_saved and invariants_saved and self._images_available():
+                    logger.debug("all representations available")
                     try:
                         self._get_targets()
                     except Exception as e:
