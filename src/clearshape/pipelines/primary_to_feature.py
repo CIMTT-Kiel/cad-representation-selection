@@ -299,7 +299,8 @@ class PrimaryFeaturePipeline:
         # TODO add folder name for part class to folder_path
         logger.info("Checking if images are available for the current part")
         folder_name = self._file_to_process.stem
-        folder_path = cons.PATHS.DATA_FEATURE / "images" / "fabwave" / folder_name
+        part_class_name = self._file_to_process.parent.name
+        folder_path = cons.PATHS.DATA_FEATURE / "images" / "fabwave" / part_class_name / folder_name
         return folder_path.is_dir()
 
     def run(self):
