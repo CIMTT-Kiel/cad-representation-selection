@@ -28,7 +28,6 @@ logging_level = logging.WARNING
 logger = logging.getLogger(__name__)
 logger.setLevel(logging_level)
 formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)8s - %(message)s")
-formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)8s - %(message)s")
 stream_handler = logging.StreamHandler()
 stream_handler.setLevel(logging_level)
 stream_handler.setFormatter(formatter)
@@ -258,7 +257,6 @@ class PrimaryFeaturePipeline:
         Save the extracted regression features.
         """
         logger.info("Saving targets")
-        logger.info("Saving targets")
         if self._files_already_processed is not None:
             targets_already_processed = pd.read_csv(cons.PATHS.DATA_FEATURE / "fabwave_targets.csv")
         else:
@@ -275,12 +273,6 @@ class PrimaryFeaturePipeline:
         """
         Save the class names with their corresponding ids.
         """
-        logger.info("Saving class names")
-        try:
-            targets = pd.read_csv(cons.PATHS.DATA_FEATURE / "fabwave_targets.csv")
-        except pd.errors.EmptyDataError:
-            logger.warning("No targets found, building new fabwave_targets.csv")
-            targets = pd.DataFrame(self._targets)
         logger.info("Saving class names")
         try:
             targets = pd.read_csv(cons.PATHS.DATA_FEATURE / "fabwave_targets.csv")
@@ -360,9 +352,7 @@ class PrimaryFeaturePipeline:
                 # only extract targets if tree, invariants and images are
                 # available
                 logger.debug(f"Tree saved: {tree_saved}, Invariants saved: {invariants_saved}, Images available: {self._images_available()}")
-                logger.debug(f"Tree saved: {tree_saved}, Invariants saved: {invariants_saved}, Images available: {self._images_available()}")
                 if tree_saved and invariants_saved and self._images_available():
-                    logger.debug("all representations available")
                     logger.debug("all representations available")
                     try:
                         self._get_targets()
