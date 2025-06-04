@@ -58,7 +58,7 @@ class PrimaryFeaturePipeline:
     This 'fabwave_targets.csv' file contains only entries for the parts for which all three representations are available.
     Thus it serves as the central reference for the feature_to_model_input pipeline.
 
-    The excecution of the pipeline may be interrupted and resumed at any time. The pipeline will skip files that have already been processed.
+    The excecution of the pipeline may be interrupted and resumed at any time. The pipeline will skip files that have already been processed. (This is determined by the contents of `fabwave_targets.csv` file.)
 
     Parameters
     ----------
