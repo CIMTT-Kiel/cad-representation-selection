@@ -1,3 +1,9 @@
+"""
+This module implements the Raw to Primary Pipeline for processing STEP files.
+
+See RawPrimaryPipeline class for details.
+"""
+
 import os
 import logging
 from typing import List, Dict, Tuple
@@ -19,6 +25,47 @@ from clearshape import constants
 logging.basicConfig(level=logging.INFO)
 
 class RawPrimaryPipeline:
+    """
+    Pipeline for processing raw STEP files into a primary state. (s. a. README.md)
+
+    This pipeline performs the following steps:
+
+    1. Load raw STEP files from a specified directory.
+    2. Fuse overlapping bodies in the STEP files.
+    3. Merge multibody parts if possible, based on specific rules.
+    4. Generate target paths for saving processed files.
+    5. Filter data based on specified criteria, including class size and manual exclusions.
+    6. Exclude specified classes from the data.
+    7. Save the processed shapes to the primary state as STEP files.
+    8. Export a CSV file containing details of excluded or errored files.
+
+    Parameters
+    ----------
+    config : Dict
+        Configuration dictionary containing various settings for the pipeline.
+    
+    Attributes
+    ----------
+    approx_timestamp : str
+        A timestamp indicating when the pipeline was initialized.
+    config : Dict
+        Configuration dictionary containing various settings for the pipeline.
+    skiped_files_counter : int
+        Counter for the number of files skipped during processing.
+    files_splited : int
+        Counter for the number of files split during processing.
+    error_files : Dict
+        Dictionary to store files that encountered errors during processing.
+    files_excluded_due_to_total_class_size : int
+        Counter for the number of files excluded due to class size criteria.
+    skip_existing : bool
+        Flag indicating whether to skip processing files that already exist.
+
+    Methods
+    -------
+    run()
+        Executes the entire pipeline process.
+    """
 
     def __init__(self, config: Dict):
         self.approx_timestamp = time.strftime("%Y-%m-%d-%H:%M")
@@ -186,7 +233,7 @@ class RawPrimaryPipeline:
     def generate_target_path(self, file : Path)->Path:
 
         """generate the target path for the primary data"""
-        logging.debug(f"generate target path for {file}..")
+        logging.info(f"generate target path for {file}..")
 
         primary_data = {}
             
@@ -294,6 +341,7 @@ class RawPrimaryPipeline:
 
     def run(self):
         """run the pipline"""
+        logging.info("Start Raw to Primary Pipeline")
         raw_data = self.load_data(self.config["path_to_raw"])
 
         files_pool, multibody_files = self.fuse_overlapping_bodies(raw_data)
