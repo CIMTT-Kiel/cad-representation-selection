@@ -28,6 +28,7 @@ logging_level = logging.WARNING
 logger = logging.getLogger(__name__)
 logger.setLevel(logging_level)
 formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)8s - %(message)s")
+formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)8s - %(message)s")
 stream_handler = logging.StreamHandler()
 stream_handler.setLevel(logging_level)
 stream_handler.setFormatter(formatter)
@@ -144,6 +145,7 @@ class PrimaryFeaturePipeline:
         """
         # get path to next step file
         logger.info("Setting next step file")
+        logger.info("Setting next step file")
         self._file_to_process = next(self._step_path_generator)
 
     def _get_targets(self) -> None:
@@ -165,6 +167,10 @@ class PrimaryFeaturePipeline:
         """
         logger.debug("Extracting regression features")
 
+        logger.info("Extracting regression features")
+        # load the CAD part
+        part = cq.importers.importStep(self._file_to_process.as_posix())
+        # class target
         class_name = self._file_to_process.parent.name
         if class_name not in self._known_classes:
             self._known_classes.append(class_name)
@@ -256,9 +262,11 @@ class PrimaryFeaturePipeline:
         Save the extracted regression features.
         """
         logger.info("Saving targets")
+        logger.info("Saving targets")
         if self._files_already_processed is not None:
             targets_already_processed = pd.read_csv(cons.PATHS.DATA_FEATURE / "fabwave_targets.csv")
         else:
+            logger.debug("No already processed targets found, creating new DataFrame")
             logger.debug("No already processed targets found, creating new DataFrame")
             targets_already_processed = None
         new_targets = pd.DataFrame(self._targets)
@@ -271,6 +279,12 @@ class PrimaryFeaturePipeline:
         """
         Save the class names with their corresponding ids.
         """
+        logger.info("Saving class names")
+        try:
+            targets = pd.read_csv(cons.PATHS.DATA_FEATURE / "fabwave_targets.csv")
+        except pd.errors.EmptyDataError:
+            logger.warning("No targets found, building new fabwave_targets.csv")
+            targets = pd.DataFrame(self._targets)
         logger.info("Saving class names")
         try:
             targets = pd.read_csv(cons.PATHS.DATA_FEATURE / "fabwave_targets.csv")
@@ -297,6 +311,8 @@ class PrimaryFeaturePipeline:
         bool
             True if the folder exists, False otherwise.
         """
+        # TODO add folder name for part class to folder_path
+        logger.info("Checking if images are available for the current part")
         # TODO add folder name for part class to folder_path
         logger.info("Checking if images are available for the current part")
         folder_name = self._file_to_process.stem
@@ -348,7 +364,9 @@ class PrimaryFeaturePipeline:
                 # only extract targets if tree, invariants and images are
                 # available
                 logger.debug(f"Tree saved: {tree_saved}, Invariants saved: {invariants_saved}, Images available: {self._images_available()}")
+                logger.debug(f"Tree saved: {tree_saved}, Invariants saved: {invariants_saved}, Images available: {self._images_available()}")
                 if tree_saved and invariants_saved and self._images_available():
+                    logger.debug("all representations available")
                     logger.debug("all representations available")
                     try:
                         self._get_targets()
