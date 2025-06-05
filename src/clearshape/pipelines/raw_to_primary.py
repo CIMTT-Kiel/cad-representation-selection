@@ -190,7 +190,7 @@ class RawPrimaryPipeline:
 
         primary_data = {}
             
-        target_file=Path(str(file).replace("1_raw", "3_primary"))
+        target_file=Path(str(file).replace("1_raw", "3_primary").replace("STEP",""))
 
         target_dir = target_file.parent
         target_filename = f"{target_file.stem}.step"
