@@ -10,6 +10,14 @@ import Part
 import os, json
 import gmsh
 
+
+import random
+import numpy as np
+import open3d as o3d
+
+import cascadio
+import trimesh
+
 from pathlib import Path
 
 app = FastAPI()
@@ -40,6 +48,8 @@ async def mesh_step(data: StepFileData):
     """
     step_file_path = f"/tmp/{data.filename}.step"
     msh_file_path = f"/tmp/{data.filename}.msh"
+
+    msh_base64_data = None
 
     # tmp file dor the step file
     with open(step_file_path, "wb") as f:
@@ -72,17 +82,21 @@ async def mesh_step(data: StepFileData):
         Path(msh_file_path).parent.mkdir(parents=True, exist_ok=True)
         gmsh.write(msh_file_path)
 
+        with open(msh_file_path, "rb") as file:
+            msh_base64_data = base64.b64encode(file.read()).decode("utf-8")
+
     except Exception as e:
         print(f"Error by meshing {msh_file_path}: {e}")
     finally:
         gmsh.finalize()
 
-    with open(msh_file_path, "rb") as file:
-        msh_base64_data = base64.b64encode(file.read()).decode("utf-8")
+
     
     # remove the tmp file to save space
-    os.remove(step_file_path)
-    os.remove(msh_file_path)
+    if os.path.exists(msh_file_path):
+        os.remove(step_file_path)
+    if os.path.exists(msh_file_path):
+        os.remove(msh_file_path)
 
     return {"msh_filedata" : msh_base64_data}
 
@@ -119,6 +133,8 @@ def fuse_overlaps(data: StepFileData):
         Part.insert(step_file.as_posix(), doc.Name)
         shapes = [volume.Shape for volume in doc.Objects]
 
+        assert len(shapes) > 0, f"No objects found in {step_file}"
+
         
         fused_shape = shapes[0] #in case shapes contain just one body fused_shape is the original shape and just will be copied
 
@@ -126,6 +142,8 @@ def fuse_overlaps(data: StepFileData):
         if len(shapes)>1:
             for shape in shapes[1:]:
                 fused_shape = fused_shape.fuse(shape)
+
+        assert len(fused_shape.Solids) > 0, f"No solids found in {step_file}"
         
         #check if fuse process was successfull - otherwise the part contains at least two bodies which can not be fused
         if len(fused_shape.Solids)==1:
@@ -133,23 +151,32 @@ def fuse_overlaps(data: StepFileData):
         else:
             fused = False 
 
+        # Objekt im Dokument erzeugen und Shape zuweisen
+        fused_obj = doc.addObject("Part::Feature", "Fused")
+        fused_obj.Shape = fused_shape
+        doc.recompute()
+
+        assert len(fused_obj.Shape.Solids) > 0, f"No solids found in {step_file}"
+                
+        if fused:
+            #save the fused shape to a file
+            fused_file_path = f"/tmp/fused_{data.filename}.step"
+            Part.export([fused_obj], fused_file_path)
+
+            with open(fused_file_path, "rb") as f:
+                base64_fused_filedata = base64.b64encode(f.read()).decode("utf-8")
+            os.remove(fused_file_path)
     except Exception as e:
         error = True
         error_msg = e
 
-    FreeCAD.closeDocument(doc.Name)
+
 
     #build the response
 
-    if fused:
-        #save the fused shape to a file
-        fused_file_path = f"/tmp/fused_{data.filename}.step"
-        Part.export([fused_shape], fused_file_path)
 
-        with open(fused_file_path, "rb") as file:
-            base64_fused_filedata = base64.b64encode(file.read()).decode("utf-8")
-        os.remove(fused_file_path)
 
+    FreeCAD.closeDocument(doc.Name)
     return {"fused": fused, "filedata": base64_fused_filedata, "error": error, "error_msg" : error_msg}
 
 @app.post("/extract_biggest_volume_as_step/")
@@ -171,10 +198,15 @@ def extract_biggest_volume_as_step(data: StepFileData):
         if len(shapes)>1:
             shapes.sort( key = lambda elem: elem.Volume)
             biggest_shape = shapes[-1]
+
+            # Objekt im Dokument erzeugen und Shape zuweisen
+            fused_obj = doc.addObject("Part::Feature", "Fused")
+            fused_obj.Shape = biggest_shape
+            doc.recompute()
         
             #save the biggest shape to a file
             biggest_shape_file_path = f"/tmp/biggest_{data.filename}.step"
-            Part.export([biggest_shape], biggest_shape_file_path)
+            Part.export([fused_obj], biggest_shape_file_path)
             with open(biggest_shape_file_path, "rb") as file:
                 base64_biggest_shape_filedata = base64.b64encode(file.read()).decode("utf-8")
             os.remove(biggest_shape_file_path)
@@ -183,11 +215,14 @@ def extract_biggest_volume_as_step(data: StepFileData):
         error = True
         error_msg = e
 
+    FreeCAD.closeDocument(doc.Name)
+
     return {"filedata": base64_biggest_shape_filedata, "error": error, "error_msg": error_msg}
 
 @app.post("/split_miter_gear_set/")
 def split_miter_gear_set(data: StepFileData):
 
+    print("split_miter_gear_set called")
     base64_gear_shape_filedata = None
     base64_headless_screw_shape_filedata = None
     error = False
@@ -206,12 +241,22 @@ def split_miter_gear_set(data: StepFileData):
         gear = shapes[-1]
         headless_screw = shapes[0]
 
+        # Objekt im Dokument erzeugen und Shape zuweisen
+        fused_obj_gear = doc.addObject("Part::Feature", "Fused")
+        fused_obj_gear.Shape = gear
+        doc.recompute()
+
+        fused_obj_hs = doc.addObject("Part::Feature", "Fused")
+        fused_obj_hs.Shape = headless_screw
+        doc.recompute()
+
+
         gear_file = Path(step_file.parent / f"{step_file.stem}_EXTRACTED_Gears.step")
         headless_screw_file = Path(step_file.parent / f"{step_file.stem}_EXTRACTED_HeadlessScrews.step")
 
         #save the biggest shape to a file
-        Part.export([gear], gear_file.as_posix())
-        Part.export([headless_screw], headless_screw_file.as_posix())
+        Part.export([fused_obj_gear], gear_file.as_posix())
+        Part.export([fused_obj_hs], headless_screw_file.as_posix())
         
         #encode step_files
         with open(gear_file.as_posix(), "rb") as file:
@@ -237,6 +282,144 @@ def decode_step_file(data: StepFileData) -> str:
         f.write(base64.b64decode(data.filedata))
 
     return step_file_path
+
+@app.post("/step_to_ply/")
+async def step_to_ply(data: StepFileData):
+    """
+
+    """
+    error = False
+    error_msg = None
+    ply_base64_data = None
+
+    step_file_path = Path(f"/tmp/{data.filename}.step")
+    ply_file_path = Path(f"/tmp/{data.filename}.ply")
+
+    output_dir = Path(f"/tmp")
+    #create dir if not exists
+    step_file_path.parent.mkdir(parents=True, exist_ok=True)
+
+    # tmp file dor the step file
+    with open(step_file_path, "wb") as f:
+        f.write(base64.b64decode(data.filedata))
+
+    try:
+        print(f"step_file_path: {step_file_path}")
+        step_converter = STEP_Converter(step_file_path, Path(f"/tmp/"))
+        step_converter.to_ply()
+        #create dir if not exists
+        print("try to write out ply file..")
+        with open(ply_file_path, "rb") as file:
+            ply_base64_data = base64.b64encode(file.read()).decode("utf-8")
+
+    except Exception as e:
+        error = True
+        error_msg = str(e)
+        print(f"Error by converting step to ply in file {data.filename}: {e}")
+
+    
+    
+    # remove the tmp file to save space
+    os.remove(step_file_path)
+    os.remove(step_converter.stl_file.as_posix())
+    os.remove(step_converter.ply_file.as_posix())
+
+    return {"ply_filedata" : ply_base64_data}
+
+class STEP_Converter():
+
+    def __init__(self, step_file, output_dir):
+        self._step_file=Path(step_file)
+        self.file_name = step_file.stem
+        self._output_dir = Path(output_dir)
+        self.pcd = None
+
+
+    # def to_stl_(self):
+    #     """
+    #     Generates a 3D mesh from a STEP file using Gmsh and saves it to a specified path.
+    #     This method initializes Gmsh, imports a STEP file, generates a 3D mesh, and saves the mesh to a specified file path.
+    #     It ensures that a 3D mesh is created and handles any exceptions that occur during the process.
+    #     Raises:
+    #         ValueError: If no 3D mesh is generated, indicating that only a 2D mesh may have been created.
+    #         Exception: For any other errors that occur during the meshing process.
+    #     Side Effects:
+    #         Creates directories if they do not exist.
+    #         Writes the generated mesh to a file.
+    #     """
+    #     gmsh.initialize(interruptible=False)
+    #     gmsh.option.setNumber("General.Terminal", 1)
+
+
+    #     try:
+    #         gmsh.model.add("3DMesh")
+    #         gmsh.model.occ.importShapes(str(self._step_file))
+    #         gmsh.model.occ.synchronize()
+
+    #         gmsh.option.setNumber("Geometry.OCCSewFaces", 1)
+
+    #         gmsh.model.occ.synchronize()
+
+    #         gmsh.model.mesh.generate(3)  # 3D Vernetzung
+            
+    #         # Überprüfung, ob ein 3D-Netz generiert wurde
+            
+    #         elem_types, _, _ = gmsh.model.mesh.getElements(dim=3)
+
+    #         if not elem_types:
+    #             raise ValueError("Fehler: Kein 3D-Netz erzeugt! Möglicherweise wurde nur ein 2D-Netz erstellt.")
+            
+    #         #create dir if not exists
+    #         gmsh.write(str(self._output_dir / f"mesh/{self.file_name}.stl"))
+    #     except Exception as e:
+    #         print(f"Error by meshing {self.path_to_step}: {e}")
+    #     finally:
+    #         gmsh.finalize()
+
+    def to_stl(self):
+        print(f"to stl: {self._step_file}")
+        tmp_path = Path("tmp")
+        tmp_path.mkdir(parents=True, exist_ok=True)
+        tmp_file = tmp_path / "out.obj"
+        print("Convert STEP to OBJ..")
+        cascadio.step_to_obj(str(self._step_file), tmp_file.as_posix())
+
+        # Load the OBJ file using trimesh
+        print("Convert OBJ to STL..")
+        print(f"tmp_file: {tmp_file}")
+        mesh = trimesh.load(tmp_file.as_posix())
+        print("Export to STL..")
+        mesh.export(str(self._output_dir / f"{self.file_name}.stl"), file_type='stl')
+
+        # Remove the temporary OBJ file
+        if tmp_file.exists():
+            os.remove(tmp_file)
+
+
+    def to_ply(self):
+        self.stl_file = self._output_dir / f"{self.file_name}.stl"
+        self.ply_file = self._output_dir / f"{self.file_name}.ply"
+
+        print(f"stl_file: {self.stl_file}")
+        print(f"ply_file: {self.ply_file}")
+
+        #create dir if not exists
+        self.stl_file.parent.mkdir(parents=True, exist_ok=True)
+        self.ply_file.parent.mkdir(parents=True, exist_ok=True)
+        
+        self.to_stl()
+        
+        #load stl file
+        print(f"load stl file: {self.stl_file}")
+        mesh = o3d.io.read_triangle_mesh(str(self.stl_file))
+        print(f"create point cloud from mesh: {mesh}")
+        pcd = o3d.geometry.TriangleMesh.sample_points_uniformly(mesh, number_of_points=8192)
+
+        #save to ply
+        print(f"save point cloud to ply file: {self.ply_file}")
+        o3d.io.write_point_cloud(str(self.ply_file), pcd)
+
+        self.pcd = pcd
 
 class StepTargetExtractor:
     def __init__(self, path:Path):
