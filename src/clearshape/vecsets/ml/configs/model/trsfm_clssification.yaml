@@ -1,0 +1,13 @@
+_target_: clearshape.vecsets.ml.modules.trsfm_classificator.VecsetClassifierModule
+
+lr: 0.0001
+
+nhead : 4
+num_layers: 3
+dropout: 0.1
+dim_feedforward: 2048
+use_pos_embedding: True
+fc_layers: [512]
+
+
+max_epochs : ${trainer.max_epochs}
