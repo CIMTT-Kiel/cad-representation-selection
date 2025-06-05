@@ -22,9 +22,9 @@ services:
       #- D:\3 Resources\Nextcloud FH Kiel\Ressourcen-KI-Gruppe\Datensätze\fabwave\4_feature:/clear-shape/data/4_feature/
 
       # Michel
-      - /home/michelkruse/Nextcloud/Ressourcen-KI-Gruppe/Datensätze/fabwave/1_raw:/clear-shape/data/1_raw/
-      - /home/michelkruse/Nextcloud/Ressourcen-KI-Gruppe/Datensätze/fabwave/3_primary:/clear-shape/data/3_primary/
-      - /home/michelkruse/Nextcloud/Ressourcen-KI-Gruppe/Datensätze/fabwave/4_feature:/clear-shape/data/4_feature/
+      # - /home/michelkruse/Nextcloud/Ressourcen-KI-Gruppe/Datensätze/fabwave/1_raw:/clear-shape/data/1_raw/
+      # - /home/michelkruse/Nextcloud/Ressourcen-KI-Gruppe/Datensätze/fabwave/3_primary:/clear-shape/data/3_primary/
+      # - /home/michelkruse/Nextcloud/Ressourcen-KI-Gruppe/Datensätze/fabwave/4_feature:/clear-shape/data/4_feature/
 
     networks:
       - container_net
