@@ -276,7 +276,10 @@ class RawPrimaryPipeline:
             for del_key in keys_to_delete:
                 self.files_excluded_due_to_total_class_size+=1
                 self.error_files[del_key] = f"Excluded class {cl} due to total of samples <min_size specified in config"
-                del data[del_key]
+                try:
+                    del data[del_key]
+                except Exception as e:
+                    logging.error(f"Error while deleting {del_key} from data: {e}")
 
         return data
 
