@@ -115,7 +115,7 @@ class PrimaryFeaturePipeline:
         )
         self._step_path_generator = (
             cons.PATHS.DATA_PRIMARY / "fabwave"
-        ).rglob("*.stp")
+        ).rglob("*.step")
         self._targets= []
         self._known_classes = []
 
