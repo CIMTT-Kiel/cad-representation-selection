@@ -15,6 +15,7 @@ import threading
 import pandas as pd
 from omegaconf import OmegaConf
 import dgl
+import cadquery as cp
 
 # custom imports
 from clearshape import constants as cons
