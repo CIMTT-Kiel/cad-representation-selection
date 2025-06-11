@@ -167,10 +167,6 @@ class PrimaryFeaturePipeline:
         """
         logger.debug("Extracting regression features")
 
-        logger.info("Extracting regression features")
-        # load the CAD part
-        part = cq.importers.importStep(self._file_to_process.as_posix())
-        # class target
         class_name = self._file_to_process.parent.name
         if class_name not in self._known_classes:
             self._known_classes.append(class_name)
