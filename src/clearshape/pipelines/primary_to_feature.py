@@ -23,7 +23,7 @@ from clearshape.invariants.invariant import InvariantCalculator
 from clearshape.targets.STEP_targets import RegressionTargetExtractor
 
 # set up logger
-logging_level = logging.DEBUG
+logging_level = logging.WARNING
 logger = logging.getLogger(__name__)
 logger.setLevel(logging_level)
 formatter = logging.Formatter("%(asctime)s %(levelname)8s - %(message)s")
@@ -163,9 +163,7 @@ class PrimaryFeaturePipeline:
             None
         """
         logger.debug("Extracting regression features")
-        # load the CAD part
-        part = cq.importers.importStep(self._file_to_process.as_posix())
-        # class target
+
         class_name = self._file_to_process.parent.name
         if class_name not in self._known_classes:
             self._known_classes.append(class_name)
@@ -225,7 +223,7 @@ class PrimaryFeaturePipeline:
         logger.debug("Calculate the moments and invariants from the CAD model")
         self._invariants = InvariantCalculator.calculate_invariants_from_step(self._file_to_process)
         #return NotImplemented
-        print("runing invariants conversion")
+        logger.info("running invariants conversion")
 
     def _get_relative_path(self) -> Path:
         """
@@ -274,8 +272,10 @@ class PrimaryFeaturePipeline:
         logger.debug("Saving class names")
         targets = pd.read_csv(cons.PATHS.DATA_FEATURE / "fabwave_targets.csv")
         class_names = targets[["class_name", "class_id"]].drop_duplicates()
+
+
         class_names.to_csv(
-            cons.PATHS.DATA_REPORTING / "part_class_ids.csv", index=False
+            cons.PATHS.DATA_FEATURE / "part_class_ids.csv", index=False
         )
 
     def _images_available(self) -> bool:
