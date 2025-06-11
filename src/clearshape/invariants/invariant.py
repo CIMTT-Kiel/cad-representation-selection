@@ -1,6 +1,7 @@
 # standard libaries
 from pathlib import Path
 import os
+import logging
 
 # Third party libaries
 import meshio
@@ -12,6 +13,10 @@ from sklearn.decomposition import PCA
 # application imports
 from clearshape.invariants.mesher import StepMesher
 
+# set up logger
+logging_level = logging.DEBUG
+logger = logging.getLogger(__name__)
+logger.setLevel(logging_level)
 
 class InvariantCalculator:
     """
@@ -165,7 +170,7 @@ class InvariantCalculator:
                 self.pis[pi_permut_key] = (mue_var/(mue_200**((4*p-q-r+2)/10)*mue_020**((4*q-p-r+2)/10)*mue_002**((4*r-q-p+2)/10)))
 
         except Exception as e:
-            print(f"Error frocessing {self.path.name}: {e}")
+            logger.warning(f"Error processing {self.path.name}: {e}")
 
     def to_json(self, path : Path):
         """

@@ -4,10 +4,15 @@
 from pathlib import Path
 import base64
 import requests
+import logging
 
 #custom libraries
 #from clearshape.constants import API_URL
 
+# set up logger
+logging_level = logging.DEBUG
+logger = logging.getLogger(__name__)
+logger.setLevel(logging_level)
 
 class StepMesher:
     """
@@ -89,7 +94,7 @@ class StepMesher:
             try:
                 self._mesh_step_file()
             except Exception as e:
-                print(f"Error processing {self.path_to_step}: {e}")
+                logger.warning(f"Error processing {self.path_to_step}: {e}")
         return None
     
     def _mesh_step_file(self):
@@ -115,14 +120,14 @@ class StepMesher:
 
         response = requests.post("http://step_api:8000/mesh_step_file/", json=payload)
 
-        print("Response status code:", response.status_code)
+        logger.debug("Response status code:", response.status_code)
         if response.status_code == 200:
             mesh_data_dict =  response.json()
             with open(str(self.path_to_msh), "wb") as f:
-                print("Decode the file data and write it to the file..")
+                logger.debug("Decode the file data and write it to the file..")
                 f.write(base64.b64decode(mesh_data_dict["msh_filedata"]))
         else:
-            print("Fehler:", response.text)
+            logger.warning("Fehler:", response.text)
 
     def _bend_path(self, orig_path, element_to_replace, new_element):
         """

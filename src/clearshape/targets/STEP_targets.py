@@ -2,7 +2,13 @@
 import requests
 import base64
 from pathlib import Path
+import logging
 
+
+# set up logger
+logging_level = logging.DEBUG
+logger = logging.getLogger(__name__)
+logger.setLevel(logging_level)
 
 class RegressionTargetExtractor:
 
@@ -36,7 +42,7 @@ class RegressionTargetExtractor:
         if response.status_code == 200:
             self.target_dict =  response.json()
         else:
-            print("Fehler:", response.text)
+            logger.warning("Fehler:", response.text)
 
     
 if __name__ == "__main__":
