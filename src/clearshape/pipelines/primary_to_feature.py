@@ -171,7 +171,7 @@ class PrimaryFeaturePipeline:
         class_id = self._known_classes.index(class_name)
 
         # extract regression features
-        extractor, targets = RegressionTargetExtractor.analyze_step(self._file_to_process.as_posix())
+        extractor, targets = RegressionTargetExtractor.analyze_step(self._file_to_process)
 
         volume = targets["volume"]
         faces = targets["faces"]
