@@ -163,7 +163,7 @@ class PrimaryFeaturePipeline:
         Returns:
             None
         """
-        logger.debug("Extracting regression features")
+        logger.debug("Extracting regression and classification features")
 
         class_name = self._file_to_process.parent.name
         if class_name not in self._known_classes:
@@ -253,7 +253,7 @@ class PrimaryFeaturePipeline:
 
     def _save_targets(self):
         """
-        Save the extracted regression features.
+        Save the extracted regression and classification features.
         """
         logger.info("Saving targets")
         if self._files_already_processed is not None:
@@ -266,23 +266,6 @@ class PrimaryFeaturePipeline:
         targets_all = pd.concat([targets_already_processed, new_targets], ignore_index=True)
         targets_all.to_csv(
             cons.PATHS.DATA_FEATURE / "fabwave_targets.csv", index=False
-        )
-
-    def _save_class_names(self):
-        """
-        Save the class names with their corresponding ids.
-        """
-        logger.info("Saving class names")
-        try:
-            targets = pd.read_csv(cons.PATHS.DATA_FEATURE / "fabwave_targets.csv")
-        except pd.errors.EmptyDataError:
-            logger.warning("No targets found, building new fabwave_targets.csv")
-            targets = pd.DataFrame(self._targets)
-        class_names = targets[["class_name", "class_id"]].drop_duplicates()
-
-
-        class_names.to_csv(
-            cons.PATHS.DATA_FEATURE / "part_class_ids.csv", index=False
         )
 
     def _images_available(self) -> bool:
@@ -364,7 +347,6 @@ class PrimaryFeaturePipeline:
 
         finally:
             self._save_targets()
-            self._save_class_names()
 
 if __name__ == "__main__":
     pipeline = PrimaryFeaturePipeline()
