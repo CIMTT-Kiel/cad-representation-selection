@@ -113,7 +113,7 @@ class PrimaryFeaturePipeline:
         )
         self._step_path_generator = (
             cons.PATHS.DATA_PRIMARY / "fabwave"
-        ).rglob("*.stp")
+        ).rglob("*.step")
         self._targets= []
         self._known_classes = []
 
@@ -313,7 +313,7 @@ class PrimaryFeaturePipeline:
         """
         # process all step files
         logger.info("Starting processing of step files.")
-        progress_bar = tqdm(desc="Files processed: ",total=len(list(Path(cons.PATHS.DATA_PRIMARY / "fabwave").rglob("*.stp"))), ncols=100)
+        progress_bar = tqdm(desc="Files processed: ",total=len(list(Path(cons.PATHS.DATA_PRIMARY / "fabwave").rglob("*.step"))), ncols=100)
 
         try:
             while True:
