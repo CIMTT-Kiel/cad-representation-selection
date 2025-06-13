@@ -39,7 +39,7 @@ from clearshape.trainer import Trainer
 logging_level = logging.DEBUG
 logger = logging.getLogger(__name__)
 logger.setLevel(logging_level)
-formatter = logging.Formatter("%(asctime)s %(levelname)8s - %(message)s")
+formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)8s - %(message)s")
 stream_handler = logging.StreamHandler()
 stream_handler.setLevel(logging_level)
 stream_handler.setFormatter(formatter)
