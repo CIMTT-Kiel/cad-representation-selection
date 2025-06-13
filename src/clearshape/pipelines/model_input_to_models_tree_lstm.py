@@ -378,7 +378,9 @@ class TreeLSTMTuningPipeline():
         dict
             A dictionary containing the best parameter configuration.
         """
-            with open(Path("tmp") / self._conf.file_best_parameter) as f:
+        logger.info(f"Load best parameters from {self._conf.file_best_parameter}")
+        with open(Path("tmp") / self._conf.file_best_parameter) as f:
+                return yaml.safe_load(f) or {}
 
     def _get_optimizer(self, optimizer: str):
         """
