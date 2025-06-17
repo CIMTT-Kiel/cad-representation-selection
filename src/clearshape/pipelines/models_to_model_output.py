@@ -84,7 +84,6 @@ class ModelsModelOutputPipeline:
 
     def __init__(self):
         self.model_path_generator = cons.PATHS.DATA_MODELS.iterdir()
-        self.models = self._set_models()
 
     def _get_models_by_type(self, model_type: str):
         """
@@ -111,14 +110,6 @@ class ModelsModelOutputPipeline:
                 models[path.stem] = {"path": path}
 
         return models
-
-    def _set_models(self):
-        """
-        Sets the models attribute to a dictionary containing the paths to the models.
-        """
-        self.models = {
-            path.stem: {"path": path} for path in cons.PATHS.DATA_MODELS.iterdir()
-        }
 
     def _initialize_tree_lstm(self, task_type) -> torch.nn.Module:
         """
@@ -230,57 +221,25 @@ class ModelsModelOutputPipeline:
                 )
         return data_loader
 
-    def _compute_predictions(self) -> pd.DataFrame:
+    def _get_scaler(self, path):
         """
-        Compute the predictions of the model on the test data set.
+        Load a scaler object from a specified file path.
+
+        This method reads a file containing a serialized scaler object
+        and deserializes it using the `pickle` module.
+
+        Parameters
+        ----------
+        path : str
+            The file path to the serialized scaler object.
 
         Returns
         -------
-        predictions : pd.DataFrame
-            DataFrame containing the predictions of the model on the test data
-            set. Depending on the model type, the DataFrame will have either one
-            column for the predicted class id or four columns for the predicted
-            volume, faces, edges, and vertices.
+        object
+            The deserialized scaler object.
         """
-        match self.model_type:
-            case "classifier":
-                assert predictions.shape[1] == 1
-            case "regressor":
-                columns = self.data_loader.dataset.data.columns[-4:]
-                predictions = torch.cat(predictions, dim=0).cpu().detach().numpy()
-                # scale predictions
-                self._load_scaler()
-                predictions = self.scaler.inverse_transform(predictions)
-                predictions = pd.DataFrame(
-                    predictions, columns=[f"pred_{column}" for column in columns]
-                )
-                assert predictions.shape[1] == 4
-
-        return predictions
-
-    def _get_scaler(self, path):
         with open(path, "rb") as scaler_file:
             return pickle.load(scaler_file)
-
-    def _get_targets(self) -> pd.DataFrame:
-        """
-        Get the targets of the test data set.
-
-        Returns
-        -------
-        targets : pd.DataFrame
-            DataFrame containing the targets of the test data set. Depending on
-            the model type, the DataFrame will have either one column for the
-            class id or four columns for the volume, faces, edges, and vertices.
-        """
-        data_set = pd.read_csv(cons.PATHS.DATA_MODEL_INPUT / "test.csv")
-        match self.model_type:
-            case "classifier":
-                return data_set[["class_id"]]
-            case "regressor":
-                return data_set[["volume", "faces", "edges", "vertices"]]
-            case _:
-                raise ValueError(f"Invalid model type: {self.model_type}")
 
     def run(self):
         """
