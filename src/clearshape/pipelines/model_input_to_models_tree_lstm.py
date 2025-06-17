@@ -380,8 +380,12 @@ class TreeLSTMTuningPipeline():
             A dictionary containing the best parameter configuration.
         """
         logger.info(f"Load best parameters from {self._conf.file_best_parameter}")
-        with open(Path("tmp") / self._conf.file_best_parameter) as f:
-                return yaml.safe_load(f) or {}
+        try:
+            with open(cons.PATHS.DATA_MODELS / self._conf.file_best_parameter) as f:
+                    return yaml.safe_load(f) or {}
+        except FileNotFoundError:
+            logger.warning(f"File {self._conf.file_best_parameter} not found. Returning empty dictionary.")
+            return {}
 
     def _get_optimizer(self, optimizer: str):
         """
@@ -769,6 +773,6 @@ class TreeLSTMTuningPipeline():
 
 
 if __name__ == "__main__":
-    #pipeline = TreeLSTMTuningPipeline("treelstm_classifier_tuning_pipeline.yaml", classification=True)
-    pipeline = TreeLSTMTuningPipeline("treelstm_regressor_tuning_pipeline.yaml", regression=True)
+    pipeline = TreeLSTMTuningPipeline("treelstm_classifier_tuning_pipeline.yaml", classification=True)
+    #pipeline = TreeLSTMTuningPipeline("treelstm_regressor_tuning_pipeline.yaml", regression=True)
     pipeline.run()
