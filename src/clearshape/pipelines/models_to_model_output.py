@@ -1,17 +1,9 @@
 # %%
-
-# TODO: add all docstring
-
 """
-This module contains the class `ModelsModelOutputPipeline` which is responsible
-for loading the models from the `data/models` directory and outputting their
-predictions on the test data set to the `data/model_output` directory.
+This module implements a pipeline to compute the predictions for the data from the test data set
+using the models stored in the `data/models` directory.
 
-Notes
------ The pipeline assumes that files containing the models follow this naming
-convention:
-
-    `{images, trees or invariants}-{regressor or classifier}.pth`
+For more information see the documentation of the `ModelsModelOutputPipeline` class.
 """
 
 # Standard Library
@@ -50,14 +42,15 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 class ModelsModelOutputPipeline:
     """
-    Pipeline to load models from the `data/6_models` directory and output
-    their predictions on the test data set to the `data/model_output` directory.
+    Pipeline to load trained models from the `data/models` directory and output
+    their predictions on the test dataset to the `data/7_model_output` directory.
 
-    Classifiers and regressors are handled separately. The predictions of all classifiers and regressors are put in a single output file respectively.
+    This pipeline handles both classifiers and regressors separately. Predictions
+    from all classifiers are saved in a single output file, and predictions from
+    all regressors are saved in another output file.
 
-    Output files:
-    - `data/model_output/classifiers_output.csv`
-    - `data/model_output/regressors_output.csv`
+    - `data/7_model_output/classifiers_output.csv`
+    - `data/7_model_output/regressors_output.csv`
 
     Parameters
     ----------
@@ -67,58 +60,92 @@ class ModelsModelOutputPipeline:
     ----------
     model_path_generator : generator
         Generator object to iterate over the files in the `data/models` directory.
-    models : dict
-        Dictionary containing the paths to the models.
-    model : torch.nn.Module
-        Current model being used in the pipeline.
-    data_loader : torch.utils.data.DataLoader
-        DataLoader object for the test data set.
-    model_path : pathlib.Path
-        Path to the current model being used in the pipeline.
-    data_type : str
-        Type of data the current model is trained on. (images, trees or invariants)
-    model_type : str
-        Type of model being used. (regressor or classifier)
 
+    models : dict
+        Dictionary containing the paths to the models. The keys are the model file stems
+        and the values are dictionaries with the model path.
+
+    Methods
+    -------
+    run():
+        Executes the pipeline to process all models, compute predictions, and save them to output files.
+
+    Notes
+    -----
+    The pipeline assumes that files containing the models follow this naming
+    convention: `{images, trees, or invariants}-{regressor or classifier}.pth`.
     """
 
     def __init__(self):
         self.model_path_generator = cons.PATHS.DATA_MODELS.iterdir()
 
-    def _get_models_by_type(self, model_type: str):
+    def _get_models_by_type(self, task_type: str):
         """
-        Get a dict of all models of the specified type (classifier or regressor)
-        in the `data/models` directory.
+        Retrieve all models of a specified type (classifier or regressor) from the `data/6_models` directory.
 
         Parameters
         ----------
         model_type : str
-            Type of models to retrieve. Must be either "classifier" or "regressor".
+            The type of models to retrieve. Must be either "classifier" or "regressor".
 
         Returns
         -------
         models : dict
-            Dictionary containing the paths to the models of the specified type.
-            The keys are the models file stem and the values are the paths to the models.
+            A dictionary where the keys are the file stems of the models and the values are dictionaries
+            containing the paths to the models.
+
+        Raises
+        ------
+        ValueError
+            If the provided `task_type` is not "classifier" or "regressor".
+
+        Notes
+        -----
+        The naming convention for model files is `{images, trees, or invariants}-{regressor or classifier}.pth`.
+
+        This method filters the models based on their file stem, which is expected to end with either
+        "classifier" or "regressor". It returns a dictionary containing the paths to the models of the
+        specified type.
         """
-        if model_type not in {"classifier", "regressor"}:
+        if task_type not in {"classifier", "regressor"}:
             raise ValueError("model_type must be either 'classifier' or 'regressor'")
 
         models = {}
         for path in cons.PATHS.DATA_MODELS.iterdir():
-            if path.stem.endswith(model_type):
+            if path.stem.endswith(task_type):
                 models[path.stem] = {"path": path}
 
         return models
 
     def _initialize_tree_lstm(self, task_type) -> torch.nn.Module:
         """
-        Initialize the TreeLSTM model using the best parameters found during the hyperparameter search.
+        Initialize a TreeLSTM model for either classification or regression tasks.
+
+        This method loads the best hyperparameters for the TreeLSTM model from a YAML file
+        and constructs the model using a RootedInTreeEncoder for encoding tree-structured data
+        and a FeedforwardMLP for prediction. The model is designed to handle either classification
+        or regression tasks based on the provided `task_type`.
+
+        Parameters
+        ----------
+        task_type : str
+            The type of task for which the TreeLSTM model is being initialized.
+            Must be either "classifier" or "regressor".
 
         Returns
         -------
-        model : torch.nn.Module
-            The TreeLSTM model with randomly initialized weights.
+        torch.nn.Module
+            A TreeLSTM model composed of a RootedInTreeEncoder and a FeedforwardMLP
+            predictor, with randomly initialized weights.
+
+        Notes
+        -----
+        - The method assumes that the best hyperparameters for the model are stored in a YAML file
+          named `tree-lstm-{task_type}-best-parameter.yaml` in the `data/6_models` directory.
+        - The tuning pipeline configuration is loaded from a YAML file named
+          `treelstm_{task_type}_tuning_pipeline.yaml` in the `config` directory.
+        - The `RootedInTreeEncoder` is used for encoding tree-structured data, and the `FeedforwardMLP`
+          is used as the predictor.
         """
         logger.info(f"Initializing TreeLSTM model")
 
@@ -142,11 +169,13 @@ class ModelsModelOutputPipeline:
         model = ModelStack([encoder, predictor])
         return model
 
+    # TODO: Implement the image model initialization
     def _initialize_image_model(
         self,
     ) -> torch.nn.Module:
         pass
 
+    # TODO: Implement the invariant model initialization
     def _initialize_invariant_model(
         self,
     ) -> torch.nn.Module:
@@ -154,16 +183,27 @@ class ModelsModelOutputPipeline:
 
     def _load_model(self, path) -> None:
         """
-        Load the models from the `data/models` directory.
+        Load a model from the specified path and initialize it based on its type.
+
+        This method determines the type of model (classifier or regressor) and the
+        data type (images, trees, or invariants) from the filename, initializes the
+        appropriate model, and loads its state dictionary.
 
         Parameters
         ----------
         path : pathlib.Path
-            Path to the models state dict.
+            Path to the model's state dictionary file. The filename should follow
+            the format `<data_type>-<model_type>.pt`, where `data_type` can be
+            'images', 'trees', or 'invariants', and `model_type` can be 'classifier'
+            or 'regressor'.
 
-        Returns
-        -------
-        None
+        model : torch.nn.Module
+            The initialized and loaded PyTorch model.
+
+        Raises
+        ------
+        ValueError
+            If the `data_type` or `model_type` extracted from the filename is invalid.
         """
         logger.info(f"Loading model from {path}")
         model = None
@@ -196,11 +236,21 @@ class ModelsModelOutputPipeline:
 
     def _get_data_loader(self, task_type, data_type, scaler=None) -> None:
         """
-        Set the DataLoader object for the test data set.
+        Creates and returns a DataLoader object for the test dataset based on the specified task type and data type.
+
+        Parameters
+        ----------
+        task_type : str
+            The type of task to perform. Supported values are "regression" and "classification".
+        data_type : str
+            The type of data to process. Supported values are "images", "invariants", and "trees".
+        scaler : object, optional
+            A scaler object to normalize the data, if applicable. Default is None.
 
         Returns
         -------
-        None
+        DataLoader or GraphDataLoader
+            A DataLoader object for "images" and "invariants" data types, or a GraphDataLoader object for "trees" data type.
         """
 
         data_set = FabwaveDataset(
@@ -243,7 +293,8 @@ class ModelsModelOutputPipeline:
 
     def run(self):
         """
-        Execute the entire pipeline.
+        Execute the pipeline to generate predictions from classifier
+        and regressor models, saving the results to CSV files.
         """
         logger.info("Starting pipeline to output model predictions.")
         # process classifiers
