@@ -317,8 +317,7 @@ class ModelsModelOutputPipeline:
             for batch_count, (input_data, target, part_path) in enumerate(
                 test_data_loader
             ):
-                if batch_count == 2:  # TODO remove early break
-                    break
+
                 input_data = input_data.to(device)
                 prediction = model(input_data)
                 prediction = prediction.cpu().detach()
@@ -355,8 +354,7 @@ class ModelsModelOutputPipeline:
             for batch_count, (input_data, target, part_path) in enumerate(
                 test_data_loader
             ):
-                if batch_count == 2:  # TODO remove early break
-                    break
+
                 input_data = input_data.to(device)
                 prediction = model(input_data)
                 prediction = prediction.cpu().detach().numpy()
