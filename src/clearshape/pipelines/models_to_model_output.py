@@ -120,7 +120,7 @@ class ModelsModelOutputPipeline:
             path.stem: {"path": path} for path in cons.PATHS.DATA_MODELS.iterdir()
         }
 
-    def _initialize_tree_lstm(self, model_type) -> torch.nn.Module:
+    def _initialize_tree_lstm(self, task_type) -> torch.nn.Module:
         """
         Initialize the TreeLSTM model using the best parameters found during the hyperparameter search.
 
@@ -132,10 +132,10 @@ class ModelsModelOutputPipeline:
         logger.info(f"Initializing TreeLSTM model")
 
         model_parameter = OmegaConf.load(
-            cons.PATHS.DATA_REPORTING / f"tree-lstm-{model_type}-best-parameter.yaml"
+            cons.PATHS.DATA_MODELS / f"tree-lstm-{task_type}-best-parameter.yaml"
         )
         tuning_pipeline_config = OmegaConf.load(
-            cons.PATHS.CONFIG / f"treelstm_{model_type}_tuning_pipeline.yaml"
+            cons.PATHS.CONFIG / f"treelstm_{task_type}_tuning_pipeline.yaml"
         )
 
         encoder = RootedInTreeEncoder(
@@ -147,15 +147,18 @@ class ModelsModelOutputPipeline:
             input_shape=model_parameter.encoding_size,
             hidden_layers=model_parameter.hidden_layers,
             output_shape=tuning_pipeline_config.output_shape,
-            task_type=self.model_type,
         )
         model = ModelStack([encoder, predictor])
         return model
 
-    def _initialize_image_model(self, model_type) -> torch.nn.Module:
+    def _initialize_image_model(
+        self,
+    ) -> torch.nn.Module:
         pass
 
-    def _initialize_invariant_model(self, model_type) -> torch.nn.Module:
+    def _initialize_invariant_model(
+        self,
+    ) -> torch.nn.Module:
         pass
 
     def _load_model(self, path) -> None:
@@ -172,7 +175,6 @@ class ModelsModelOutputPipeline:
         None
         """
         logger.info(f"Loading model from {path}")
-        return True # TODO: remove this line. For testing purposes only
         model = None
         model_type = path.stem.split("-")[-1]  # regressor or classifier
         data_type = path.stem.split("-")[0]  # images, trees or invariants
@@ -194,7 +196,9 @@ class ModelsModelOutputPipeline:
                 f"Invalid model type: {data_type}-{model_type}. Supported types are: images, trees, invariants for data and regressor, classifier for model type."
             )
 
-        model.load_state_dict(torch.load(self.model_path), weight_only=True)
+        model.load_state_dict(
+            torch.load(path, weights_only=True, map_location=device), strict=False
+        )
         model.to(device)
         model.eval()
         return model
@@ -211,7 +215,8 @@ class ModelsModelOutputPipeline:
         data_set = FabwaveDataset(
             cons.PATHS.DATA_MODEL_INPUT / "test.csv",
             data_type=data_type,
-            task_type=task_type,
+            regression=task_type == "regression",
+            classification=task_type == "classification",
             scaler=scaler,
         )
         match data_type:
@@ -296,7 +301,6 @@ class ModelsModelOutputPipeline:
         for model in classifier_models:
             logger.info(f"Processing classifier model: {model}")
             data_type = model.split("-")[0]  # images, trees or invariants
-            logger.debug(model)
             model = self._load_model(classifier_models[model]["path"])
             test_data_loader = self._get_data_loader("classification", data_type)
 
@@ -306,7 +310,7 @@ class ModelsModelOutputPipeline:
                 if batch_count == 2:  # TODO remove early break
                     break
                 input_data = input_data.to(device)
-                prediction = torch.rand((32, 38))  # TODO replace with model(input_data)
+                prediction = model(input_data)
                 prediction = prediction.cpu().detach()
                 prediction = prediction.argmax(dim=1).numpy()
                 predictions["path"].extend(part_path)
@@ -332,7 +336,6 @@ class ModelsModelOutputPipeline:
         for model in regressor_models:
             logger.info(f"Processing regressor model: {model}")
             data_type = model.split("-")[0]
-            logger.debug(model)
             model = self._load_model(regressor_models[model]["path"])
             scaler = self._get_scaler(cons.PATHS.DATA_MODEL_INPUT / "robust_scaler.pkl")
             test_data_loader = self._get_data_loader(
@@ -345,7 +348,7 @@ class ModelsModelOutputPipeline:
                 if batch_count == 2:  # TODO remove early break
                     break
                 input_data = input_data.to(device)
-                prediction = torch.rand((32, 4))  # TODO replace with model(input_data)
+                prediction = model(input_data)
                 prediction = prediction.cpu().detach().numpy()
                 prediction = scaler.inverse_transform(prediction)
 
@@ -360,7 +363,7 @@ class ModelsModelOutputPipeline:
             cons.PATHS.DATA_MODEL_OUTPUT / "regressors_output.csv", index=False
         )
 
-        logger.info("Pipeline completed.")
+        logger.info("Pipeline finished.")
 
 
 if __name__ == "__main__":
