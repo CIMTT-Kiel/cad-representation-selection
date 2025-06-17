@@ -132,7 +132,7 @@ class Trainer:
         logger.debug("Starting training one epoch.")
         self.model.train()
         loss_total = 0
-        for batch_idx, (inputs, targets) in enumerate(self.train_loader):
+        for batch_idx, (inputs, targets, path) in enumerate(self.train_loader):
             inputs, targets = inputs.to(self.device), targets.to(self.device)
             self.optimizer.zero_grad()
             outputs = self.model(inputs)
@@ -179,7 +179,7 @@ class Trainer:
         self.model.eval()
         loss_total = 0
         with torch.no_grad():
-            for inputs, targets in self.train_loader:
+            for inputs, targets, path in self.train_loader:
                 inputs, targets = inputs.to(self.device), targets.to(self.device)
                 outputs = self.model(inputs)
                 loss = self.loss_fn(outputs, targets)
@@ -200,7 +200,7 @@ class Trainer:
         self.model.eval()
         test_score_total = 0
         with torch.no_grad():
-            for inputs, targets in self.test_loader:
+            for inputs, targets, path in self.test_loader:
                 inputs, targets = inputs.to(self.device), targets.to(self.device)
                 outputs = self.model(inputs)
                 try:
