@@ -124,4 +124,5 @@ class FabwaveDataset(Dataset):
         elif self.regression:
             target = torch.tensor([row['volume'], row['faces'], row['edges'], row['vertices']], dtype=torch.float32)  # Convert class label to float for regression
         
-        return data_representation, target
+        path = row['path']
+        return data_representation, target, path
