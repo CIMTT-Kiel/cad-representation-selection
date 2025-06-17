@@ -715,7 +715,7 @@ class TreeLSTMTuningPipeline():
         best_parameter = self._load_best_parameter()
         best_parameter.update(best_tuned_parameter)
         logger.debug(f"best parameter before saving: {best_parameter}")
-        best_parameter_path = Path("tmp") / self._conf.file_best_parameter
+        best_parameter_path = cons.PATHS.DATA_MODELS / self._conf.file_best_parameter
         with open(best_parameter_path, "w") as f:
             yaml.dump(best_parameter, f)
 
