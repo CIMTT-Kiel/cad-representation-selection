@@ -229,7 +229,7 @@ class TreeLSTMTuningPipeline():
         predictor = FeedforwardMLP(
             input_shape=params["encoding_size"],
             hidden_layers=params["hidden_layers"],
-            output_shape=self._conf.output_shape,
+            output_shape=pd.read_csv(cons.PATHS.DATA_MODEL_INPUT / "train.csv")["class_id"].nunique() if self.classification else self._conf.output_shape,
             activation=nn.ReLU(),
             # Use ReLU for regression, because regression targets are non-negative
             output_activation= output_activation,
