@@ -115,7 +115,10 @@ class PrimaryFeaturePipeline:
             cons.PATHS.DATA_PRIMARY / "fabwave"
         ).rglob("*.step")
         self._targets= []
-        self._known_classes = []
+        try:
+            self._known_classes = pd.read_csv(cons.PATHS.DATA_FEATURE / "fabwave_targets.csv")["class_name"].unique().tolist()
+        except (pd.errors.EmptyDataError, FileNotFoundError):
+            self._known_classes = []
 
         # get list of files already processed
         try:
