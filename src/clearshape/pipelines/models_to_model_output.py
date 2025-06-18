@@ -164,7 +164,7 @@ class ModelsModelOutputPipeline:
         predictor = FeedforwardMLP(
             input_shape=model_parameter.encoding_size,
             hidden_layers=model_parameter.hidden_layers,
-            output_shape=tuning_pipeline_config.output_shape,
+            output_shape=pd.read_csv(cons.PATHS.DATA_MODEL_INPUT / "train.csv")["class_id"].nunique() if task_type == "classifier" else tuning_pipeline_config.output_shape,
         )
         model = ModelStack([encoder, predictor])
         return model
