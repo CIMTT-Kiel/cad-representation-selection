@@ -1,13 +1,11 @@
 # TODO: add all missing docstring and update
 
-#%%
+# %%
 # This pipeline is supposed to take the results from the prediction computation and compute the reporting metrics.
 # For the classifier models the metrics are accuracy, precision, recall, and F1 score. As well as the confusion matricies.
 
 # The gaol is to save
-"""
-
-"""
+""" """
 
 
 # standard library
@@ -35,37 +33,54 @@ stream_handler.setLevel(logging_level)
 stream_handler.setFormatter(formatter)
 logger.addHandler(stream_handler)
 
+
 class ModelOutputToReportingPipeline:
-    """
+    """ """
 
-    """
-
-    def _filter_for_data_type(self, classifier_output: pd.DataFrame, test_data: pd.DataFrame, data_type: str):
+    def _filter_output_for_data_type(
+        self,
+        output: pd.DataFrame,
+        test_data: pd.DataFrame,
+        data_type: str,
+        is_classifier: bool,
+    ):
         """
-        Filters the classifier output and test data for a specific data type and returns the true class IDs, predicted class IDs, and class names.
+        Filters the output and test data for a specific data type and returns the true and predicted values.
 
         Parameters
         ----------
-        classifier_output : pd.DataFrame
-            DataFrame containing the classifier output with columns 'data_type', 'path', and 'pred_class_id'.
+        output : pd.DataFrame
+            DataFrame containing the model output with columns 'data_type', 'path', and prediction columns.
         test_data : pd.DataFrame
-            DataFrame containing the test data with columns 'path', 'class_id', and 'class_name'.
+            DataFrame containing the test data with columns 'path' and true value columns.
         data_type : str
             The specific data type to filter and process.
+        is_classifier : bool
+            Whether the output is from a classifier or regressor.
 
         Returns
         -------
         tuple
-            A tuple containing the true class IDs, predicted class IDs, and class names.
+            A tuple containing the true values and predicted values.
         """
-        data_subset = classifier_output.query("data_type == @data_type")
-        # assert values are in correct order
+        logger.info(f"Filtering output for data type: {data_type}")
+        data_subset = output.query("data_type == @data_type")
         assert all(data_subset["path"] == test_data["path"])
-        class_ids_true = test_data["class_id"]
-        class_ids_predicted = data_subset["pred_class_id"]
-        return class_ids_true, class_ids_predicted
-    
-    def _save_confusion_matrix(self, class_ids_true, class_ids_predicted, data_type, class_id_name_map:dict) -> None:
+
+        if is_classifier:
+            true_values = test_data["class_id"]
+            predicted_values = data_subset["pred_class_id"]
+        else:
+            true_values = test_data[["volume", "faces", "edges", "vertices"]]
+            predicted_values = data_subset[
+                ["pred_volume", "pred_faces", "pred_edges", "pred_vertices"]
+            ]
+
+        return true_values, predicted_values
+
+    def _save_confusion_matrix(
+        self, class_ids_true, class_ids_predicted, data_type, class_id_name_map: dict
+    ) -> None:
         """
         Calculates and saves confusion matrices for each data type approch.
 
@@ -77,18 +92,28 @@ class ModelOutputToReportingPipeline:
             DataFrame containing the classifier output with columns 'data_type', 'path', and 'pred_class_id'.
         test_data : pd.DataFrame
             DataFrame containing the test data with columns 'path', 'class_id', and 'class_name'.
-        
+
         Returns
         -------
         None
         """
         logger.info(f"Saving confusion matrix for data type: {data_type}")
-        confusion_matrix = metrics.confusion_matrix(class_ids_true, class_ids_predicted, normalize='true')
+        confusion_matrix = metrics.confusion_matrix(
+            class_ids_true, class_ids_predicted, normalize="true"
+        )
 
-        confusion_matrix = pd.DataFrame(confusion_matrix, index=class_id_name_map.values(), columns=class_id_name_map.values())
-        confusion_matrix.to_csv(cons.PATHS.DATA_REPORTING / f"confusion_matrix_{data_type}.csv", index=True)
-    
-    def _save_classification_report(self, class_ids_true, class_ids_predicted, data_type, class_id_name_map) -> None:
+        confusion_matrix = pd.DataFrame(
+            confusion_matrix,
+            index=class_id_name_map.values(),
+            columns=class_id_name_map.values(),
+        )
+        confusion_matrix.to_csv(
+            cons.PATHS.DATA_REPORTING / f"confusion_matrix_{data_type}.csv", index=True
+        )
+
+    def _save_classification_metrics(
+        self, classifier_output: pd.DataFrame, test_data: pd.DataFrame
+    ) -> None:
         """
         Calculates and saves the classification report for each data type approach.
 
@@ -100,17 +125,146 @@ class ModelOutputToReportingPipeline:
             DataFrame containing the classifier output with columns 'data_type', 'path', and 'pred_class_id'.
         test_data : pd.DataFrame
             DataFrame containing the test data with columns 'path', 'class_id', and 'class_name'.
-        
+
         Returns
         -------
         None
         """
-        target_names = list(class_id_name_map.values())
-        report = metrics.classification_report(class_ids_true, class_ids_predicted, output_dict=True, target_names=target_names)
-        report_df = pd.DataFrame(report).transpose()
-        report_df.to_csv(cons.PATHS.DATA_REPORTING / f"classification_report_{data_type}.csv", index=True)
+        logger.info("Saving classification metrics")
+        results = []
+        for data_type in classifier_output["data_type"].unique():
+            class_ids_true, class_ids_predicted = self._filter_output_for_data_type(
+                classifier_output, test_data, data_type, is_classifier=True
+            )
+            accuracy = metrics.accuracy_score(class_ids_true, class_ids_predicted)
+            f1_score = metrics.f1_score(
+                class_ids_true, class_ids_predicted, average="micro"
+            )
+            recall = metrics.recall_score(
+                class_ids_true, class_ids_predicted, average="micro"
+            )
+            precision = metrics.precision_score(
+                class_ids_true, class_ids_predicted, average="micro"
+            )
+            results.append(
+                {
+                    "data_type": data_type,
+                    "accuracy_micro": accuracy,
+                    "f1_score_micro": f1_score,
+                    "recall_micro": recall,
+                    "precision_micro": precision,
+                }
+            )
 
-            
+        results_df = pd.DataFrame(results)
+        results_df.to_csv(
+            cons.PATHS.DATA_REPORTING / "classification_report.csv", index=False
+        )
+
+    def _save_regression_metrics(
+        self, regressor_output: pd.DataFrame, test_data: pd.DataFrame
+    ) -> None:
+        """
+        Calculates and saves the regression metrics for each data type approach.
+
+        The regression metrics include Mean Absolute Error (MAE), Mean Squared Error (MSE), and R-squared.
+
+        Parameters
+        ----------
+        regressor_output : pd.DataFrame
+            DataFrame containing the regressor output with columns 'data_type', 'path', and predicted values.
+        test_data : pd.DataFrame
+            DataFrame containing the test data with columns 'path' and true values.
+
+        Returns
+        -------
+        None
+        """
+        logger.info("Saving regression metrics")
+        results = []
+        for data_type in regressor_output["data_type"].unique():
+            for attribute in ["volume", "faces", "edges", "vertices"]:
+                true_values, predicted_values = self._filter_output_for_data_type(
+                    regressor_output, test_data, data_type, is_classifier=False
+                )
+                mae = metrics.mean_absolute_error(true_values, predicted_values)
+                mse = metrics.mean_squared_error(true_values, predicted_values)
+                r2 = metrics.r2_score(true_values, predicted_values)
+                results.append(
+                    {
+                        "data_type": data_type,
+                        "attribute": attribute,
+                        "mae": mae,
+                        "mse": mse,
+                        "r2": r2,
+                    }
+                )
+
+            results_df = pd.DataFrame(results)
+            results_df.to_csv(
+                cons.PATHS.DATA_REPORTING / "regression_report.csv", index=False
+            )
+
+    def _calc_error_table(
+        self, regressor_output: pd.DataFrame, test_data: pd.DataFrame
+    ) -> None:
+        """
+        Calculates and saves the error table for regression metrics.
+
+        The error table includes the absolute error, relative error, and percentage error for each attribute.
+
+        Parameters
+        ----------
+        regressor_output : pd.DataFrame
+            DataFrame containing the regressor output with columns 'data_type', 'path', and predicted values.
+        test_data : pd.DataFrame
+            DataFrame containing the test data with columns 'path', 'volume', 'faces', 'edges', and 'vertices'.
+
+        Returns
+        -------
+        None
+            Saves the error table as a CSV file in the reporting directory.
+        """
+        logger.info("Calculating error table")
+        errors = pd.DataFrame(
+            columns=[
+                "path",
+                "data_type",
+                "volume_error",
+                "faces_error",
+                "edges_error",
+                "vertices_error",
+            ]
+        )
+        for data_type in regressor_output["data_type"].unique():
+            data_type_output = regressor_output.query("data_type == @data_type")
+            errors = pd.concat(
+                [errors, data_type_output[["path", "data_type"]]], ignore_index=True
+            )
+            errors["volume_error"] = abs(
+                data_type_output["pred_volume"] - test_data["volume"]
+            )
+            errors["faces_error"] = abs(
+                data_type_output["pred_faces"] - test_data["faces"]
+            )
+            errors["edges_error"] = abs(
+                data_type_output["pred_edges"] - test_data["edges"]
+            )
+            errors["vertices_error"] = abs(
+                data_type_output["pred_vertices"] - test_data["vertices"]
+            )
+            errors["volume_relative_error"] = (
+                errors["volume_error"] / test_data["volume"]
+            )
+            errors["faces_relative_error"] = errors["faces_error"] / test_data["faces"]
+            errors["edges_relative_error"] = errors["edges_error"] / test_data["edges"]
+            errors["vertices_relative_error"] = (
+                errors["vertices_error"] / test_data["vertices"]
+            )
+        errors.to_csv(
+            cons.PATHS.DATA_REPORTING / "regression_error_table.csv", index=False
+        )
+
     def run(self):
         """
         Execute the pipeline to compute reporting metrics and save confusion matrices.
@@ -120,21 +274,47 @@ class ModelOutputToReportingPipeline:
         None
         """
         logger.info("Starting Model Output to Reporting Pipeline...")
-        logger.info("Compute classifier metrics.")
-        classifier_output = pd.read_csv(cons.PATHS.DATA_MODEL_OUTPUT / "classifiers_output.csv")
-        test_data = pd.read_csv(cons.PATHS.DATA_MODEL_INPUT / "test.csv")
 
+        # === CLASSIFICATION METRICS ===
+        logger.info("Compute classifier metrics.")
+        # load predictions and test data
+        classifier_output = pd.read_csv(
+            cons.PATHS.DATA_MODEL_OUTPUT / "classifiers_output.csv"
+        )
+        test_data = pd.read_csv(cons.PATHS.DATA_MODEL_INPUT / "test.csv")[
+            ["path", "class_id", "class_name"]
+        ]
+
+        # calculate and save confusion matrices for each data type
         for data_type in classifier_output["data_type"].unique():
             logger.info(f"Processing data type: {data_type}")
-            class_ids_true, class_ids_predicted = self._filter_for_data_type(classifier_output, test_data, data_type)
-            class_id_to_class_name = dict(zip(test_data["class_id"].unique(), test_data["class_name"].unique()))
-            self._save_confusion_matrix(class_ids_true, class_ids_predicted, data_type, class_id_to_class_name)
-            self._save_classification_report(class_ids_true, class_ids_predicted, data_type, class_id_to_class_name)
+            class_ids_true, class_ids_predicted = self._filter_output_for_data_type(
+                classifier_output, test_data, data_type, is_classifier=True
+            )
+            class_id_to_class_name = dict(
+                zip(test_data["class_id"].unique(), test_data["class_name"].unique())
+            )
+            self._save_confusion_matrix(
+                class_ids_true, class_ids_predicted, data_type, class_id_to_class_name
+            )
 
+        self._save_classification_metrics(classifier_output, test_data)
+
+        # === REGRESSION METRICS ===
         logger.info("Compute regression metrics.")
-        logger.info("Not implemented yet")
-        
+        # load predictions and test data
+        regressor_output = pd.read_csv(
+            cons.PATHS.DATA_MODEL_OUTPUT / "regressors_output.csv"
+        )
+        test_data = pd.read_csv(cons.PATHS.DATA_MODEL_INPUT / "test.csv")[
+            ["path", "volume", "faces", "edges", "vertices"]
+        ]
+
+        self._save_regression_metrics(regressor_output, test_data)
+        self._calc_error_table(regressor_output, test_data)
+
         logger.info("Pipeline completed successfully.")
+
 
 if __name__ == "__main__":
     pipeline = ModelOutputToReportingPipeline()
