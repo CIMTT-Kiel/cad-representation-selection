@@ -1,24 +1,16 @@
-# TODO: add all missing docstring and update
-
 # %%
-# This pipeline is supposed to take the results from the prediction computation and compute the reporting metrics.
-# For the classifier models the metrics are accuracy, precision, recall, and F1 score. As well as the confusion matricies.
+"""
+This module implements a pipeline to process the predictions and the test data to compute reporting metrics.
 
-# The gaol is to save
-""" """
-
+For details see the documentation of the `ModelOutputToReportingPipeline` class.
+"""
 
 # standard library
 import logging
 
 # third-party
 import pandas as pd
-import sklearn as skl
-from sklearn.utils import multiclass
 import sklearn.metrics as metrics
-import matplotlib.pyplot as plt
-import seaborn as sns
-import seaborn.objects as so
 
 # custom packages
 import clearshape.constants as cons
@@ -35,9 +27,28 @@ logger.addHandler(stream_handler)
 
 
 class ModelOutputToReportingPipeline:
-    """ """
+    """
+    Pipeline to process the model output and test data to compute reporting metrics.
 
-    def _filter_output_for_data_type(
+    This pipeline computes confusion matrices for classification tasks, classification metrics,
+    regression metrics, and an error table for regression tasks. It saves the results to CSV files
+    in the reporting directory.
+
+    Parameters
+    ----------
+    None
+
+    Attributes
+    ----------
+    None
+
+    Methods
+    -------
+    run() : None
+        Executes the pipeline to compute reporting metrics and save confusion matrices.
+    """
+
+    def _get_true_and_prediced_values(
         self,
         output: pd.DataFrame,
         test_data: pd.DataFrame,
@@ -45,7 +56,11 @@ class ModelOutputToReportingPipeline:
         is_classifier: bool,
     ):
         """
-        Filters the output and test data for a specific data type and returns the true and predicted values.
+        Filters the model output for a specific data type and returns the true and predicted values.
+
+        This method ensures that the paths in the model output and test data match for the specified data type.
+        For classification tasks, it retrieves the true class IDs and predicted class IDs.
+        For regression tasks, it retrieves the true and predicted values for the attributes volume, faces, edges, and vertices.
 
         Parameters
         ----------
@@ -54,14 +69,14 @@ class ModelOutputToReportingPipeline:
         test_data : pd.DataFrame
             DataFrame containing the test data with columns 'path' and true value columns.
         data_type : str
-            The specific data type to filter and process.
+            The specific data type to filter and process. (trees, images, or invariants)
         is_classifier : bool
-            Whether the output is from a classifier or regressor.
+            Whether the output is from a classifier (True) or regressor (False).
 
         Returns
         -------
         tuple
-            A tuple containing the true values and predicted values.
+            A tuple containing the true values and predicted values as pandas Series or DataFrames.
         """
         logger.info(f"Filtering output for data type: {data_type}")
         data_subset = output.query("data_type == @data_type")
@@ -82,16 +97,21 @@ class ModelOutputToReportingPipeline:
         self, class_ids_true, class_ids_predicted, data_type, class_id_name_map: dict
     ) -> None:
         """
-        Calculates and saves confusion matrices for each data type approch.
+        Saves confusion matrices for each data type approach.
 
-        The column header of the confusion matricies are the predicted class ids, and the index are the true class ids.
+        The confusion matrix provides normalized values representing the proportion of true class IDs classified as each predicted class ID.
+        The rows correspond to true class IDs, and the columns correspond to predicted class IDs.
 
         Parameters
         ----------
-        classifier_output : pd.DataFrame
-            DataFrame containing the classifier output with columns 'data_type', 'path', and 'pred_class_id'.
-        test_data : pd.DataFrame
-            DataFrame containing the test data with columns 'path', 'class_id', and 'class_name'.
+        class_ids_true : pd.Series
+            Series containing the true class IDs.
+        class_ids_predicted : pd.Series
+            Series containing the predicted class IDs.
+        data_type : str
+            The specific data type being processed (e.g., trees, images, or invariants).
+        class_id_name_map : dict
+            Dictionary mapping class IDs to their corresponding class names.
 
         Returns
         -------
@@ -115,9 +135,10 @@ class ModelOutputToReportingPipeline:
         self, classifier_output: pd.DataFrame, test_data: pd.DataFrame
     ) -> None:
         """
-        Calculates and saves the classification report for each data type approach.
+        Computes and saves classification metrics for each data type.
 
-        The classification report includes precision, recall, F1-score, and support for each class.
+        This method calculates metrics such as accuracy, F1-score, recall, and precision for classification tasks.
+        The results are aggregated and saved as a CSV file in the reporting directory.
 
         Parameters
         ----------
