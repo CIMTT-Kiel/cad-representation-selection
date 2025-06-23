@@ -305,6 +305,37 @@ class ModelOutputToReportingPipeline:
             "wb") as f:
             f.write(buffer.getvalue())
         buffer.close()
+
+    def _save_regression_plot(self, regressing_report:pd.DataFrame) -> None:
+        """
+        Creates and saves a bar plot for the regression report.
+
+        This method generates a bar plot showing the Mean Absolute Error (MAE) for each attribute
+        across different data types. The plot is saved as a PNG file in the reporting directory.
+
+        Parameters
+        ----------
+        regressing_report : pd.DataFrame
+            DataFrame containing the regression report with columns 'data_type', 'attribute', and 'mae'.
+        
+        Returns
+        -------
+        so.Plot
+            A seaborn objects Plot instance representing the bar plot.
+        """
+        plot = (
+            so.Plot(regressing_report, x="attribute", y="mae", color="data_type",)
+            .add(
+                so.Bar(), so.Dodge()
+            )
+            .label(title="Mean Absolute Error (MAE) by Attribute and Data Type",
+                   x="Attribute", y="Mean Absolute Error (MAE)", color="Data Type")
+        )
+        plot.save(
+            cons.PATHS.DATA_REPORTING / "regression_mae_plot.png",
+            format="png",
+            bbox_inches="tight",
+        )
     def run(self):
         """
         Execute the pipeline to compute reporting metrics and save confusion matrices.
