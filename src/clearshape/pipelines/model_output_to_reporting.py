@@ -93,7 +93,7 @@ class ModelOutputToReportingPipeline:
 
         return true_values, predicted_values
 
-    def _save_confusion_matrix(
+    def _get_confusion_matrix(
         self, class_ids_true, class_ids_predicted, data_type, class_id_name_map: dict
     ) -> None:
         """
@@ -127,13 +127,11 @@ class ModelOutputToReportingPipeline:
             index=class_id_name_map.values(),
             columns=class_id_name_map.values(),
         )
-        confusion_matrix.to_csv(
-            cons.PATHS.DATA_REPORTING / f"confusion_matrix_{data_type}.csv", index=True
-        )
+        return confusion_matrix
 
-    def _save_classification_metrics(
+    def _get_classification_metrics(
         self, classifier_output: pd.DataFrame, test_data: pd.DataFrame
-    ) -> None:
+    ) -> pd.DataFrame:
         """
         Computes and saves classification metrics for each data type.
 
@@ -149,9 +147,12 @@ class ModelOutputToReportingPipeline:
 
         Returns
         -------
-        None
+        results_df : pd.DataFrame
+            DataFrame containing the classification metrics for each data type.
+            The DataFrame has columns 'data_type', 'accuracy_micro', 'f1_score_micro',
+            'recall_micro', and 'precision_micro'.
         """
-        logger.info("Saving classification metrics")
+        logger.debug("Saving classification metrics")
         results = []
         for data_type in classifier_output["data_type"].unique():
             class_ids_true, class_ids_predicted = self._filter_output_for_data_type(
@@ -178,15 +179,13 @@ class ModelOutputToReportingPipeline:
             )
 
         results_df = pd.DataFrame(results)
-        results_df.to_csv(
-            cons.PATHS.DATA_REPORTING / "classification_report.csv", index=False
-        )
+        return results_df
 
-    def _save_regression_metrics(
+    def _get_regression_metrics(
         self, regressor_output: pd.DataFrame, test_data: pd.DataFrame
-    ) -> None:
+    ) -> pd.DataFrame:
         """
-        Calculates and saves the regression metrics for each data type approach.
+        Calculates and returns the regression metrics for each data type approach.
 
         The regression metrics include Mean Absolute Error (MAE), Mean Squared Error (MSE), and R-squared.
 
@@ -199,9 +198,11 @@ class ModelOutputToReportingPipeline:
 
         Returns
         -------
-        None
+        results_df : pd.DataFrame
+            DataFrame containing the regression metrics for each data type and attribute.
+            The DataFrame has columns 'data_type', 'attribute', 'mae', 'mse', and 'r2'.
         """
-        logger.info("Saving regression metrics")
+        logger.debug("Getting regression metrics")
         results = []
         for data_type in regressor_output["data_type"].unique():
             for attribute in ["volume", "faces", "edges", "vertices"]:
@@ -222,15 +223,13 @@ class ModelOutputToReportingPipeline:
                 )
 
             results_df = pd.DataFrame(results)
-            results_df.to_csv(
-                cons.PATHS.DATA_REPORTING / "regression_report.csv", index=False
-            )
+        return results_df
 
-    def _calc_error_table(
+    def _get_error_table(
         self, regressor_output: pd.DataFrame, test_data: pd.DataFrame
-    ) -> None:
+    ) -> pd.DataFrame:
         """
-        Calculates and saves the error table for regression metrics.
+        Calculates and returns the error table for regression metrics.
 
         The error table includes the absolute error, relative error, and percentage error for each attribute.
 
@@ -243,8 +242,10 @@ class ModelOutputToReportingPipeline:
 
         Returns
         -------
-        None
-            Saves the error table as a CSV file in the reporting directory.
+        errors : pd.DataFrame
+            DataFrame containing the error table with columns 'path', 'data_type', 'volume_error
+            ', 'faces_error', 'edges_error', 'vertices_error', 'volume_relative_error',
+            'faces_relative_error', 'edges_relative_error', and 'vertices_relative_error'.
         """
         logger.info("Calculating error table")
         errors = pd.DataFrame(
@@ -262,28 +263,15 @@ class ModelOutputToReportingPipeline:
             errors = pd.concat(
                 [errors, data_type_output[["path", "data_type"]]], ignore_index=True
             )
-            errors["volume_error"] = abs(
-                data_type_output["pred_volume"] - test_data["volume"]
-            )
-            errors["faces_error"] = abs(
-                data_type_output["pred_faces"] - test_data["faces"]
-            )
-            errors["edges_error"] = abs(
-                data_type_output["pred_edges"] - test_data["edges"]
-            )
-            errors["vertices_error"] = abs(
-                data_type_output["pred_vertices"] - test_data["vertices"]
-            )
-            errors["volume_relative_error"] = (
-                errors["volume_error"] / test_data["volume"]
-            )
+            errors["volume_error"] = abs(data_type_output["pred_volume"] - test_data["volume"])
+            errors["faces_error"] = abs(data_type_output["pred_faces"] - test_data["faces"])
+            errors["edges_error"] = abs(data_type_output["pred_edges"] - test_data["edges"])
+            errors["vertices_error"] = abs(data_type_output["pred_vertices"] - test_data["vertices"])
+            errors["volume_relative_error"] = (errors["volume_error"] / test_data["volume"])
             errors["faces_relative_error"] = errors["faces_error"] / test_data["faces"]
             errors["edges_relative_error"] = errors["edges_error"] / test_data["edges"]
-            errors["vertices_relative_error"] = (
-                errors["vertices_error"] / test_data["vertices"]
-            )
-        errors.to_csv(
-            cons.PATHS.DATA_REPORTING / "regression_error_table.csv", index=False
+            errors["vertices_relative_error"] = (errors["vertices_error"] / test_data["vertices"])
+        return errors
         )
 
     def run(self):
