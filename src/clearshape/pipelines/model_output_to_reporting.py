@@ -336,6 +336,41 @@ class ModelOutputToReportingPipeline:
             format="png",
             bbox_inches="tight",
         )
+
+    def _save_classification_metrics_plot(self, classification_metrics: pd.DataFrame) -> None:
+        """
+        Creates and saves a bar plot for the classification metrics.
+
+        This method generates a bar plot showing the accuracy, F1-score, recall, and precision
+        for each data type. The plot is saved as a PNG file in the reporting directory.
+
+        Parameters
+        ----------
+        classification_metrics : pd.DataFrame
+            DataFrame containing the classification metrics with columns 'data_type', 'accuracy_micro',
+            'f1_score_micro', 'recall_micro', and 'precision_micro'.
+
+        Returns
+        -------
+        so.Plot
+            A seaborn objects Plot instance representing the bar plot.
+        """
+        plot = (
+            so.Plot(classification_metrics, x="data_type")
+            .add(so.Bar(), so.Dodge())
+            .label(
+                title="Classification Metrics by Data Type",
+                x="Data Type",
+                y="Metric Value",
+                color="Metric",
+            )
+            .scale(y=so.Scale("linear", zero=False))
+        )
+        plot.save(
+            cons.PATHS.DATA_REPORTING / "classification_metrics_plot.png",
+            format="png",
+            bbox_inches="tight",
+        )
     def run(self):
         """
         Execute the pipeline to compute reporting metrics and save confusion matrices.
