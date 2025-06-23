@@ -272,8 +272,39 @@ class ModelOutputToReportingPipeline:
             errors["edges_relative_error"] = errors["edges_error"] / test_data["edges"]
             errors["vertices_relative_error"] = (errors["vertices_error"] / test_data["vertices"])
         return errors
+    
+    def _save_confusion_matrix_plot(self, confusion_matrix:pd.DataFrame, data_type: str) -> None:
+        """"""
+        plot = sns.heatmap(
+            confusion_matrix,
+            annot=True,
+            fmt=".2f",
+            cmap="Blues",
+            cbar=False,
+            xticklabels=confusion_matrix.columns,
+            yticklabels=confusion_matrix.index,
         )
+        logger.debug("set labels")
+        plot.set_xlabel("Predicted Class")
+        plot.set_ylabel("True Class")
+        plot.set_title("Confusion Matrix for " + data_type + " approach")
+        
+        # Save the plot to a buffer
+        logger.debug("Saving confusion matrix plot to buffer.")
+        buffer = io.BytesIO()
 
+        plot.figure.savefig(
+            buffer,
+            format="png",
+            bbox_inches="tight",
+        )
+        buffer.seek(0)
+        # Save the plot to a file
+        with open(
+            cons.PATHS.DATA_REPORTING / f"confusion_matrix_{data_type}.png",
+            "wb") as f:
+            f.write(buffer.getvalue())
+        buffer.close()
     def run(self):
         """
         Execute the pipeline to compute reporting metrics and save confusion matrices.
