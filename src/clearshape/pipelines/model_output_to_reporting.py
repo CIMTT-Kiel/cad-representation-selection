@@ -272,69 +272,6 @@ class ModelOutputToReportingPipeline:
             errors["edges_relative_error"] = errors["edges_error"] / test_data["edges"]
             errors["vertices_relative_error"] = (errors["vertices_error"] / test_data["vertices"])
         return errors
-    
-    def _save_confusion_matrix_plot(self, confusion_matrix:pd.DataFrame, data_type: str) -> None:
-        """"""
-        plot = sns.heatmap(
-            confusion_matrix,
-            annot=True,
-            fmt=".2f",
-            cmap="Blues",
-            cbar=False,
-            xticklabels=confusion_matrix.columns,
-            yticklabels=confusion_matrix.index,
-        )
-        logger.debug("set labels")
-        plot.set_xlabel("Predicted Class")
-        plot.set_ylabel("True Class")
-        plot.set_title("Confusion Matrix for " + data_type + " approach")
-        
-        # Save the plot to a buffer
-        logger.debug("Saving confusion matrix plot to buffer.")
-        buffer = io.BytesIO()
-
-        plot.figure.savefig(
-            buffer,
-            format="png",
-            bbox_inches="tight",
-        )
-        buffer.seek(0)
-        # Save the plot to a file
-        with open(
-            cons.PATHS.DATA_REPORTING / f"confusion_matrix_{data_type}.png",
-            "wb") as f:
-            f.write(buffer.getvalue())
-        buffer.close()
-
-    def _save_regression_plot(self, regressing_report:pd.DataFrame) -> None:
-        """
-        Creates and saves a bar plot for the regression report.
-
-        This method generates a bar plot showing the Mean Absolute Error (MAE) for each attribute
-        across different data types. The plot is saved as a PNG file in the reporting directory.
-
-        Parameters
-        ----------
-        regressing_report : pd.DataFrame
-            DataFrame containing the regression report with columns 'data_type', 'attribute', and 'mae'.
-        
-        Returns
-        -------
-        so.Plot
-            A seaborn objects Plot instance representing the bar plot.
-        """
-        plot = (
-            so.Plot(regressing_report, x="attribute", y="mae", color="data_type",)
-            .add(
-                so.Bar(), so.Dodge()
-            )
-            .label(title="Mean Absolute Error (MAE) by Attribute and Data Type",
-                   x="Attribute", y="Mean Absolute Error (MAE)", color="Data Type")
-        )
-        plot.save(
-            cons.PATHS.DATA_REPORTING / "regression_mae_plot.png",
-            format="png",
-            bbox_inches="tight",
         )
 
     def _save_classification_metrics_plot(self, classification_metrics: pd.DataFrame) -> None:
