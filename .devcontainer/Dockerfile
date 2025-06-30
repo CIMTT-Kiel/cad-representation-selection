@@ -5,7 +5,8 @@ WORKDIR /clear-shape
 # Install packages for visualization of graphs
 RUN apt-get update && apt-get install -y \
      graphviz \
-     graphviz-dev
+     graphviz-dev \
+     libgl1
 
 # # # Download and extract gmsh SDK
 # RUN wget https://gmsh.info/bin/Linux/gmsh-4.12.2-Linux64-sdk.tgz \
