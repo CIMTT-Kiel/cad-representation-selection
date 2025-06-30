@@ -22,7 +22,7 @@ import pandas as pd
 from clearshape import constants
 
 # Logger konfigurieren
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.WARNING)
 
 class RawPrimaryPipeline:
     """
@@ -129,18 +129,18 @@ class RawPrimaryPipeline:
 
                 elif response_dict["fused"] == False:
                     #save the original file to a new location
-                    shutil.copy(step_file.as_posix(), target_file.as_posix())
+                    #shutil.copy(step_file.as_posix(), target_file.as_posix())
                     multibody_step_files.append(step_file)
 
                 else:
-                    logging.warning("Error while posting to RestAPI!")
+                    logging.warning(f"Error while posting to RestAPI for {step_file}")
                     self.error_files[step_file] = "Error while posting to RestAPI"
         
         return (fused_step_files, multibody_step_files)
     
     def merge_multibodie_parts_if_possible(self,fused_files : List, multibody_parts : List):
         """Try to fix multibody parts by separating the bodies by volume. The rules which and if to keep differs by the class. These rule are hardcoded based on previous observations"""
-        logging.info(" Try to merge reamining multibodie parts")
+        logging.debug(" Try to merge reamining multibodie parts")
 
         files_pool= fused_files.copy()
 
@@ -163,7 +163,7 @@ class RawPrimaryPipeline:
                     if response.status_code == 200:
                         response_dict =  response.json()
                     else:
-                        logging.warning("Error while posting to RestAPI:", response.text)
+                        logging.warning(f"Error while posting to RestAPI for {file}")
 
                     #process the response
                     if response_dict["error"] == True:
@@ -182,10 +182,10 @@ class RawPrimaryPipeline:
 
             elif "Miter Gear Set Screw" in str(file) and self.config["split_Miter_Gear_Set_Screw"]:
                 #special rule for Miter Gear Set - Both parts are kept and sorted to the classes headless screws and Gears. These files will be marked with {NEW_CLASS}_EXTRACTED at the end of filename and will be handled in func generate_target_files
-
+                logging.debug(f"{file} will be handled by Miter Gear Set Screw rule")
                 try:
-                    with open(file.as_posix(), "rb") as file:
-                        base64_data = base64.b64encode(file.read()).decode("utf-8")
+                    with open(file.as_posix(), "rb") as f:
+                        base64_data = base64.b64encode(f.read()).decode("utf-8")
 
                     payload = {
                         "filename": file.stem,
@@ -197,7 +197,7 @@ class RawPrimaryPipeline:
                     if response.status_code == 200:
                         response_dict =  response.json()
                     else:
-                        logging.warning("Error while posting to RestAPI:", response.text)
+                        logging.warning(f"Error while posting to RestAPI for {file} with code:", response.status_code)
 
                     #process the response
                     if response_dict["error"] == True:
