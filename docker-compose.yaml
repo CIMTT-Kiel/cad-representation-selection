@@ -15,7 +15,9 @@ services:
     container_name: devcontainer
     volumes:
       - .:/clear-shape  # mount repository into dev container (nneeded to synch with local folder)
-      
+
+      - /home/michelkruse/Nextcloud/Ressourcen-KI-Gruppe/Modelle/vecset_encoder/points_vec1024x32_dim1024_depth24_sdf_nb/checkpoint-110.pth:/clear-shape/src/clearshape/vecsets/preprocessing/vecset_model/ckpts/checkpoint-110.pth # mount the model checkpoint for vecset_encoder - needed for preprocessing
+
       # Daniel
       - D:\3 Resources\Nextcloud FH Kiel\Ressourcen-KI-Gruppe\Datensätze\fabwave\1_raw:/clear-shape/data/1_raw/
       - D:\3 Resources\Nextcloud FH Kiel\Ressourcen-KI-Gruppe\Datensätze\fabwave\3_primary:/clear-shape/data/3_primary/
