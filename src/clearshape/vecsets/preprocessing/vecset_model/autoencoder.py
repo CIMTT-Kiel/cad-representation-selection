@@ -3,8 +3,6 @@
 import torch
 import torch.nn as nn
 
-#from torch_cluster import fps
-
 from einops import rearrange, repeat
 
 import math
@@ -170,20 +168,23 @@ class VecSetAutoEncoder(nn.Module):
 
     def forward(self, pc, queries=None):
         bottleneck = self.encode(pc)
-        #x = self.learn(bottleneck['x'])
+        x = self.learn(bottleneck['x'])
 
-        #if queries.shape[1] > 100000:
-        #    N = 100000
-        #    os = []
-        #    for block_idx in range(math.ceil(queries.shape[1] / N)):
-        #        o = self.decode(x, queries[:, block_idx*N:(block_idx+1)*N, :]).squeeze(-1)
-        #        os.append(o)
-        #    o = torch.cat(os, dim=1)
-        #else:
-        #    o = self.decode(x, queries).squeeze(-1)
+        if queries.shape[1] > 100000:
+           N = 100000
+           os = []
+           for block_idx in range(math.ceil(queries.shape[1] / N)):
+               o = self.decode(x, queries[:, block_idx*N:(block_idx+1)*N, :]).squeeze(-1)
+               os.append(o)
+           o = torch.cat(os, dim=1)
+        else:
+           o = self.decode(x, queries).squeeze(-1)
 
-        #return {'o': o, **bottleneck}
-        return {**bottleneck}
+        return {'o': o, **bottleneck}
+    
+    def encode_to_vecset(self, pc):
+            bottleneck = self.encode(pc)
+            return {**bottleneck}
 
 
 def create_autoencoder(depth=24, dim=512, M=512, N=2048, query_type='point', bottleneck=None, bottleneck_args={}):
