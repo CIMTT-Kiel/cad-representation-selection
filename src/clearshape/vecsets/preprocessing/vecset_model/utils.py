@@ -3,16 +3,10 @@
 import numpy as np
 
 import torch
-from torch import nn, einsum
+from torch import nn
 import torch.nn.functional as F
 
-from einops import rearrange, repeat
-
-#from torch_cluster import fps
-
-import math
-
-#from flash_attn import flash_attn_kvpacked_func
+from einops import rearrange
 
 def exists(val):
     return val is not None
