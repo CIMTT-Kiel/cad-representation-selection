@@ -85,14 +85,6 @@ class RawPrimaryPipeline:
         raw_step_files = raw_step_files 
         logging.info(f"load {len(raw_step_files)} files.")
         return raw_step_files
-    
-    # def build_target_file(self, step_file: Path):
-    #     target_filename  = Path(f"{step_file.stem}.step") #only to check if file was already processed
-    #     target_dir = Path(str(step_file).replace("1_raw", "3_primary")).parent
-
-    #     target_file = target_dir / target_filename 
-
-    #     return target_file
 
 
     def fuse_overlapping_bodies(self, raw_step_files: List) -> Tuple[Dict]:
@@ -155,9 +147,11 @@ class RawPrimaryPipeline:
         for file in multibody_parts:
             #check if the part should be handled by max_volume rule
             if True in [cl in str(file) for cl in self.config["classes_to_apply_max_volume_rule"]]:
+                logging.debug(f" -> {file} will be handled by max_volume rule")
                 try:
-                    with open(file.as_posix(), "rb") as file:
-                        base64_data = base64.b64encode(file.read()).decode("utf-8")
+                    logging.debug("open and encode file..")
+                    with open(file.as_posix(), "rb") as f:
+                        base64_data = base64.b64encode(f.read()).decode("utf-8")
 
                     payload = {
                         "filename": file.stem,
@@ -183,6 +177,7 @@ class RawPrimaryPipeline:
                         files_pool.append(file) 
 
                 except Exception as e:
+                    logging.warning(f"Error while processing {file}: {e}")
                     self.error_files[file] = e
 
             elif "Miter Gear Set Screw" in str(file) and self.config["split_Miter_Gear_Set_Screw"]:
