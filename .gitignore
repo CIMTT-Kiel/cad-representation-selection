@@ -104,3 +104,4 @@ target/
 .txt
 .pt
 .venv/
+*.pth
