@@ -16,6 +16,7 @@ import pandas as pd
 import numpy as np
 from PIL import Image
 import dgl
+import json
 
 # custom packages
 import clearshape.constants as cons
@@ -48,14 +49,17 @@ class FabwaveDataset(Dataset):
         Optional transform to be applied on a sample.
     """
 
-    def __init__(self, csv_file: Union[str, Path], data_type: str, regression:bool=False, classification:bool=False, scaler=None):
-        assert data_type in ["images", "trees", "invariants"], "Is the data type spelled correctly?"
+    def __init__(self, csv_file: Union[str, Path], data_type: str, regression:bool=False, classification:bool=False, scaler=None,):
+        assert data_type in ["images", "trees", "invariants", "vecsets"], "Is the data type spelled correctly?"
         assert regression ^ classification, "Please specify the task type: 'classification' or 'regression'."
         self.scaler = scaler  
         self.data = self._get_scaled_data(csv_file) if self.scaler else self._load_data(csv_file) # Load CSV file into a DataFrame
         self.data_type = data_type
         self.regression = regression
         self.classification = classification
+
+        #default for invariants
+        self.inv_only = True
 
     def _load_data(self, csv_file: Union[str, Path]) -> pd.DataFrame:
         return pd.read_csv(csv_file, index_col=0)
@@ -95,13 +99,14 @@ class FabwaveDataset(Dataset):
         # Determine the correct folder based on the extracted folder name
         
         file_paths = {
-            'images': cons.PATHS.DATA_FEATURE / 'images/fabwave' / f"{row['path']}.png",
-            'trees': cons.PATHS.DATA_FEATURE  / 'trees/fabwave' / f"{row['path']}.bin",
-            'invariants': cons.PATHS.DATA_FEATURE / 'invariants/fabwave' / f"{row['path']}.pkl"
+            'images': cons.PATHS.DATA_FEATURE / 'images/fabwave' / f"{row.name}.png",
+            'trees': cons.PATHS.DATA_FEATURE  / 'trees/fabwave' / f"{row.name}.bin",
+            'invariants': cons.PATHS.DATA_FEATURE / 'invariants/fabwave' / f"{row.name}.json",
+            'vecsets': cons.PATHS.DATA_FEATURE / 'vecsets/fabwave' / f"{row.name}.npy"
         }
 
         if self.data_type not in file_paths:
-            raise ValueError(f"Unknown data category in path: {row['path']}")
+            raise ValueError(f"Unknown data category in path: {row.name}")
 
         file_path = file_paths[self.data_type]
 
@@ -109,9 +114,35 @@ class FabwaveDataset(Dataset):
         if self.data_type == 'trees':
             data_representation = dgl.load_graphs(file_path.as_posix())[0][0]
         elif self.data_type == 'invariants':
-            with open(file_path.as_posix(), 'rb') as f:
-                raise NotImplementedError("Invariants data type not implemented yet.")
-                # data_representation = 
+            with open(file_path.as_posix(), 'r') as f:
+                invs = json.load(f)
+
+                #delete pi_200, pi_020 and pi_002
+                del invs['pi_200']
+                del invs['pi_020']
+                del invs['pi_002']
+
+                # split into moments and invariants
+                mue_values = [] #moments
+                pi_values = [] # invariants
+
+                for key, value in invs.items():
+                    if key.startswith('mue_'):
+                        mue_values.append(value)
+                    elif key.startswith('pi_'):
+                        pi_values.append(value)
+
+                # TODO: scale the moments if used in combination with invariants
+
+                if self.inv_only:
+                    data_representation = torch.tensor(pi_values, dtype=torch.float32)
+                else:
+                    data_representation = torch.tensor(mue_values + pi_values, dtype=torch.float32)
+
+        elif self.data_type == 'vecsets':
+            # Load the vecset from a .npy file
+            data_representation = torch.Tensor(np.load(file_path.as_posix(), allow_pickle=True))
+
         elif self.data_type == 'images':
             raise NotImplementedError("Image data type not implemented yet.")
             # data_representation = 
@@ -124,5 +155,8 @@ class FabwaveDataset(Dataset):
         elif self.regression:
             target = torch.tensor([row['volume'], row['faces'], row['edges'], row['vertices']], dtype=torch.float32)  # Convert class label to float for regression
         
-        path = row['path']
+        path = row.name
         return data_representation, target, path
+    
+
+
