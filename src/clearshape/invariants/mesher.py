@@ -11,7 +11,7 @@ import clearshape.constants as constants
 #from clearshape.constants import API_URL
 
 # set up logger
-logging_level = logging.DEBUG
+logging_level = logging.ERROR
 logger = logging.getLogger(__name__)
 logger.setLevel(logging_level)
 
