@@ -11,6 +11,8 @@ import logging
 # third-party
 import pandas as pd
 import sklearn.metrics as metrics
+import seaborn as sns
+import seaborn.objects as so
 
 # custom packages
 import clearshape.constants as cons
@@ -308,6 +310,25 @@ class ModelOutputToReportingPipeline:
             format="png",
             bbox_inches="tight",
         )
+
+    def _save_violin_plot(self, error_table:pd.DataFrame):
+        """
+        Builds and saves a plot showing error distributions for each attribute and each data type approach.
+
+        Parameters
+        ----------
+        error_table
+            Dataframe with error values for a specific attribute, e.g. relative error values for volume, faces, edges and vertices.
+
+        Returns
+        -------
+        None
+        """
+        grid = sns.catplot(data=error_table, x="data_type", y="value", col="error_type", kind="violin")
+        grid.set_axis_labels("Data Type", " Relative Volume Error")
+        grid.set_titles("{col_name}")
+        grid.savefig(cons.PATHS.DATA_REPORTING / "error_distributions.png", format="png", bbox_inches="tight")
+
     def run(self):
         """
         Execute the pipeline to compute reporting metrics and save confusion matrices.
