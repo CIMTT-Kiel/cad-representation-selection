@@ -10,6 +10,7 @@ from pathlib import Path
 from tqdm import tqdm
 import time
 import threading
+import csv
 
 # third party imports
 import pandas as pd
@@ -25,7 +26,7 @@ from clearshape.targets.STEP_targets import RegressionTargetExtractor
 from clearshape.vecsets.preprocessing.conversions import CAD_Converter
 
 # set up logger
-logging_level = logging.DEBUG
+logging_level = logging.WARNING
 logger = logging.getLogger(__name__)
 logger.setLevel(logging_level)
 formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)8s - %(message)s")
@@ -129,6 +130,14 @@ class PrimaryFeaturePipeline:
             self._files_already_processed = None
         except FileNotFoundError:
             self._files_already_processed = None
+
+        # get list of files which failed in a previous run
+        try:
+            self._files_already_failed = pd.read_csv(cons.PATHS.DATA_FEATURE / "fabwave_error_files.csv")["path"].values
+        except pd.errors.EmptyDataError:
+            self._files_already_failed = None
+        except FileNotFoundError:
+            self._files_already_failed = None
 
     def _get_next_step_path(self) -> None:
         """
@@ -342,7 +351,6 @@ class PrimaryFeaturePipeline:
             targets_already_processed = pd.read_csv(cons.PATHS.DATA_FEATURE / "fabwave_targets.csv")
         else:
             logger.debug("No already processed targets found, creating new DataFrame")
-            logger.debug("No already processed targets found, creating new DataFrame")
             targets_already_processed = None
         new_targets = pd.DataFrame(self._targets)
         targets_all = pd.concat([targets_already_processed, new_targets], ignore_index=True)
@@ -388,8 +396,16 @@ class PrimaryFeaturePipeline:
                     relative_path = self._file_to_process.relative_to(
                         cons.PATHS.DATA_PRIMARY / "fabwave"
                     ).with_suffix("").as_posix()
+
+                    #check if file is already processed
                     if self._files_already_processed is not None and relative_path in self._files_already_processed:
-                        logger.debug(f"Skipping already processed file {self._file_to_process}")
+                        logger.warning(f"Skipping already processed file {self._file_to_process}")
+                        progress_bar.update(1)
+                        continue
+
+                    #check if file has failed in a previous run
+                    if self._files_already_failed is not None and relative_path in self._files_already_failed:
+                        logger.warning(f"Skipping already failed file {self._file_to_process}")
                         progress_bar.update(1)
                         continue
 
@@ -441,6 +457,11 @@ class PrimaryFeaturePipeline:
                         self._get_targets()
                     except Exception as e:
                         logger.warning(f"Error extracting targets from {self._file_to_process}: {e}")
+                        write_path_to_error_file(relative_path)
+                else:
+                    write_path_to_error_file(relative_path)
+
+                                       
 
                 progress_bar.update(1)
 
@@ -448,6 +469,20 @@ class PrimaryFeaturePipeline:
 
         finally:
             self._save_targets()
+
+def write_path_to_error_file(relative_path):
+    
+    error_file = cons.PATHS.DATA_FEATURE / "fabwave_error_files.csv"
+    logger.warning(f"Write failed file {relative_path} to error file: {error_file}")
+
+    # add path to file
+    mode= "a" if error_file.exists() else "w"                  
+    with open(error_file, mode=mode, newline="", encoding="utf-8") as file:
+        writer = csv.writer(file)
+        logger.warning("Write row..")
+        writer.writerow([relative_path])
+
+
 
 if __name__ == "__main__":
     pipeline = PrimaryFeaturePipeline()
