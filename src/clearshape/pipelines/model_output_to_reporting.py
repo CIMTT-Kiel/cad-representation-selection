@@ -245,9 +245,7 @@ class ModelOutputToReportingPipeline:
         Returns
         -------
         errors : pd.DataFrame
-            DataFrame containing the error table with columns 'path', 'data_type', 'volume_error
-            ', 'faces_error', 'edges_error', 'vertices_error', 'volume_relative_error',
-            'faces_relative_error', 'edges_relative_error', and 'vertices_relative_error'.
+            DataFrame containing the error table with columns 'path', 'data_type', 'error_type', 'value'
         """
         logger.info("Calculating error table")
         errors = pd.DataFrame(
@@ -273,8 +271,9 @@ class ModelOutputToReportingPipeline:
             errors["faces_relative_error"] = errors["faces_error"] / test_data["faces"]
             errors["edges_relative_error"] = errors["edges_error"] / test_data["edges"]
             errors["vertices_relative_error"] = (errors["vertices_error"] / test_data["vertices"])
+
+        errors = errors.melt(id_vars=["path", "data_type"], var_name="error_type")
         return errors
-        )
 
     def _save_classification_metrics_plot(self, classification_metrics: pd.DataFrame) -> None:
         """
