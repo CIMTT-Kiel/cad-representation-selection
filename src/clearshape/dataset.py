@@ -127,8 +127,6 @@ class FabwaveDataset(Dataset):
             A dictionary containing the features and label.
         """
         row = self.data.iloc[idx]
-        print(row)
-        print(row["path"])
 
         # Determine the correct folder based on the extracted folder name
         
