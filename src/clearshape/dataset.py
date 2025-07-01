@@ -12,6 +12,7 @@ import logging
 # third party libaries
 import torch
 from torch.utils.data import Dataset
+import torch.nn.functional as F
 import pandas as pd
 import numpy as np
 from PIL import Image
@@ -61,6 +62,8 @@ class FabwaveDataset(Dataset):
         #default for invariants
         self.inv_only = True
 
+        self.cache = {}
+
     def _load_data(self, csv_file: Union[str, Path]) -> pd.DataFrame:
         return pd.read_csv(csv_file, index_col=0)
     
@@ -82,7 +85,36 @@ class FabwaveDataset(Dataset):
 
     def __getitem__(self, idx):
         """
-        Retrieves a sample at the given index.
+        Return a sample at the given index. The sample will be calculated on the first occurance and is cached afterwards.
+        Following queries are returned from cache. 
+
+        Parameters
+        ----------
+        idx : int
+            Index of the sample to retrieve.
+
+        Returns
+        -------
+        dict
+            A dictionary containing the features and label.
+        """
+
+        data_representation =None 
+        target = None 
+        path = None
+
+        if idx in self.cache.keys():
+            data_representation, target, path = self.cache[idx]
+        else:
+            data_representation, target, path = self.parse_part(idx)
+            self.cache[idx] = (data_representation, target, path)
+        
+        return data_representation, target, path
+
+    
+    def parse_part(self, idx):
+        """
+        Retrieves and calculate a sample at the given index.
 
         Parameters
         ----------
@@ -95,14 +127,16 @@ class FabwaveDataset(Dataset):
             A dictionary containing the features and label.
         """
         row = self.data.iloc[idx]
+        print(row)
+        print(row["path"])
 
         # Determine the correct folder based on the extracted folder name
         
         file_paths = {
-            'images': cons.PATHS.DATA_FEATURE / 'images/fabwave' / f"{row.name}.png",
-            'trees': cons.PATHS.DATA_FEATURE  / 'trees/fabwave' / f"{row.name}.bin",
-            'invariants': cons.PATHS.DATA_FEATURE / 'invariants/fabwave' / f"{row.name}.json",
-            'vecsets': cons.PATHS.DATA_FEATURE / 'vecsets/fabwave' / f"{row.name}.npy"
+            'images': cons.PATHS.DATA_FEATURE / 'images/fabwave' / f"{row.path}.png",
+            'trees': cons.PATHS.DATA_FEATURE  / 'trees/fabwave' / f"{row.path}.bin",
+            'invariants': cons.PATHS.DATA_FEATURE / 'invariants/fabwave' / f"{row.path}.json",
+            'vecsets': cons.PATHS.DATA_FEATURE / 'vecsets/fabwave' / f"{row.path}.npy"
         }
 
         if self.data_type not in file_paths:
@@ -151,11 +185,15 @@ class FabwaveDataset(Dataset):
         
         # get task-specific targets
         if self.classification:
-            target = torch.tensor(row['class_id'])
+            if self.data_type=="vecsets" or self.data_type=="invariants":
+                target = F.one_hot(torch.tensor(row['class_id']), num_classes=40).float()
+            else:
+                target = torch.tensor(row['class_id'])
+
         elif self.regression:
             target = torch.tensor([row['volume'], row['faces'], row['edges'], row['vertices']], dtype=torch.float32)  # Convert class label to float for regression
         
-        path = row.name
+        path = row.path
         return data_representation, target, path
     
 
