@@ -25,7 +25,8 @@ class VecsetClassifier(nn.Module):
         if fc_layers is not None:
             for hidden_dim in fc_layers:
                 layers.append(nn.Linear(in_dim, hidden_dim))
-                layers.append(nn.ReLU())
+                layers.append(nn.BatchNorm1d(hidden_dim))
+                layers.append(nn.LeakyReLU())
                 layers.append(nn.Dropout(dropout))
                 in_dim = hidden_dim
 

@@ -1,3 +1,4 @@
+#third party imports
 import optuna
 import mlflow
 from pytorch_lightning import Trainer
@@ -5,16 +6,17 @@ from pytorch_lightning.loggers import MLFlowLogger
 import torch
 from torch.utils.data import DataLoader, random_split, TensorDataset
 
+#custom imports
 from clearshape.invariants.ml.modules.invs_classificator import InvariantClassifier
+from clearshape.dataset import FabwaveDataset
+
 
 
 def get_dataloaders(batch_size=32):
-    # Dummy-Daten (ersetzen durch echte)
-    X = torch.randn(1000, 16)
-    y = torch.randint(0, 38, (1000,))
-    ds = TensorDataset(X, y)
-    train_ds, val_ds = random_split(ds, [800, 200])
-    return DataLoader(train_ds, batch_size=batch_size), DataLoader(val_ds, batch_size=batch_size)
+    train_loader = DataLoader(FabwaveDataset(csv_file="/clear-shape/data/5_model_input/train.csv", classification=True, data_type="invariants"), batch_size=batch_size)
+    validation_loader = DataLoader(FabwaveDataset(csv_file="/clear-shape/data/5_model_input/validation.csv", classification=True, data_type="invariants"), batch_size=batch_size)
+
+    return train_loader, validation_loader
 
 def objective(trial):
     # Hyperparameter-Sampling
@@ -74,7 +76,7 @@ def main():
     hidden_size = best_params["hidden_size"]
     model = InvariantClassifier(
         in_dim=16,
-        num_classes=38,
+        num_classes=40,
         fc_layers=[hidden_size, 2*hidden_size, hidden_size],
         dropout=best_params["dropout"],
         lr=best_params["lr"]

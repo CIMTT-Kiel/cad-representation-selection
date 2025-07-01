@@ -8,25 +8,42 @@ from clearshape.models.vecset_trnsf_encoder import VecsetClassifier
 
 
 class VecsetClassifierModule(pl.LightningModule):
-    def __init__(self, lr=3e-5, input_dim=32, d_model=1024, nhead=8, num_layers=4, fc_layers=None,
-                 num_classes=40, dim_feedforward=2048, dropout=0.1, use_pos_embedding=True, max_epochs=100):
+    def __init__(self, 
+                 lr = 1e-3,
+                 input_dim=32, 
+                 d_model=1024, 
+                 nhead=8, 
+                 num_layers=4, 
+                 num_classes=40, 
+                 dim_feedforward=2048, 
+                 fc_layers=None,
+                 dropout=0.3, 
+                 use_pos_embedding=True, 
+                 ):
         super().__init__()
-        
+        self.save_hyperparameters()
+
         self.use_pos_embbeding = use_pos_embedding
 
-        self.model = VecsetClassifier(input_dim=input_dim, d_model=d_model, nhead=nhead,
-                                      num_layers=num_layers, num_classes=num_classes,
-                                      dim_feedforward=dim_feedforward, dropout=dropout, use_pos_embedding=use_pos_embedding)
+        self.model = VecsetClassifier(
+                                    input_dim=input_dim, 
+                                    d_model=d_model, 
+                                    nhead=nhead,
+                                    num_layers=num_layers, 
+                                    fc_layers=fc_layers,
+                                    num_classes=num_classes,
+                                    dim_feedforward=dim_feedforward, 
+                                    dropout=dropout, 
+                                    use_pos_embedding=use_pos_embedding
+                                    )
         
+        #metrics
         self.train_acc = Accuracy(task="multiclass", num_classes=num_classes)
         self.val_acc = Accuracy(task="multiclass", num_classes=num_classes)
 
+        # criterion
         self.criterion = nn.CrossEntropyLoss()
-
-        self.max_epochs = max_epochs
-        self.lr = lr
-
-        self.save_hyperparameters()
+        
 
     def forward(self, vector_set):
         return self.model(vector_set)
@@ -87,25 +104,21 @@ class VecsetClassifierModule(pl.LightningModule):
 
 
     def configure_optimizers(self):
-        # AdamW-Optimizer
-        optimizer = torch.optim.AdamW(
-            self.parameters(),          # Alle Modellparameter optimieren
-            lr=self.hparams.lr,         # Lernrate
-            #weight_decay=self.hparams.weight_decay  # Weight Decay
-        )
+        optimizer = torch.optim.AdamW(self.parameters(), lr=self.hparams.lr)
 
-        # Cosine Annealing Scheduler
-        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
+        scheduler = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(
             optimizer,
-            T_max=self.max_epochs,  # Maximale Anzahl der Epochen
-            eta_min=0.0000001  # Minimale Lernrate, die der Scheduler erreichen kann
+            T_0=10,          # Erste Periode (z. B. 10 Epochen)
+            T_mult=2,        # Jede Periode wird doppelt so lang
+            eta_min=1e-6     # Minimale Lernrate am Ende eines Zyklus
         )
 
         return {
             "optimizer": optimizer,
             "lr_scheduler": {
                 "scheduler": scheduler,
-                "monitor": "train_loss"  # Hier kannst du eine Metrik überwachen, auf die der Scheduler reagiert
+                "interval": "epoch",     # oder "step", je nachdem wie du willst
+                "monitor": "val_loss",   # optional, z. B. bei ReduceLROnPlateau
             }
         }
     

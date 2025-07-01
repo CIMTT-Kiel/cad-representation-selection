@@ -1,4 +1,0 @@
-_target_: clearshape.vecsets.ml.modules.vecset_datamodul.VecsetDataModule
-
-batch_size: 128
-num_workers: 4

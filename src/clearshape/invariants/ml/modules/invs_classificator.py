@@ -20,7 +20,7 @@ class InvariantClassifier(pl.LightningModule):
         return self.model(x)
 
     def training_step(self, batch, batch_idx):
-        x, y = batch
+        x, y, _ = batch
         logits = self(x)
         loss = F.cross_entropy(logits, y)
         f1 = self.f1_score(logits.argmax(dim=1), y)
@@ -33,7 +33,7 @@ class InvariantClassifier(pl.LightningModule):
         return loss
 
     def validation_step(self, batch, batch_idx):
-        x, y = batch
+        x, y, _ = batch
         logits = self(x)
 
         acc = (logits.argmax(dim=1) == y).float().mean()
@@ -48,14 +48,14 @@ class InvariantClassifier(pl.LightningModule):
         return acc
     
     def test_step(self, batch, batch_idx):
-        x, y = batch
+        x, y, _ = batch
         logits = self(x)
         acc = (logits.argmax(dim=1) == y).float().mean()
         self.log('test_acc', acc, prog_bar=True)
         return acc
     
     def predict_step(self, batch):
-        x, _ = batch
+        x, y, _ = batch
         logits = self(x)
         return logits.argmax(dim=1)
     
