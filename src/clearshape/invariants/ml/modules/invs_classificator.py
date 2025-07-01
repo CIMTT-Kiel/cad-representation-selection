@@ -22,24 +22,26 @@ class InvariantClassifier(pl.LightningModule):
     def training_step(self, batch, batch_idx):
         x, y, _ = batch
         logits = self(x)
+
         loss = F.cross_entropy(logits, y)
-        f1 = self.f1_score(logits.argmax(dim=1), y)
+        f1 = self.f1_score(logits.argmax(dim=1), y.argmax(dim=1))
 
         # Log metrics
         self.log('train_loss', loss, prog_bar=True)
-        self.log('train_acc', (logits.argmax(dim=1) == y).float().mean(), prog_bar=True)
+        self.log('train_acc', (logits.argmax(dim=1) == y.argmax(dim=1)).float().mean(), prog_bar=True)
         self.log('train_f1_score', f1, prog_bar=True)
 
         return loss
 
     def validation_step(self, batch, batch_idx):
         x, y, _ = batch
+
         logits = self(x)
 
-        acc = (logits.argmax(dim=1) == y).float().mean()
-        loss = F.cross_entropy(logits, y)
+        acc = (logits.argmax(dim=1) == y.argmax(dim=1)).float().mean()
+        loss = F.cross_entropy(logits, y.argmax(dim=1))
 
-        f1_score = self.f1_score(logits.argmax(dim=1), y)
+        f1_score = self.f1_score(logits.argmax(dim=1), y.argmax(dim=1))
 
         self.log('val_acc', acc, prog_bar=True)
         self.log('val_loss', loss, prog_bar=True)
