@@ -20,5 +20,6 @@ dependencies = [
     "meshio",
     "trimesh",
     "open3d",
-    "cascadio"
+    "cascadio",
+    "pytorch-lightning",
 ]
