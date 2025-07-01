@@ -206,6 +206,10 @@ class FeatureModelInputPipeline:
         scaler = RobustScaler()
         scaler.fit(train[["volume", "faces", "edges", "vertices"]])
         scaler_path = cons.PATHS.DATA_MODEL_INPUT / "robust_scaler.pkl"
+
+        #ensure the dir exists
+        scaler_path.parent.mkdir(exist_ok=True)
+
         with open(scaler_path, "wb") as f:
             pickle.dump(scaler, f)
 
