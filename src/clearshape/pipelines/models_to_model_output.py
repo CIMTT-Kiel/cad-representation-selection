@@ -26,6 +26,8 @@ from clearshape.dataset import FabwaveDataset
 from clearshape.models.feedforward_mlp import FeedforwardMLP
 from clearshape.models.modelstack import ModelStack
 from clearshape.models.treelstm import RootedInTreeEncoder
+from clearshape.constants import PATHS
+from clearshape.models.invariant_mlp import InvariantMLP 
 
 # set up logger
 logging_level = logging.DEBUG
@@ -176,10 +178,48 @@ class ModelsModelOutputPipeline:
         pass
 
     # TODO: Implement the invariant model initialization
-    def _initialize_invariant_model(
-        self,
-    ) -> torch.nn.Module:
-        pass
+    def _initialize_invariant_model(self,) -> torch.nn.Module:
+        """
+        Initialize the InvariantMLP model for classification tasks.
+
+        This method loads the best trained checkpoint for the invariant model from a saved
+        `.ckpt` file, extracts the hyperparameters and state dictionary, adapts the state
+        dictionary keys if necessary, and instantiates the model with the loaded parameters.
+
+        Returns
+        -------
+        torch.nn.Module
+            An InvariantMLP model initialized with the best saved weights and hyperparameters.
+
+        Notes
+        -----
+        - The checkpoint is assumed to be stored in the `data/6_models/invariants_classification.ckpt` file.
+        - The hyperparameter dictionary inside the checkpoint contains parameters used to
+        instantiate the `InvariantMLP`. The learning rate (`lr`) key is removed before model initialization.
+        - The keys in the `state_dict` may have a "model." prefix, which is stripped before loading.
+        - This method assumes the model class `InvariantMLP` is already imported and available.
+        """
+        logger.info(f"Initializing Invariants-model")
+
+        checkpoint = torch.load((PATHS.DATA_MODELS / "invariants_classification.ckpt").as_posix())
+        hyperparams = checkpoint["hyper_parameters"]
+        del hyperparams["lr"]
+
+        state_dict = checkpoint["state_dict"]
+
+        # "model."-Prefix aus Keys entfernen
+        new_state_dict = {}
+        for k, v in state_dict.items():
+            if k.startswith("model."):
+                new_key = k[len("model."):]
+            else:
+                new_key = k
+            new_state_dict[new_key] = v
+
+        model = InvariantMLP(**hyperparams)
+        model.load_state_dict(new_state_dict)
+
+        return model
 
     def _load_model(self, path) -> None:
         """

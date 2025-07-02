@@ -5,11 +5,13 @@ from pytorch_lightning import Trainer
 from pytorch_lightning.loggers import MLFlowLogger
 import torch
 from torch.utils.data import DataLoader, random_split, TensorDataset
+import pandas as pd
 
 #custom imports
 from clearshape.invariants.ml.modules.invs_classificator import InvariantClassifier
 from pytorch_lightning.callbacks import EarlyStopping, ModelCheckpoint
 from clearshape.dataset import FabwaveDataset
+from clearshape.constants import PATHS
 
 
 
@@ -22,19 +24,22 @@ def get_dataloaders(batch_size):
 def objective(trial):
     # Hyperparameter-Sampling
 
-    dropout = trial.suggest_float("dropout", 0.1, 0.3)
+    dropout = trial.suggest_float("dropout", 0.0, 0.5)
     lr = trial.suggest_float("lr", 1e-3, 1e-2, log=True)
-    hidden_size = trial.suggest_int("hidden_size", 128,1024)
+    hidden_size = trial.suggest_int("hidden_size", 128,2048)
 
-    batch_size = trial.suggest_categorical("batch_size", [256,512])
+    batch_size = trial.suggest_categorical("batch_size", [128,256,512,1024])
 
 
     train_loader, val_loader = get_dataloaders(batch_size=batch_size)
 
+    num_classes = int(pd.read_csv(PATHS.DATA_FEATURE / "fabwave_targets.csv").class_id.values.max())+1
+
+
     model = InvariantClassifier(
         in_dim=16,
-        num_classes=40,
-        fc_layers=[hidden_size, 2*hidden_size, hidden_size],
+        num_classes=num_classes,
+        fc_layers=[hidden_size//4, hidden_size//2, hidden_size, hidden_size, hidden_size, hidden_size//2, hidden_size//4],
         dropout=dropout,
         lr=lr
     )
@@ -79,7 +84,8 @@ def main():
     study = optuna.create_study(direction="minimize")
     study.optimize(objective, n_trials=20)
 
-    print("Beste Konfiguration:", study.best_trial.params)
+    num_classes = int(pd.read_csv(PATHS.DATA_FEATURE / "fabwave_targets.csv").class_id.values.max())+1
+    
 
     # Bestes Modell trainieren und speichern
     best_params = study.best_trial.params
@@ -87,8 +93,8 @@ def main():
     hidden_size = best_params["hidden_size"]
     model = InvariantClassifier(
         in_dim=16,
-        num_classes=40,
-        fc_layers=[hidden_size, 2*hidden_size, hidden_size],
+        num_classes=num_classes,
+        fc_layers=[hidden_size//4, hidden_size//2, hidden_size, hidden_size, hidden_size//2, hidden_size//4],
         dropout=best_params["dropout"],
         lr=best_params["lr"]
     )
@@ -106,16 +112,14 @@ def main():
         monitor='val_loss',           # oder z. B. "val_acc"
         save_top_k=1,                 # nur das beste Modell speichern
         mode='min',                   # "min" für loss, "max" für acc
-        filename='best-{epoch:02d}-{val_loss:.4f}',  # Dateinamenformat
+        dirpath=PATHS.DATA_MODELS.as_posix(), 
+        filename='invariants_classification',  # Dateinamenformat
         save_weights_only=False,      # speichert komplette Checkpoints
         verbose=True
     )
 
     trainer = Trainer(max_epochs=1000, logger=mlf_logger, callbacks=[early_stop_callback, checkpoint_callback], enable_checkpointing=True)
     trainer.fit(model, train_loader, val_loader)
-
-
-    torch.save(model.state_dict(), r"../models/invariants-classification.pt")
 
 
 if __name__ == "__main__":
