@@ -9,7 +9,7 @@
 /data/7_model_output
 /data/8_reporting
 
-/mlruns
+**/mlruns
 
 # === Boiler Plate entries ===
 
