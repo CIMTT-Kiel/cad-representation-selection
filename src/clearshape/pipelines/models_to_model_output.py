@@ -26,6 +26,8 @@ from clearshape.dataset import FabwaveDataset
 from clearshape.models.feedforward_mlp import FeedforwardMLP
 from clearshape.models.modelstack import ModelStack
 from clearshape.models.treelstm import RootedInTreeEncoder
+from clearshape.constants import PATHS
+from clearshape.models.invariant_mlp import InvariantMLP 
 
 # set up logger
 logging_level = logging.DEBUG
@@ -179,7 +181,27 @@ class ModelsModelOutputPipeline:
     def _initialize_invariant_model(
         self,
     ) -> torch.nn.Module:
-        pass
+        logger.info(f"Initializing Invariants-model")
+
+        checkpoint = torch.load((PATHS.DATA_MODELS / "invariants_classification.ckpt").as_posix())
+        hyperparams = checkpoint["hyper_parameters"]
+        del hyperparams["lr"]
+
+        state_dict = checkpoint["state_dict"]
+
+        # "model."-Prefix aus Keys entfernen
+        new_state_dict = {}
+        for k, v in state_dict.items():
+            if k.startswith("model."):
+                new_key = k[len("model."):]
+            else:
+                new_key = k
+            new_state_dict[new_key] = v
+
+        model = InvariantMLP(**hyperparams)
+        model.load_state_dict(new_state_dict)
+
+        return model
 
     def _load_model(self, path) -> None:
         """
