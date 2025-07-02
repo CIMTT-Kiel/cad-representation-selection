@@ -183,11 +183,7 @@ class FabwaveDataset(Dataset):
         
         # get task-specific targets
         if self.classification:
-            if self.data_type=="vecsets" or self.data_type=="invariants":
-                target = F.one_hot(torch.tensor(row['class_id']), num_classes=40).float()
-            else:
                 target = torch.tensor(row['class_id'])
-
         elif self.regression:
             target = torch.tensor([row['volume'], row['faces'], row['edges'], row['vertices']], dtype=torch.float32)  # Convert class label to float for regression
         
