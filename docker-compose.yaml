@@ -25,6 +25,10 @@ services:
       #- D:\3 Resources\Nextcloud FH Kiel\Ressourcen-KI-Gruppe\Datensätze\fabwave\1_raw:/clear-shape/data/1_raw/
       #- D:\3 Resources\Nextcloud FH Kiel\Ressourcen-KI-Gruppe\Datensätze\fabwave\3_primary:/clear-shape/data/3_primary/
       #- D:\3 Resources\Nextcloud FH Kiel\Ressourcen-KI-Gruppe\Datensätze\fabwave\4_feature:/clear-shape/data/4_feature/
+      #- D:\3 Resources\Nextcloud FH Kiel\Ressourcen-KI-Gruppe\Datensätze\fabwave\5_model_input:/clear-shape/data/5_model_input/
+      #- D:\3 Resources\Nextcloud FH Kiel\Ressourcen-KI-Gruppe\Datensätze\fabwave\6_models:/clear-shape/data/6_models/
+      #- D:\3 Resources\Nextcloud FH Kiel\Ressourcen-KI-Gruppe\Datensätze\fabwave\7_model_output:/clear-shape/data/7_model_output/
+      #- D:\3 Resources\Nextcloud FH Kiel\Ressourcen-KI-Gruppe\Datensätze\fabwave\8_reporting:/clear-shape/data/8_reporting/
 
       # Michel
       # model checkpoint for vecset_encoder - needed for preprocessing
@@ -33,6 +37,10 @@ services:
       #- /home/michelkruse/Nextcloud/Ressourcen-KI-Gruppe/Datensätze/fabwave/1_raw:/clear-shape/data/1_raw/
       #- /home/michelkruse/Nextcloud/Ressourcen-KI-Gruppe/Datensätze/fabwave/3_primary:/clear-shape/data/3_primary/
       #- /home/michelkruse/Nextcloud/Ressourcen-KI-Gruppe/Datensätze/fabwave/4_feature:/clear-shape/data/4_feature/
+      #- /home/michelkruse/Nextcloud/Ressourcen-KI-Gruppe/Datensätze/fabwave/5_model_input:/clear-shape/data/5_model_input/
+      #- /home/michelkruse/Nextcloud/Ressourcen-KI-Gruppe/Datensätze/fabwave/6_models:/clear-shape/data/6_models/
+      #- /home/michelkruse/Nextcloud/Ressourcen-KI-Gruppe/Datensätze/fabwave/7_model_output:/clear-shape/data/7_model_output/
+      #- /home/michelkruse/Nextcloud/Ressourcen-KI-Gruppe/Datensätze/fabwave/8_reporting:/clear-shape/data/8_reporting/
 
     networks:
       - container_net
