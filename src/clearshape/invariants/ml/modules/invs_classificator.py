@@ -24,11 +24,12 @@ class InvariantClassifier(pl.LightningModule):
         logits = self(x)
 
         loss = F.cross_entropy(logits, y)
-        f1 = self.f1_score(logits.argmax(dim=1), y.argmax(dim=1))
+        f1 = self.f1_score(logits.argmax(dim=1), y)
+        train_acc = (logits.argmax(dim=1) == y).float().mean()
 
         # Log metrics
         self.log('train_loss', loss, prog_bar=True)
-        self.log('train_acc', (logits.argmax(dim=1) == y.argmax(dim=1)).float().mean(), prog_bar=True)
+        self.log('train_acc', train_acc, prog_bar=True)
         self.log('train_f1_score', f1, prog_bar=True)
 
         return loss
@@ -38,10 +39,10 @@ class InvariantClassifier(pl.LightningModule):
 
         logits = self(x)
 
-        acc = (logits.argmax(dim=1) == y.argmax(dim=1)).float().mean()
-        loss = F.cross_entropy(logits, y.argmax(dim=1))
+        acc = (logits.argmax(dim=1) == y).float().mean()
+        loss = F.cross_entropy(logits, y)
 
-        f1_score = self.f1_score(logits.argmax(dim=1), y.argmax(dim=1))
+        f1_score = self.f1_score(logits.argmax(dim=1), y)
 
         self.log('val_acc', acc, prog_bar=True)
         self.log('val_loss', loss, prog_bar=True)
