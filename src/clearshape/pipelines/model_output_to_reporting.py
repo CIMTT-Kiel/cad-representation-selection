@@ -323,7 +323,6 @@ class ModelOutputToReportingPipeline:
                 y="Metric Value",
                 color="Metric",
             )
-            .scale(y=so.Scale("linear", zero=False))
         )
         plot.save(
             cons.PATHS.DATA_REPORTING / "classification_metrics_plot.png",
