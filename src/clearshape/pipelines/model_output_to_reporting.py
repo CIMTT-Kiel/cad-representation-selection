@@ -208,24 +208,29 @@ class ModelOutputToReportingPipeline:
         results = []
         for data_type in regressor_output["data_type"].unique():
             for attribute in ["volume", "faces", "edges", "vertices"]:
-                true_values, predicted_values = self._filter_output_for_data_type(
-                    regressor_output, test_data, data_type, is_classifier=False
-                )
-                mae = metrics.mean_absolute_error(true_values, predicted_values)
-                mse = metrics.mean_squared_error(true_values, predicted_values)
-                r2 = metrics.r2_score(true_values, predicted_values)
-                results.append(
-                    {
-                        "data_type": data_type,
-                        "attribute": attribute,
-                        "mae": mae,
-                        "mse": mse,
-                        "r2": r2,
-                    }
-                )
+    def _save_regression_metrics_plot(self, regression_metrics:pd.DataFrame) -> None:
+        """
+        Builds and saves plot which compares regression metrics accross all approaches and attributes.
 
-            results_df = pd.DataFrame(results)
-        return results_df
+        MAE, R2 and MSE for each attribute and values grouped by data type.
+        """
+        plot = (
+            so.Plot(regression_metrics, x="metric", y="value", color="data_type", )
+            .facet("attribute")
+            .add(so.Bar(), so.Dodge())
+            .label(
+                x="Metric",
+                y="Value",
+                color="Data Type",
+            )
+            .layout(size=(15, 5))
+        )
+        plot.save(
+            cons.PATHS.DATA_REPORTING / "regression_metrics_plot.png",
+            format="png",
+            bbox_inches="tight",
+        )
+
 
     def _get_error_table(
         self, regressor_output: pd.DataFrame, test_data: pd.DataFrame
