@@ -19,7 +19,7 @@ services:
 
       # Daniel
       # model checkpoint for vecset_encoder - needed for preprocessing
-      #- D:\3 Resources\Nextcloud FH Kiel\Ressourcen-KI-Gruppe\Modelle/vecset_encoder/points_vec1024x32_dim1024_depth24_sdf_nb/checkpoint-110.pth:/clear-shape/src/clearshape/vecsets/preprocessing/vecset_model/ckpts/checkpoint-110.pth
+      #- D:\3 Resources\Nextcloud FH Kiel\Ressourcen-KI-Gruppe\Modelle\VecsetEncoder\points_vec1024x32_dim1024_depth24_sdf_nb:/clear-shape/src/clearshape/vecsets/preprocessing/vecset_model/ckpts/
 
       # data-folders for fabwave dataset
       #- D:\3 Resources\Nextcloud FH Kiel\Ressourcen-KI-Gruppe\Datensätze\fabwave\1_raw:/clear-shape/data/1_raw/
