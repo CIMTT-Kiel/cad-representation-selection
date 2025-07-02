@@ -187,9 +187,7 @@ class ModelOutputToReportingPipeline:
         self, regressor_output: pd.DataFrame, test_data: pd.DataFrame
     ) -> pd.DataFrame:
         """
-        Calculates and returns the regression metrics for each data type approach.
-
-        The regression metrics include Mean Absolute Error (MAE), Mean Squared Error (MSE), and R-squared.
+        Computes regression metrics (MAE, MSE, R-squared) for each data type and attribute.
 
         Parameters
         ----------
@@ -200,14 +198,32 @@ class ModelOutputToReportingPipeline:
 
         Returns
         -------
-        results_df : pd.DataFrame
-            DataFrame containing the regression metrics for each data type and attribute.
-            The DataFrame has columns 'data_type', 'attribute', 'mae', 'mse', and 'r2'.
+        pd.DataFrame
+            DataFrame with columns 'data_type', 'attribute', 'metric', and 'value',
+            summarizing regression metrics for each data type and attribute.
         """
-        logger.debug("Getting regression metrics")
-        results = []
+        logger.debug("Calculating regression metrics")
+        metrics_list = []
+
         for data_type in regressor_output["data_type"].unique():
+            true_values, predicted_values = self._get_true_and_prediced_values(
+                regressor_output, test_data, data_type, is_classifier=False
+            )
+
             for attribute in ["volume", "faces", "edges", "vertices"]:
+                attribute_true = true_values[attribute]
+                attribute_pred = predicted_values[f"pred_{attribute}"]
+
+                metrics_list.extend(
+                    [
+                        {"data_type": data_type, "attribute": attribute, "metric": "mae", "value": metrics.mean_absolute_error(attribute_true, attribute_pred)},
+                        {"data_type": data_type, "attribute": attribute, "metric": "mse", "value": metrics.mean_squared_error(attribute_true, attribute_pred)},
+                        {"data_type": data_type, "attribute": attribute, "metric": "r2", "value": metrics.r2_score(attribute_true, attribute_pred)},
+                    ]
+                )
+
+        return pd.DataFrame(metrics_list)
+    
     def _save_regression_metrics_plot(self, regression_metrics:pd.DataFrame) -> None:
         """
         Builds and saves plot which compares regression metrics accross all approaches and attributes.
