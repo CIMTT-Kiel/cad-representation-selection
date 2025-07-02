@@ -28,6 +28,7 @@ from clearshape.models.modelstack import ModelStack
 from clearshape.models.treelstm import RootedInTreeEncoder
 from clearshape.constants import PATHS
 from clearshape.models.invariant_mlp import InvariantMLP 
+from clearshape.models.vecset_trnsf_encoder import VecsetClassifier
 
 # set up logger
 logging_level = logging.DEBUG
@@ -178,7 +179,7 @@ class ModelsModelOutputPipeline:
         pass
 
     # TODO: Implement the invariant model initialization
-    def _initialize_invariant_model(self,) -> torch.nn.Module:
+    def _initialize_invariant_model(self, task_type) -> torch.nn.Module:
         """
         Initialize the InvariantMLP model for classification tasks.
 
@@ -199,6 +200,8 @@ class ModelsModelOutputPipeline:
         - The keys in the `state_dict` may have a "model." prefix, which is stripped before loading.
         - This method assumes the model class `InvariantMLP` is already imported and available.
         """
+        #TODO implement for regression
+
         logger.info(f"Initializing Invariants-model")
 
         checkpoint = torch.load((PATHS.DATA_MODELS / "invariants_classification.ckpt").as_posix())
@@ -217,6 +220,59 @@ class ModelsModelOutputPipeline:
             new_state_dict[new_key] = v
 
         model = InvariantMLP(**hyperparams)
+        model.load_state_dict(new_state_dict)
+
+        return model
+    
+    def _initialize_vecset_model(self, task_type) -> torch.nn.Module:
+        """
+        Initialize a VecSet model for either classification or regression tasks.
+
+        This method loads a pre-trained VecSet model from a checkpoint file, reconstructs the model 
+        using the saved hyperparameters (excluding the learning rate), und loads the trained weights. 
+        The method is used to initialize the VecSet-based model architecture for downstream tasks such 
+        as classification or regression.
+
+        Parameters
+        ----------
+        task_type : str
+            The type of task for which the VecSet model is being initialized.
+            Typically "classifier" or "regressor". (Note: currently not used to branch logic.)
+
+        Returns
+        -------
+        torch.nn.Module
+            A VecSetClassifier model with architecture and weights restored from the checkpoint.
+
+        Notes
+        -----
+        - The model checkpoint is expected at `data/6_models/vecset_classification.ckpt`.
+        - The checkpoint must contain a `"state_dict"` with weight tensors and `"hyper_parameters"` 
+        used to define the model architecture.
+        - The `"lr"` hyperparameter is excluded during reconstruction, as it is optimizer-specific.
+        - The keys in the saved `state_dict` are expected to be prefixed with `"model."`, which will
+        be stripped before loading into the instantiated model.
+        - The model class `VecsetClassifier` must be importable in the current environment.
+        """
+        #TODO implement for regression
+        logger.info(f"Initializing Invariants-model")
+
+        checkpoint = torch.load((PATHS.DATA_MODELS / "vecsets_classification.ckpt").as_posix())
+        hyperparams = checkpoint["hyper_parameters"]
+        del hyperparams["lr"]
+
+        state_dict = checkpoint["state_dict"]
+
+        # "model."-Prefix aus Keys entfernen
+        new_state_dict = {}
+        for k, v in state_dict.items():
+            if k.startswith("model."):
+                new_key = k[len("model."):]
+            else:
+                new_key = k
+            new_state_dict[new_key] = v
+
+        model = VecsetClassifier(**hyperparams)
         model.load_state_dict(new_state_dict)
 
         return model
@@ -262,6 +318,10 @@ class ModelsModelOutputPipeline:
                 model = self._initialize_invariant_model("classifier")
             case ("invariants", "regressor"):
                 model = self._initialize_invariant_model("regressor")
+            case ("vecsets", "classifier"):
+                model = self._initialize_vecset_model("classifier")
+            case ("vecsets", "regressor"):
+                model = self._initialize_vecset_model("regressor")
         if model is None:
             raise ValueError(
                 f"Invalid model type: {data_type}-{model_type}. Supported types are: images, trees, invariants for data and regressor, classifier for model type."
@@ -304,6 +364,8 @@ class ModelsModelOutputPipeline:
             case "images":
                 data_loader = DataLoader(data_set, batch_size=32, shuffle=False)
             case "invariants":
+                data_loader = DataLoader(data_set, batch_size=32, shuffle=False)
+            case "vecsets":
                 data_loader = DataLoader(data_set, batch_size=32, shuffle=False)
             case "trees":
                 data_loader = dgl.dataloading.GraphDataLoader(

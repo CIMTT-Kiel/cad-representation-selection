@@ -8,6 +8,7 @@ from pytorch_lightning.callbacks import EarlyStopping, ModelCheckpoint
 
 from clearshape.vecsets.ml.modules.trsfm_classificator import VecsetClassifierModule
 from clearshape.dataset import FabwaveDataset
+from clearshape.constants import PATHS
 
 
 def get_dataloaders(batch_size=32):
@@ -67,13 +68,13 @@ def objective(trial):
     )
 
     trainer.fit(model, train_loader, val_loader)
-    val_acc = trainer.callback_metrics["val_acc"].item()
+    val_loss = trainer.callback_metrics["val_loss"].item()
 
     # Hyperparameter und Metrik an MLflow loggen (über den Logger)
     mlf_logger.log_hyperparams(trial.params)
-    mlf_logger.log_metrics({"val_acc": val_acc})
+    mlf_logger.log_metrics({"val_loss": val_loss})
 
-    return val_acc  # Optuna maximiert diese Metrik
+    return val_loss  
 
 
 def main():
@@ -82,12 +83,23 @@ def main():
 
     mlf_logger = MLFlowLogger(experiment_name="vecsets-classification", tracking_uri="file:./../vecsets/ml/mlruns", run_name="best-model")
 
-    study = optuna.create_study(direction="maximize")
+    study = optuna.create_study(direction="minimize")
     study.optimize(objective, n_trials=20)
 
     # Bestes Modell trainieren und speichern
     best_params = study.best_trial.params
 
+    # #from previous runs
+    # best_params ={
+    #     "lr" : 2.53e-4,
+    #     "nhead" : 8,
+    #     "num_layers" : 4,
+    #     "hidden_size" : 1211,
+    #     "dropout" : 0.42,
+    #     "fc_layers" : None,
+    #     "batch_size" : 64
+
+    # }
 
     model = VecsetClassifierModule( 
                 lr = best_params["lr"],
@@ -115,16 +127,14 @@ def main():
         monitor='val_loss',           # oder z. B. "val_acc"
         save_top_k=1,                 # nur das beste Modell speichern
         mode='min',                   # "min" für loss, "max" für acc
-        filename='best-{epoch:02d}-{val_loss:.4f}',  # Dateinamenformat
+        dirpath=PATHS.DATA_MODELS.as_posix(),
+        filename='vecsets_classification',  # Dateinamenformat
         save_weights_only=False,      # speichert komplette Checkpoints
         verbose=True
     )
 
     trainer = Trainer(max_epochs=500, logger=mlf_logger, callbacks=[early_stop_callback, checkpoint_callback], enable_checkpointing=True, enable_model_summary=False, log_every_n_steps=1)
     trainer.fit(model, train_loader, val_loader)
-
-
-    torch.save(model.state_dict(), r"../models/vecsets-classification.pt")
 
 
 if __name__ == "__main__":
