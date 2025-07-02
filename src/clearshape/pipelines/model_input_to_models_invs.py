@@ -8,6 +8,7 @@ from torch.utils.data import DataLoader, random_split, TensorDataset
 
 #custom imports
 from clearshape.invariants.ml.modules.invs_classificator import InvariantClassifier
+from pytorch_lightning.callbacks import EarlyStopping, ModelCheckpoint
 from clearshape.dataset import FabwaveDataset
 
 
@@ -41,12 +42,22 @@ def objective(trial):
     # MLflow Logger
     mlf_logger = MLFlowLogger(experiment_name="invariants-classification", tracking_uri="file:./../invariants/ml/mlruns")
 
+
+
+    early_stop_callback = EarlyStopping(
+            monitor='val_loss',     # oder "val_acc", je nachdem
+            patience=10,             # z. B. 5 Epochen ohne Verbesserung
+            mode='min',             # "min" für loss, "max" für accuracy
+            verbose=True
+        )
+
     trainer = Trainer(
         max_epochs=150,
         logger=mlf_logger,
         enable_checkpointing=False,
         enable_model_summary=False,
-        log_every_n_steps=1
+        log_every_n_steps=1,
+        callbacks=[early_stop_callback]
     )
 
     trainer.fit(model, train_loader, val_loader)
@@ -85,7 +96,22 @@ def main():
     train_loader, val_loader = get_dataloaders(batch_size=best_params["batch_size"])
 
 
-    trainer = Trainer(max_epochs=1000, logger=mlf_logger)
+    early_stop_callback = EarlyStopping(
+            monitor='val_loss',     # oder "val_acc", je nachdem
+            patience=10,             # z. B. 5 Epochen ohne Verbesserung
+            mode='min',             # "min" für loss, "max" für accuracy
+            verbose=True
+        )
+    checkpoint_callback = ModelCheckpoint(
+        monitor='val_loss',           # oder z. B. "val_acc"
+        save_top_k=1,                 # nur das beste Modell speichern
+        mode='min',                   # "min" für loss, "max" für acc
+        filename='best-{epoch:02d}-{val_loss:.4f}',  # Dateinamenformat
+        save_weights_only=False,      # speichert komplette Checkpoints
+        verbose=True
+    )
+
+    trainer = Trainer(max_epochs=1000, logger=mlf_logger, callbacks=[early_stop_callback, checkpoint_callback], enable_checkpointing=True)
     trainer.fit(model, train_loader, val_loader)
 
 

@@ -49,7 +49,7 @@ class VecsetClassifierModule(pl.LightningModule):
         return self.model(vector_set)
 
     def training_step(self, batch, batch_idx):
-        vector_set, target_cls = batch
+        vector_set, target_cls, _ = batch
 
         # Convert one-hot to label indices
         if target_cls.ndim > 1 and target_cls.shape[-1] > 1:
@@ -65,7 +65,7 @@ class VecsetClassifierModule(pl.LightningModule):
         return loss
 
     def validation_step(self, batch, batch_idx):
-        vector_set, target_cls = batch
+        vector_set, target_cls, _= batch
 
         if target_cls.ndim > 1 and target_cls.shape[-1] > 1:
             target_cls = torch.argmax(target_cls, dim=-1)
@@ -81,7 +81,7 @@ class VecsetClassifierModule(pl.LightningModule):
 
     # Test Step anpassen
     def test_step(self, batch, batch_idx):
-        vector_set, target_cls = batch
+        vector_set, target_cls, _= batch
 
         # Wenn One-Hot-Labels verwendet werden, in Integer-Labels umwandeln
         if target_cls.ndim > 1 and target_cls.shape[-1] > 1:
@@ -108,7 +108,7 @@ class VecsetClassifierModule(pl.LightningModule):
 
         scheduler = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(
             optimizer,
-            T_0=10,          # Erste Periode (z. B. 10 Epochen)
+            T_0=20,          # Erste Periode (z. B. 10 Epochen)
             T_mult=2,        # Jede Periode wird doppelt so lang
             eta_min=1e-6     # Minimale Lernrate am Ende eines Zyklus
         )

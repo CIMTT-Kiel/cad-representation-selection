@@ -66,7 +66,7 @@ class InvariantClassifier(pl.LightningModule):
 
         scheduler = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(
             optimizer,
-            T_0=10,          # Erste Periode (z. B. 10 Epochen)
+            T_0=20,          # Erste Periode (z. B. 10 Epochen)
             T_mult=2,        # Jede Periode wird doppelt so lang
             eta_min=1e-6     # Minimale Lernrate am Ende eines Zyklus
         )
