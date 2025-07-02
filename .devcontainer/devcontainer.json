@@ -6,7 +6,7 @@
   "service": "devcontainer",
 
   "runArgs": [
-    //"--gpus=all", // for GPU support - this line has to be removed on mac 
+    "--gpus=all", // for GPU support - this line has to be removed on mac 
     "--rm"
   ],
 
