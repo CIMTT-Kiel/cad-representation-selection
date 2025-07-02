@@ -178,9 +178,27 @@ class ModelsModelOutputPipeline:
         pass
 
     # TODO: Implement the invariant model initialization
-    def _initialize_invariant_model(
-        self,
-    ) -> torch.nn.Module:
+    def _initialize_invariant_model(self,) -> torch.nn.Module:
+        """
+        Initialize the InvariantMLP model for classification tasks.
+
+        This method loads the best trained checkpoint for the invariant model from a saved
+        `.ckpt` file, extracts the hyperparameters and state dictionary, adapts the state
+        dictionary keys if necessary, and instantiates the model with the loaded parameters.
+
+        Returns
+        -------
+        torch.nn.Module
+            An InvariantMLP model initialized with the best saved weights and hyperparameters.
+
+        Notes
+        -----
+        - The checkpoint is assumed to be stored in the `data/6_models/invariants_classification.ckpt` file.
+        - The hyperparameter dictionary inside the checkpoint contains parameters used to
+        instantiate the `InvariantMLP`. The learning rate (`lr`) key is removed before model initialization.
+        - The keys in the `state_dict` may have a "model." prefix, which is stripped before loading.
+        - This method assumes the model class `InvariantMLP` is already imported and available.
+        """
         logger.info(f"Initializing Invariants-model")
 
         checkpoint = torch.load((PATHS.DATA_MODELS / "invariants_classification.ckpt").as_posix())
