@@ -3,6 +3,7 @@ import pytorch_lightning as pl
 import torch.nn.functional as F
 import torch.nn as nn
 from torchmetrics.classification import Accuracy
+from torchmetrics import F1Score
 #custom imports
 from clearshape.models.vecset_trnsf_encoder import VecsetClassifier
 
@@ -40,6 +41,7 @@ class VecsetClassifierModule(pl.LightningModule):
         #metrics
         self.train_acc = Accuracy(task="multiclass", num_classes=num_classes)
         self.val_acc = Accuracy(task="multiclass", num_classes=num_classes)
+        self.f1_score = F1Score(task="multiclass", num_classes=num_classes)
 
         # criterion
         self.criterion = nn.CrossEntropyLoss()
@@ -51,41 +53,34 @@ class VecsetClassifierModule(pl.LightningModule):
     def training_step(self, batch, batch_idx):
         vector_set, target_cls, _ = batch
 
-        # Convert one-hot to label indices
-        if target_cls.ndim > 1 and target_cls.shape[-1] > 1:
-            target_cls = torch.argmax(target_cls, dim=-1)
-
         logits = self(vector_set)
         loss = self.criterion(logits, target_cls)
         preds = torch.argmax(logits, dim=-1)
+        f1 = self.f1_score(logits.argmax(dim=1), target_cls)
 
         self.train_acc(preds, target_cls)
         self.log("train_loss", loss)
         self.log("train_acc", self.train_acc, prog_bar=True)
+        self.log('train_f1_score', f1, prog_bar=True)
         return loss
 
     def validation_step(self, batch, batch_idx):
         vector_set, target_cls, _= batch
 
-        if target_cls.ndim > 1 and target_cls.shape[-1] > 1:
-            target_cls = torch.argmax(target_cls, dim=-1)
-
         logits = self(vector_set)
         val_loss = self.criterion(logits, target_cls)
         preds = torch.argmax(logits, dim=-1)
-
         self.val_acc(preds, target_cls)
+        f1_score = self.f1_score(logits.argmax(dim=1), target_cls)
+
         self.log("val_loss", val_loss, prog_bar=True)
         self.log("val_acc", self.val_acc, prog_bar=True, on_step=False, on_epoch=True)
+        self.log('val_f1_score', f1_score, prog_bar=True)
         self.log("lr", self.trainer.optimizers[0].param_groups[0]['lr'])
 
     # Test Step anpassen
     def test_step(self, batch, batch_idx):
         vector_set, target_cls, _= batch
-
-        # Wenn One-Hot-Labels verwendet werden, in Integer-Labels umwandeln
-        if target_cls.ndim > 1 and target_cls.shape[-1] > 1:
-            target_cls = torch.argmax(target_cls, dim=-1)
 
         logits = self(vector_set)
         test_loss = self.criterion(logits, target_cls)
