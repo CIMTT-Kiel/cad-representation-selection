@@ -156,7 +156,7 @@ class ModelOutputToReportingPipeline:
         logger.debug("Saving classification metrics")
         results = []
         for data_type in classifier_output["data_type"].unique():
-            class_ids_true, class_ids_predicted = self._filter_output_for_data_type(
+            class_ids_true, class_ids_predicted = self._get_true_and_prediced_values(
                 classifier_output, test_data, data_type, is_classifier=True
             )
             accuracy = metrics.accuracy_score(class_ids_true, class_ids_predicted)
