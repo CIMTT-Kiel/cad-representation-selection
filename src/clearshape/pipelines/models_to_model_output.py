@@ -204,23 +204,11 @@ class ModelsModelOutputPipeline:
 
         logger.info(f"Initializing Invariants-model")
 
-        checkpoint = torch.load((PATHS.DATA_MODELS / "invariants_classification.ckpt").as_posix())
+        checkpoint = torch.load((PATHS.DATA_MODELS / "invariants-classifier.ckpt").as_posix())
         hyperparams = checkpoint["hyper_parameters"]
         del hyperparams["lr"]
 
-        state_dict = checkpoint["state_dict"]
-
-        # "model."-Prefix aus Keys entfernen
-        new_state_dict = {}
-        for k, v in state_dict.items():
-            if k.startswith("model."):
-                new_key = k[len("model."):]
-            else:
-                new_key = k
-            new_state_dict[new_key] = v
-
         model = InvariantMLP(**hyperparams)
-        model.load_state_dict(new_state_dict)
 
         return model
     
@@ -246,7 +234,7 @@ class ModelsModelOutputPipeline:
 
         Notes
         -----
-        - The model checkpoint is expected at `data/6_models/vecset_classification.ckpt`.
+        - The model checkpoint is expected at `data/6_models/vecsets-classifierckpt.ckpt`.
         - The checkpoint must contain a `"state_dict"` with weight tensors and `"hyper_parameters"` 
         used to define the model architecture.
         - The `"lr"` hyperparameter is excluded during reconstruction, as it is optimizer-specific.
@@ -255,25 +243,14 @@ class ModelsModelOutputPipeline:
         - The model class `VecsetClassifier` must be importable in the current environment.
         """
         #TODO implement for regression
-        logger.info(f"Initializing Invariants-model")
+        logger.info(f"Initializing Vecset-model")
 
-        checkpoint = torch.load((PATHS.DATA_MODELS / "vecsets_classification.ckpt").as_posix())
+        checkpoint = torch.load((PATHS.DATA_MODELS / "vecsets-classifier.ckpt").as_posix())
         hyperparams = checkpoint["hyper_parameters"]
         del hyperparams["lr"]
 
-        state_dict = checkpoint["state_dict"]
-
-        # "model."-Prefix aus Keys entfernen
-        new_state_dict = {}
-        for k, v in state_dict.items():
-            if k.startswith("model."):
-                new_key = k[len("model."):]
-            else:
-                new_key = k
-            new_state_dict[new_key] = v
-
         model = VecsetClassifier(**hyperparams)
-        model.load_state_dict(new_state_dict)
+
 
         return model
 
@@ -327,11 +304,18 @@ class ModelsModelOutputPipeline:
                 f"Invalid model type: {data_type}-{model_type}. Supported types are: images, trees, invariants for data and regressor, classifier for model type."
             )
 
-        model.load_state_dict(
-            torch.load(path, weights_only=True, map_location=device), strict=False
-        )
+        if path.suffix == ".pth":
+            state_dict = torch.load(path, weights_only=True, map_location=device)
+        elif path.suffix == ".ckpt":
+            checkpoint = torch.load(path.as_posix(), map_location=device)
+            state_dict = {k.replace("model.", ""): v for k, v in checkpoint["state_dict"].items()}
+        else:
+            raise NotImplementedError(f"Loading model format {path.suffix} is not implemented")
+
+        model.load_state_dict(state_dict, strict=False)
         model.to(device)
         model.eval()
+
         return model
 
     def _get_data_loader(self, task_type, data_type, scaler=None) -> None:
@@ -399,8 +383,8 @@ class ModelsModelOutputPipeline:
         and regressor models, saving the results to CSV files.
         """
         logger.info("Starting pipeline to output model predictions.")
+
         # process classifiers
-        logger.info("Processing classifier models...")
         classifier_models = self._get_models_by_type("classifier")
 
         # for each classifier model, load the model, compute predictions and save them to a csv file
