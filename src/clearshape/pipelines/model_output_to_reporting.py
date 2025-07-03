@@ -360,7 +360,8 @@ class ModelOutputToReportingPipeline:
         ax.set_title(f"Confusion Matrix for {data_type}")
         ax.set_xlabel("Predicted Class")
         ax.set_ylabel("True Class")
-        ax.xaxis.tick_top()
+        ax.figure.set_size_inches(15, 8)
+        ax.set_xticklabels(ax.get_xticklabels(), rotation=90, ha="right")
 
         ax.figure.savefig(
             cons.PATHS.DATA_REPORTING / f"confusion_matrix_{data_type}.png",
