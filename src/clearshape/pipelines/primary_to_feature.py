@@ -316,7 +316,7 @@ class PrimaryFeaturePipeline:
         The file is stored in the `data/4_feature/vecsets` directory with the same name as the STEP file,
         but with a `.npy` extension.
         """
-        logging.debug("Saving vector set representation")
+        logger.debug("Saving vector set representation")
         relative_path = self._get_relative_path()
         vecset_path = (cons.PATHS.DATA_FEATURE / "vecsets" / relative_path).with_suffix(".npy")
         # ensure the directory exists
@@ -399,13 +399,13 @@ class PrimaryFeaturePipeline:
 
                     #check if file is already processed
                     if self._files_already_processed is not None and relative_path in self._files_already_processed:
-                        logger.warning(f"Skipping already processed file {self._file_to_process}")
+                        logger.info(f"Skipping already processed file {self._file_to_process}")
                         progress_bar.update(1)
                         continue
 
                     #check if file has failed in a previous run
                     if self._files_already_failed is not None and relative_path in self._files_already_failed:
-                        logger.warning(f"Skipping already failed file {self._file_to_process}")
+                        logger.info(f"Skipping already failed file {self._file_to_process}")
                         progress_bar.update(1)
                         continue
 
@@ -420,7 +420,7 @@ class PrimaryFeaturePipeline:
                     try:
                         self._convert_to_tree()
                         self._save_tree()
-                        tree_saved = True
+                        tree_saved = self._tree_available()
                     except Exception as e:
                         logger.warning(f"Error converting {self._file_to_process} to TREE: {e}")
                 else:
@@ -431,7 +431,7 @@ class PrimaryFeaturePipeline:
                     try:
                         self._convert_to_invariants()
                         self._save_invariants()
-                        invariants_saved = True
+                        invariants_saved = self._invariants_available() 
                     except Exception as e:
                         logger.warning(f"Error in converting {self._file_to_process} to INVARIANTS: {e}")
                 else:
@@ -442,7 +442,7 @@ class PrimaryFeaturePipeline:
                     try:
                         self._convert_to_vecset()
                         self._save_vecset()
-                        vecset_saved = True
+                        vecset_saved = self._vecset_available()
                     except Exception as e:
                         logger.warning(f"Error in converting {self._file_to_process} to VECSET: {e}")
                 else:
@@ -479,7 +479,6 @@ def write_path_to_error_file(relative_path):
     mode= "a" if error_file.exists() else "w"                  
     with open(error_file, mode=mode, newline="", encoding="utf-8") as file:
         writer = csv.writer(file)
-        logger.warning("Write row..")
         writer.writerow([relative_path])
 
 
