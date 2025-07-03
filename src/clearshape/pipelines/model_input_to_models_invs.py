@@ -113,7 +113,7 @@ def main():
         save_top_k=1,                 # nur das beste Modell speichern
         mode='min',                   # "min" für loss, "max" für acc
         dirpath=PATHS.DATA_MODELS.as_posix(), 
-        filename='invariants_classification',  # Dateinamenformat
+        filename='invariants-classifier',  # Dateinamenformat
         save_weights_only=False,      # speichert komplette Checkpoints
         verbose=True
     )
