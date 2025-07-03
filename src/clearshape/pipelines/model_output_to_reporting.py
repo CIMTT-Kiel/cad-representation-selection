@@ -348,6 +348,29 @@ class ModelOutputToReportingPipeline:
         grid.set_titles("{col_name}")
         grid.savefig(cons.PATHS.DATA_REPORTING / "error_distributions.png", format="png", bbox_inches="tight")
 
+    def _save_confusion_matrix_plot(self, confusion_matrix: pd.DataFrame, data_type: str) -> None:
+        """
+        """
+        ax = sns.heatmap(
+            confusion_matrix,
+            annot=True,
+            fmt=".2f",
+            cmap="Blues",
+            cbar=False,
+            xticklabels=confusion_matrix.columns,
+            yticklabels=confusion_matrix.index,
+        )
+        ax.set_title(f"Confusion Matrix for {data_type}")
+        ax.set_xlabel("Predicted Class")
+        ax.set_ylabel("True Class")
+        ax.xaxis.tick_top()
+
+        ax.figure.savefig(
+            cons.PATHS.DATA_REPORTING / f"confusion_matrix_{data_type}.png",
+            format="png",
+            bbox_inches="tight",
+        )
+
     def run(self):
         """
         Execute the pipeline to compute reporting metrics and save confusion matrices.
