@@ -151,8 +151,7 @@ class ModelOutputToReportingPipeline:
         -------
         results_df : pd.DataFrame
             DataFrame containing the classification metrics for each data type.
-            The DataFrame has columns 'data_type', 'accuracy_micro', 'f1_score_micro',
-            'recall_micro', and 'precision_micro'.
+            The DataFrame has columns 'data_type', 'metric', and 'value'.
         """
         logger.debug("Saving classification metrics")
         results = []
@@ -170,16 +169,14 @@ class ModelOutputToReportingPipeline:
             precision = metrics.precision_score(
                 class_ids_true, class_ids_predicted, average="micro"
             )
-            results.append(
-                {
-                    "data_type": data_type,
-                    "accuracy_micro": accuracy,
-                    "f1_score_micro": f1_score,
-                    "recall_micro": recall,
-                    "precision_micro": precision,
-                }
+            results.extend(
+                [
+                    {"data_type": data_type, "metric": "accuracy_micro", "value": accuracy},
+                    {"data_type": data_type, "metric": "f1_score_micro", "value": f1_score},
+                    {"data_type": data_type, "metric": "recall_micro", "value": recall},
+                    {"data_type": data_type, "metric": "precision_micro", "value": precision},
+                ]
             )
-
         results_df = pd.DataFrame(results)
         return results_df
 
@@ -315,13 +312,13 @@ class ModelOutputToReportingPipeline:
             A seaborn objects Plot instance representing the bar plot.
         """
         plot = (
-            so.Plot(classification_metrics, x="data_type")
+            so.Plot(classification_metrics, x="metric", y="value", color="data_type")
             .add(so.Bar(), so.Dodge())
             .label(
                 title="Classification Metrics by Data Type",
-                x="Data Type",
+                x="Metric",
                 y="Metric Value",
-                color="Metric",
+                color="Data Type",
             )
         )
         plot.save(
