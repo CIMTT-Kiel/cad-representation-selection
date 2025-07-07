@@ -400,47 +400,59 @@ class ModelOutputToReportingPipeline:
         # === CLASSIFICATION METRICS ===
         logger.info("Compute classifier metrics.")
         # load predictions and test data
-        classifier_output = pd.read_csv(
-            cons.PATHS.DATA_MODEL_OUTPUT / "classifiers_output.csv"
-        )
-        test_data = pd.read_csv(cons.PATHS.DATA_MODEL_INPUT / "test.csv")[
-            ["path", "class_id", "class_name"]
-        ]
+        try:
+            classifier_output = pd.read_csv(
+                cons.PATHS.DATA_MODEL_OUTPUT / "classifiers_output.csv"
+            )
+            test_data = pd.read_csv(cons.PATHS.DATA_MODEL_INPUT / "test.csv")[
+                ["path", "class_id", "class_name"]
+            ]
+            classifier_output_found = True
+        except FileNotFoundError:
+            classifier_output_found = False
 
-        # calculate and save confusion matrices for each data type
-        for data_type in classifier_output["data_type"].unique():
-            logger.info(f"Processing data type: {data_type}")
-            class_ids_true, class_ids_predicted = self._get_true_and_prediced_values(
-                classifier_output, test_data, data_type, is_classifier=True
-            )
-            class_id_to_class_name = dict(
-                zip(test_data["class_id"].unique(), test_data["class_name"].unique())
-            )
-            confusion_matrix = self._get_confusion_matrix(
-                class_ids_true, class_ids_predicted, data_type, class_id_to_class_name
-            )
-            self._save_confusion_matrix_plot(confusion_matrix, data_type)
-            
-        # compute classification metrics and plot them for all models
-        classification_metrics = self._get_classification_metrics(classifier_output, test_data)
-        self._save_classification_metrics_plot(classification_metrics)
+        if classifier_output_found:
+            # calculate and save confusion matrices for each data type
+            for data_type in classifier_output["data_type"].unique():
+                logger.info(f"Processing data type: {data_type}")
+                class_ids_true, class_ids_predicted = self._get_true_and_prediced_values(
+                    classifier_output, test_data, data_type, is_classifier=True
+                )
+                class_id_to_class_name = dict(
+                    zip(test_data["class_id"].unique(), test_data["class_name"].unique())
+                )
+                confusion_matrix = self._get_confusion_matrix(
+                    class_ids_true, class_ids_predicted, data_type, class_id_to_class_name
+                )
+                self._save_confusion_matrix_plot(confusion_matrix, data_type)
+        
+
+            # compute classification metrics and plot them for all models
+            classification_metrics = self._get_classification_metrics(classifier_output, test_data)
+            self._save_classification_metrics_plot(classification_metrics)
 
         # === REGRESSION METRICS ===
         logger.info("Compute regression metrics.")
         # load predictions and test data
-        regressor_output = pd.read_csv(
-            cons.PATHS.DATA_MODEL_OUTPUT / "regressors_output.csv"
-        )
-        test_data = pd.read_csv(cons.PATHS.DATA_MODEL_INPUT / "test.csv")[
-            ["path", "volume", "faces", "edges", "vertices"]
-        ]
+        try:
+            regressor_output = pd.read_csv(
+                cons.PATHS.DATA_MODEL_OUTPUT / "regressors_output.csv"
+            )
+            test_data = pd.read_csv(cons.PATHS.DATA_MODEL_INPUT / "test.csv")[
+                ["path", "volume", "faces", "edges", "vertices"]
+            ]
+            regressor_output_found = True
+        except FileNotFoundError:
+            regressor_output_found = False
 
-        regression_metrics = self._get_regression_metrics(regressor_output, test_data)
-        self._save_regression_metrics_plot(regression_metrics)
+        if regressor_output_found:
+            regression_metrics = self._get_regression_metrics(regressor_output, test_data)
+            self._save_regression_metrics_plot(regression_metrics)
 
-        error_table = self._get_error_table(regressor_output, test_data)
-        self._save_violin_plot(error_table)
+            error_table = self._get_error_table(regressor_output, test_data)
+            self._save_violin_plot(error_table)
 
+        
         logger.info("Pipeline completed successfully.")
 
 
