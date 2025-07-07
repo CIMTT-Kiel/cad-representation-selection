@@ -266,31 +266,47 @@ class ModelOutputToReportingPipeline:
             DataFrame containing the error table with columns 'path', 'data_type', 'error_type', 'value'
         """
         logger.info("Calculating error table")
-        errors = pd.DataFrame(
-            columns=[
-                "path",
-                "data_type",
-                "volume_error",
-                "faces_error",
-                "edges_error",
-                "vertices_error",
-            ]
-        )
+        # for each data type and each cad model indentified by the path, calculate the relative error for each attribute
+        errors = []
         for data_type in regressor_output["data_type"].unique():
             data_type_output = regressor_output.query("data_type == @data_type")
-            errors = pd.concat(
-                [errors, data_type_output[["path", "data_type"]]], ignore_index=True
-            )
-            errors["volume_error"] = abs(data_type_output["pred_volume"] - test_data["volume"])
-            errors["faces_error"] = abs(data_type_output["pred_faces"] - test_data["faces"])
-            errors["edges_error"] = abs(data_type_output["pred_edges"] - test_data["edges"])
-            errors["vertices_error"] = abs(data_type_output["pred_vertices"] - test_data["vertices"])
-            errors["volume_relative_error"] = (errors["volume_error"] / test_data["volume"])
-            errors["faces_relative_error"] = errors["faces_error"] / test_data["faces"]
-            errors["edges_relative_error"] = errors["edges_error"] / test_data["edges"]
-            errors["vertices_relative_error"] = (errors["vertices_error"] / test_data["vertices"])
-
-        errors = errors.melt(id_vars=["path", "data_type"], var_name="error_type")
+            for _, row in data_type_output.iterrows():
+                true_values = test_data.query("path == @row['path']")
+                if true_values.empty:
+                    continue
+                true_values = true_values.iloc[0]
+                # calculate absolute errors
+                volume_error = abs(row["pred_volume"] - true_values["volume"])
+                faces_error = abs(row["pred_faces"] - true_values["faces"])
+                edges_error = abs(row["pred_edges"] - true_values["edges"])
+                vertices_error = abs(row["pred_vertices"] - true_values["vertices"])
+                # calculate relative errors
+                volume_relative_error = volume_error / true_values["volume"] if true_values["volume"] != 0 else 0
+                faces_relative_error = faces_error / true_values["faces"] if true_values["faces"] != 0 else 0
+                edges_relative_error = edges_error / true_values["edges"] if true_values["edges"] != 0 else 0
+                vertices_relative_error = vertices_error / true_values["vertices"] if true_values["vertices"] != 0 else 0
+                # append errors to the list
+                errors.append(
+                    {
+                        "path": row["path"],
+                        "data_type": data_type,
+                        "volume_error": volume_error,
+                        "faces_error": faces_error,
+                        "edges_error": edges_error,
+                        "vertices_error": vertices_error,
+                        "volume_relative_error": volume_relative_error,
+                        "faces_relative_error": faces_relative_error,
+                        "edges_relative_error": edges_relative_error,
+                        "vertices_relative_error": vertices_relative_error,
+                    }
+                )
+        # create a DataFrame from the errors list
+        errors = pd.DataFrame(errors)
+        # melt the DataFrame to have a long format with error types
+        errors = errors.melt(
+            id_vars=["path", "data_type"],
+            var_name="error_type",
+        )
         return errors
 
     def _save_classification_metrics_plot(self, classification_metrics: pd.DataFrame) -> None:
