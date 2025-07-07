@@ -356,8 +356,10 @@ class ModelOutputToReportingPipeline:
         -------
         None
         """
+        logger.info("Saving violin plot for error distributions")
+        # filter the error table to only include relative errors
+        error_table = error_table.query("error_type.str.contains('relative')").copy()
         grid = sns.catplot(data=error_table, x="data_type", y="value", col="error_type", kind="violin")
-        grid.set_axis_labels("Data Type", " Relative Volume Error")
         grid.set_titles("{col_name}")
         grid.savefig(cons.PATHS.DATA_REPORTING / "error_distributions.png", format="png", bbox_inches="tight")
 
