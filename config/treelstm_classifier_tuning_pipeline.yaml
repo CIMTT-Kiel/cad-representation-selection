@@ -16,7 +16,7 @@ train:
 
   # fixed hyperparameters for training stage
   batch_size: 256  # preferably high for faster training
-  learning_rate: 1.
+  learning_rate: 0.0001
   optimizer: adam
   dropout_rate: 0.0
   
