@@ -21,8 +21,9 @@ class TestConstructor(unittest.TestCase):
 
     def test_weights_have_correct_shape(self):
         for layer in self.mlp.layers:
-            self.assertEqual(layer.weight.shape, (layer.out_features, layer.in_features))
-            self.assertEqual(layer.bias.shape, (layer.out_features,))
+            if isinstance(layer, nn.Linear):
+                self.assertEqual(layer.weight.shape, (layer.out_features, layer.in_features))
+                self.assertEqual(layer.bias.shape, (layer.out_features,))
 
 class TestForward(unittest.TestCase):
 
