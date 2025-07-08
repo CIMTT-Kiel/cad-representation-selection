@@ -596,8 +596,8 @@ class TreeLSTMTuningPipeline():
             optimizer=self._get_optimizer(parameter["optimizer"]),
             train_loader=self._train_data_loader,
             test_loader=self._test_data_loader,
-            loss_fn=self._get_loss_function(),
-            test_metric=self._get_test_metric(),
+            loss_fn=self._get_loss_function(model),
+            test_metric=self._get_test_metric(model),
             device=device,
             regression=self.regression,
             classification=self.classification,
@@ -637,7 +637,7 @@ class TreeLSTMTuningPipeline():
         return best_params
 
     # TODO refactor get_loss_function and get_test_metric. WET code!
-    def _get_loss_function(self):
+    def _get_loss_function(self, model=None):
         """
         Instantiate the loss function based on the configuration.
 
@@ -657,11 +657,11 @@ class TreeLSTMTuningPipeline():
             case "cross_entropy":
                 return nn.CrossEntropyLoss()
             case "f1":
-                return MulticlassF1Score(num_classes=self._conf.output_shape)
+                return MulticlassF1Score(num_classes=model.models[-1].layers[-2].out_features)
             case _ :
                 raise ValueError(f"Loss function {self._conf.loss_function} not recognized.")
 
-    def _get_test_metric(self):
+    def _get_test_metric(self, model=None):
         """
         Instantiate the test metric based on the configuration.
 
@@ -681,7 +681,7 @@ class TreeLSTMTuningPipeline():
             case "cross_entropy":
                 return nn.CrossEntropyLoss()
             case "f1":
-                return MulticlassF1Score(num_classes=self._conf.output_shape)
+                return MulticlassF1Score(num_classes=model.models[-1].layers[-2].out_features)
             case _:
                 raise ValueError(f"Test metric {self._conf.test_metric} not recognized.")
 
