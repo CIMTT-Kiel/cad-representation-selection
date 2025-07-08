@@ -13,7 +13,6 @@ class TestConstructor(unittest.TestCase):
         self.assertEqual(self.mlp.layers[0].out_features, 20)
         self.assertEqual(self.mlp.layers[-1].out_features, 5)
         self.assertIsInstance(self.mlp.activation, nn.ReLU)
-        self.assertEqual(self.mlp.task_type, "classification")
 
     def test_initial_weigths_are_not_zero(self):
         for param in self.mlp.parameters():
@@ -21,14 +20,15 @@ class TestConstructor(unittest.TestCase):
 
     def test_weights_have_correct_shape(self):
         for layer in self.mlp.layers:
-            self.assertEqual(layer.weight.shape, (layer.out_features, layer.in_features))
-            self.assertEqual(layer.bias.shape, (layer.out_features,))
+            if isinstance(layer, nn.Linear):
+                self.assertEqual(layer.weight.shape, (layer.out_features, layer.in_features))
+                self.assertEqual(layer.bias.shape, (layer.out_features,))
 
 class TestForward(unittest.TestCase):
 
     def setUp(self):
         self.mlp_classifier = FeedforwardMLP(10, [20], 5)
-        self.mlp_regressor = FeedforwardMLP(10, [20], 1, task_type="regression")
+        self.mlp_regressor = FeedforwardMLP(10, [20], 1)
 
     def test_output_shape_is_5(self):
         input_tensor = torch.randn(1, 10)
