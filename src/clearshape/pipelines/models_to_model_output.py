@@ -41,7 +41,9 @@ stream_handler.setFormatter(formatter)
 logger.addHandler(stream_handler)
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+logger.info(f"Using device: {device}")
 
+torch.manual_seed(42)
 
 class ModelsModelOutputPipeline:
     """
@@ -312,8 +314,8 @@ class ModelsModelOutputPipeline:
         else:
             raise NotImplementedError(f"Loading model format {path.suffix} is not implemented")
 
-        model.load_state_dict(state_dict, strict=False)
         model.to(device)
+        model.load_state_dict(state_dict, strict=False)
         model.eval()
 
         return model
@@ -346,14 +348,14 @@ class ModelsModelOutputPipeline:
         )
         match data_type:
             case "images":
-                data_loader = DataLoader(data_set, batch_size=32, shuffle=False)
+                data_loader = DataLoader(data_set, batch_size=256, shuffle=False)
             case "invariants":
-                data_loader = DataLoader(data_set, batch_size=32, shuffle=False)
+                data_loader = DataLoader(data_set, batch_size=256, shuffle=False)
             case "vecsets":
-                data_loader = DataLoader(data_set, batch_size=32, shuffle=False)
+                data_loader = DataLoader(data_set, batch_size=256, shuffle=False)
             case "trees":
                 data_loader = dgl.dataloading.GraphDataLoader(
-                    data_set, batch_size=32, shuffle=False
+                    data_set, batch_size=256, shuffle=False, 
                 )
         return data_loader
 
