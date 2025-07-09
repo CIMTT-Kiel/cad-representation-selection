@@ -23,8 +23,8 @@ train:
   # hyperparameters to tune during training stage
 
   encoder:
-    encoding_size_min: 100
-    encoding_size_max: 100
+    encoding_size_min: 30
+    encoding_size_max: 30
     encoding_size_step: 50
 
   predictor:
@@ -39,7 +39,7 @@ train:
 validation:
 
   # fixed hyperparameters for validation stage
-  batch_size: 128  # preferably high for faster training
+  batch_size: 256  # preferably high for faster training
   optimizer: adam
 
   # hyperparameters to tune during validation stage
@@ -59,6 +59,6 @@ test:
   optimizer: adam
 
   # hyperparameters to tune during test stage
-  batch_size_min: 16
-  batch_size_max: 16
-  batch_size_step: 16
+  batch_size_min: 256
+  batch_size_max: 256
+  batch_size_step: 256
