@@ -123,7 +123,8 @@ class ModelOutputToReportingPipeline:
         confusion_matrix = metrics.confusion_matrix(
             class_ids_true, class_ids_predicted, normalize="true"
         )
-
+        
+        class_id_name_map = dict(sorted(class_id_name_map.items()))
         confusion_matrix = pd.DataFrame(
             confusion_matrix,
             index=class_id_name_map.values(),
@@ -418,9 +419,7 @@ class ModelOutputToReportingPipeline:
                 class_ids_true, class_ids_predicted = self._get_true_and_prediced_values(
                     classifier_output, test_data, data_type, is_classifier=True
                 )
-                class_id_to_class_name = dict(
-                    zip(test_data["class_id"].unique(), test_data["class_name"].unique())
-                )
+                class_id_to_class_name = test_data.drop_duplicates(subset=["class_id"])[["class_id", "class_name"]].set_index("class_id")["class_name"].to_dict()
                 confusion_matrix = self._get_confusion_matrix(
                     class_ids_true, class_ids_predicted, data_type, class_id_to_class_name
                 )
