@@ -312,8 +312,8 @@ class ModelsModelOutputPipeline:
         else:
             raise NotImplementedError(f"Loading model format {path.suffix} is not implemented")
 
-        model.load_state_dict(state_dict, strict=False)
         model.to(device)
+        model.load_state_dict(state_dict, strict=False)
         model.eval()
 
         return model
