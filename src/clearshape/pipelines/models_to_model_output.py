@@ -346,14 +346,14 @@ class ModelsModelOutputPipeline:
         )
         match data_type:
             case "images":
-                data_loader = DataLoader(data_set, batch_size=32, shuffle=False)
+                data_loader = DataLoader(data_set, batch_size=256, shuffle=False)
             case "invariants":
-                data_loader = DataLoader(data_set, batch_size=32, shuffle=False)
+                data_loader = DataLoader(data_set, batch_size=256, shuffle=False)
             case "vecsets":
-                data_loader = DataLoader(data_set, batch_size=32, shuffle=False)
+                data_loader = DataLoader(data_set, batch_size=256, shuffle=False)
             case "trees":
                 data_loader = dgl.dataloading.GraphDataLoader(
-                    data_set, batch_size=32, shuffle=False
+                    data_set, batch_size=256, shuffle=False, 
                 )
         return data_loader
 
