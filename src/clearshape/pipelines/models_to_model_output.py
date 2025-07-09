@@ -41,7 +41,9 @@ stream_handler.setFormatter(formatter)
 logger.addHandler(stream_handler)
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+logger.info(f"Using device: {device}")
 
+torch.manual_seed(42)
 
 class ModelsModelOutputPipeline:
     """
