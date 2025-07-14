@@ -103,22 +103,8 @@ class Trainer:
         return self._epochs_trained
 
     @property
-    def optimizer(self):
-        return self._optimizer
-
-    @optimizer.setter
-    def optimizer(self, optimizer):
-        logger.debug("enter optimizer setter")
-        self._optimizer = optimizer(self.model.parameters())
-
-    @property
     def model(self):
         return self._model
-
-    @model.setter
-    def model(self, model):
-        self._model = model
-        self._optimizer = self.optimizer(self.model.parameters())
 
     def train_one_epoch(self):
         """
