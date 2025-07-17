@@ -551,7 +551,7 @@ class TreeLSTMTuningPipeline():
         -------
         None
         """
-        epochs_to_train_in_a_row = 2
+        epochs_to_train_in_a_row = 5
         for _ in range(self._conf.n_epochs // epochs_to_train_in_a_row):
             training_loss = trainer.train(n_epochs=epochs_to_train_in_a_row)
             test_score = trainer.test()
