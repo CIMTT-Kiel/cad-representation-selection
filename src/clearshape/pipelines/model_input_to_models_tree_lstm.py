@@ -317,6 +317,7 @@ class TreeLSTMTuningPipeline():
                     "batch_size": self._conf.train.batch_size,
                     "optimizer": self._conf.train.optimizer,
                     "dropout_rate": self._conf.train.dropout_rate,
+                    "learning_rate": self._conf.train.learning_rate,
                 }
             case "validation":
                 return {
@@ -550,7 +551,7 @@ class TreeLSTMTuningPipeline():
         -------
         None
         """
-        epochs_to_train_in_a_row = 2
+        epochs_to_train_in_a_row = 5
         for _ in range(self._conf.n_epochs // epochs_to_train_in_a_row):
             training_loss = trainer.train(n_epochs=epochs_to_train_in_a_row)
             test_score = trainer.test()
@@ -595,7 +596,7 @@ class TreeLSTMTuningPipeline():
         self._set_data_loader(parameter["batch_size"])
         trainer = Trainer(
             model=model,
-            optimizer=self._get_optimizer(parameter["optimizer"]),
+            optimizer=self._get_optimizer(parameter["optimizer"])(model.parameters(), lr=parameter["learning_rate"]),
             train_loader=self._train_data_loader,
             test_loader=self._test_data_loader,
             loss_fn=self._get_loss_function(model),

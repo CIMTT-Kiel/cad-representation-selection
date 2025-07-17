@@ -16,6 +16,7 @@ import yaml
 import dgl
 import pandas as pd
 import torch
+import torch.nn as nn
 from omegaconf import OmegaConf
 from sklearn.preprocessing import MinMaxScaler
 from torch.utils.data import DataLoader
@@ -170,6 +171,9 @@ class ModelsModelOutputPipeline:
             input_shape=model_parameter.encoding_size,
             hidden_layers=model_parameter.hidden_layers,
             output_shape=pd.read_csv(cons.PATHS.DATA_MODEL_INPUT / "train.csv")["class_id"].nunique() if task_type == "classifier" else tuning_pipeline_config.output_shape,
+            dropout_rate=model_parameter.dropout_rate,
+            activation=nn.ReLU(),
+            output_activation=nn.Softmax(dim=1) if task_type == "classifier" else nn.ReLU(),
         )
         model = ModelStack([encoder, predictor])
         return model
@@ -307,7 +311,7 @@ class ModelsModelOutputPipeline:
             )
 
         if path.suffix == ".pth":
-            state_dict = torch.load(path, weights_only=True, map_location=device)
+            state_dict = torch.load(path, weights_only=False, map_location=device)
         elif path.suffix == ".ckpt":
             checkpoint = torch.load(path.as_posix(), map_location=device)
             state_dict = {k.replace("model.", ""): v for k, v in checkpoint["state_dict"].items()}
