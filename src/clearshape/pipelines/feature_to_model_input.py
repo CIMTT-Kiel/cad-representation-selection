@@ -133,8 +133,7 @@ class FeatureModelInputPipeline:
         The required class size is defined as `0.5 * median_class_size`.
         """
         class_sizes = self._master_table.value_counts("class_id")
-        class_size_median = class_sizes.median()
-        class_size_min_required = int(class_size_median * 0.5)
+        class_size_min_required = class_sizes.max()
         return class_size_min_required
 
     def _get_data_splits(self) -> tuple[pd.DataFrame]:
