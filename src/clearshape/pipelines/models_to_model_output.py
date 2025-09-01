@@ -438,7 +438,7 @@ class ModelsModelOutputPipeline:
             logger.info(f"Processing regressor model: {model}")
             data_type = model.split("-")[0]
             model = self._load_model(regressor_models[model]["path"])
-            scaler = self._get_scaler(cons.PATHS.DATA_MODEL_INPUT / "robust_scaler.pkl")
+            scaler = self._get_scaler(cons.PATHS.DATA_MODEL_INPUT / "log_scaler.pkl")
             test_data_loader = self._get_data_loader(
                 "regression", data_type, scaler=scaler
             )

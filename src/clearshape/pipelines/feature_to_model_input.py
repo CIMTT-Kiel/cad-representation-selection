@@ -14,6 +14,7 @@ from sklearn.preprocessing import RobustScaler
 
 # custom packages
 import clearshape.constants as cons
+from clearshape.scaler.custom_scalers import LogScaler
 
 # set up logger
 logging_level = logging.DEBUG
@@ -200,17 +201,29 @@ class FeatureModelInputPipeline:
         logger.info("Generating stratified data splits.")
         train, val, test = self._get_data_splits()
 
-        # fit and save scaler
-        logger.info("Fitting and saving scaler.")
-        scaler = RobustScaler()
-        scaler.fit(train[["volume", "faces", "edges", "vertices"]])
-        scaler_path = cons.PATHS.DATA_MODEL_INPUT / "robust_scaler.pkl"
+        # fit and save robust scaler
+        logger.info("Fitting and saving robust scaler.")
+        robust_scaler = RobustScaler()
+        robust_scaler.fit(train[["volume", "faces", "edges", "vertices"]])
+        robust_scaler_path = cons.PATHS.DATA_MODEL_INPUT / "robust_scaler.pkl"
 
         #ensure the dir exists
-        scaler_path.parent.mkdir(exist_ok=True)
+        robust_scaler_path.parent.mkdir(exist_ok=True)
 
-        with open(scaler_path, "wb") as f:
-            pickle.dump(scaler, f)
+        with open(robust_scaler_path, "wb") as f:
+            pickle.dump(robust_scaler, f)
+
+        # save log scaler
+        logger.info("Fitting and saving log scaler.")
+        log_scaler = LogScaler()
+        log_scaler.fit(train[["volume", "faces", "edges", "vertices"]]) # just as placeholder method to be consistent with sklearn api
+        log_scaler_path = cons.PATHS.DATA_MODEL_INPUT / "log_scaler.pkl"
+
+        #ensure the dir exists
+        log_scaler_path.parent.mkdir(exist_ok=True)
+
+        with open(log_scaler_path, "wb") as f:
+            pickle.dump(log_scaler, f)
 
         # save data splits
         logger.info("Saving data splits.")
