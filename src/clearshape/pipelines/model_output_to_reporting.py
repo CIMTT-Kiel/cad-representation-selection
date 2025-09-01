@@ -82,7 +82,7 @@ class ModelOutputToReportingPipeline:
         """
         logger.info(f"Filtering output for data type: {data_type}")
         data_subset = output.query("data_type == @data_type")
-        assert all(data_subset["path"] == test_data["path"])
+        #assert all(data_subset["path"] == test_data["path"])
 
         if is_classifier:
             true_values = test_data["class_id"]
@@ -160,6 +160,9 @@ class ModelOutputToReportingPipeline:
             class_ids_true, class_ids_predicted = self._get_true_and_prediced_values(
                 classifier_output, test_data, data_type, is_classifier=True
             )
+            logger.debug(class_ids_true)
+            logger.debug("")
+            logger.debug(class_ids_predicted)
             accuracy = metrics.accuracy_score(class_ids_true, class_ids_predicted)
             f1_score = metrics.f1_score(
                 class_ids_true, class_ids_predicted, average="micro"

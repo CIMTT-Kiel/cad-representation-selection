@@ -104,18 +104,18 @@ class TreeLSTMTuningPipeline():
         match self._current_stage:
             case "train":
                 return optuna.create_study(
-                    direction="minimize",
+                    direction="maximize",
                     pruner=optuna.pruners.MedianPruner(
                         n_startup_trials=3, n_warmup_steps=30
                     ),
                 )
             case "validation":
                 return optuna.create_study(
-                    direction="minimize",
+                    direction="maximize",
                 )
             case "test":
                 return optuna.create_study(
-                    direction="minimize",
+                    direction="maximize",
                 )
 
     def _load_scaler(self):
@@ -680,10 +680,13 @@ class TreeLSTMTuningPipeline():
         """
         match self._conf.test_metric:
             case "mean_squared_error":
+                logger.warning("MAKE SURE OPTIMIZATION FUNCTION IS *MINIMIZING* THE OBJECTIVE FUNCTION FOR MSE!!!")
                 return nn.MSELoss()
             case "cross_entropy":
+                logger.warning("MAKE SURE THE OPTIMIZATION FUNCTION IS MINIMIZING CROSS ENTROPY!!!")
                 return nn.CrossEntropyLoss()
             case "f1":
+                logger.warning("MAKE SURE THE OPTIMIZATION FUNCTION IS MAXIMIZING THE F1 SCORE!!!")
                 return MulticlassF1Score(num_classes=model.models[-1].layers[-2].out_features)
             case _:
                 raise ValueError(f"Test metric {self._conf.test_metric} not recognized.")

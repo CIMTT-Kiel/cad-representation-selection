@@ -26,9 +26,9 @@ def objective(trial):
 
     dropout = trial.suggest_float("dropout", 0.0, 0.5)
     lr = trial.suggest_float("lr", 1e-3, 1e-2, log=True)
-    hidden_size = trial.suggest_int("hidden_size", 128,2048)
+    hidden_size = trial.suggest_int("hidden_size", 64,2048*2)
 
-    batch_size = trial.suggest_categorical("batch_size", [128,256,512,1024])
+    batch_size = trial.suggest_categorical("batch_size", [256,512,1024])
 
 
     train_loader, val_loader = get_dataloaders(batch_size=batch_size)
@@ -50,14 +50,14 @@ def objective(trial):
 
 
     early_stop_callback = EarlyStopping(
-            monitor='val_loss',     # oder "val_acc", je nachdem
-            patience=10,             # z. B. 5 Epochen ohne Verbesserung
-            mode='min',             # "min" für loss, "max" für accuracy
+            monitor='val_f1_score',     # oder "val_acc", je nachdem
+            patience=50,             # z. B. 5 Epochen ohne Verbesserung
+            mode='max',             # "min" für loss, "max" für accuracy
             verbose=True
         )
 
     trainer = Trainer(
-        max_epochs=150,
+        max_epochs=200,
         logger=mlf_logger,
         enable_checkpointing=False,
         enable_model_summary=False,
@@ -67,12 +67,14 @@ def objective(trial):
 
     trainer.fit(model, train_loader, val_loader)
     val_loss = trainer.callback_metrics["val_loss"].item()
+    val_f1_score = trainer.callback_metrics["val_f1_score"].item()
 
     # Hyperparameter und Metrik an MLflow loggen (über den Logger)
     mlf_logger.log_hyperparams(trial.params)
     mlf_logger.log_metrics({"val_loss": val_loss})
+    mlf_logger.log_metrics({"val_f1_score": val_f1_score})
 
-    return val_loss  # Optuna maximiert diese Metrik
+    return val_f1_score  # Optuna maximiert diese Metrik
 
 
 def main():
@@ -81,8 +83,8 @@ def main():
 
     mlf_logger = MLFlowLogger(experiment_name="invariants-classification", tracking_uri="file:./../invariants/ml/mlruns", run_name="best-model")
 
-    study = optuna.create_study(direction="minimize")
-    study.optimize(objective, n_trials=20)
+    study = optuna.create_study(direction="maximize")
+    study.optimize(objective, n_trials=100)
 
     num_classes = int(pd.read_csv(PATHS.DATA_FEATURE / "fabwave_targets.csv").class_id.values.max())+1
     
@@ -103,9 +105,9 @@ def main():
 
 
     early_stop_callback = EarlyStopping(
-            monitor='val_loss',     # oder "val_acc", je nachdem
-            patience=10,             # z. B. 5 Epochen ohne Verbesserung
-            mode='min',             # "min" für loss, "max" für accuracy
+            monitor='val_f1_score',     # oder "val_acc", je nachdem
+            patience=100,             # z. B. 5 Epochen ohne Verbesserung
+            mode='max',             # "min" für loss, "max" für accuracy
             verbose=True
         )
     checkpoint_callback = ModelCheckpoint(

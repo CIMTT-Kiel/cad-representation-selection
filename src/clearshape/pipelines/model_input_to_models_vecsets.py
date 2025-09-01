@@ -20,17 +20,18 @@ def get_dataloaders(batch_size=32):
 def objective(trial):
 
     # Hyperparameter-sampling
-    dropout = trial.suggest_float("dropout", 0.1, 0.5)
+    dropout = trial.suggest_float("dropout", 0.3, 0.5)
     lr = trial.suggest_float("lr", 1e-5, 1e-3, log=True)
-    batch_size = 64
+    batch_size = 85
 
 
     # Transformer-specific hyperparameters
     nhead = trial.suggest_categorical("nhead", [4, 8])
     num_layers = trial.suggest_int("num_layers", 2, 8)
+    
 
     # Feedforward network size
-    dim_feedforward = trial.suggest_int("hidden_size", 512, 2024)
+    dim_feedforward = trial.suggest_int("hidden_size", 128, 2024)
 
 
     train_loader, val_loader = get_dataloaders(batch_size=batch_size)
@@ -53,13 +54,13 @@ def objective(trial):
 
     early_stop_callback = EarlyStopping(
             monitor='val_loss',     # oder "val_acc", je nachdem
-            patience=10,             # z. B. 5 Epochen ohne Verbesserung
+            patience=50,             # z. B. 5 Epochen ohne Verbesserung
             mode='min',             # "min" für loss, "max" für accuracy
             verbose=True
         )
 
     trainer = Trainer(
-        max_epochs=100,
+        max_epochs=200,
         logger=mlf_logger,
         enable_checkpointing=False,
         enable_model_summary=False,
@@ -69,12 +70,14 @@ def objective(trial):
 
     trainer.fit(model, train_loader, val_loader)
     val_loss = trainer.callback_metrics["val_loss"].item()
+    val_f1_score = trainer.callback_metrics["val_f1_score"].item()
 
     # Hyperparameter und Metrik an MLflow loggen (über den Logger)
     mlf_logger.log_hyperparams(trial.params)
     mlf_logger.log_metrics({"val_loss": val_loss})
+    mlf_logger.log_metrics({"val_f1_score": val_loss})
 
-    return val_loss  
+    return val_f1_score  
 
 
 def main():
@@ -83,23 +86,23 @@ def main():
 
     mlf_logger = MLFlowLogger(experiment_name="vecsets-classification", tracking_uri="file:./../vecsets/ml/mlruns", run_name="best-model")
 
-    study = optuna.create_study(direction="minimize")
-    study.optimize(objective, n_trials=20)
+    #study = optuna.create_study(direction="maximize")
+    #study.optimize(objective, n_trials=100)
 
     # Bestes Modell trainieren und speichern
-    best_params = study.best_trial.params
+    #best_params = study.best_trial.params
 
     # #from previous runs
-    # best_params ={
-    #     "lr" : 2.53e-4,
-    #     "nhead" : 8,
-    #     "num_layers" : 4,
-    #     "hidden_size" : 1211,
-    #     "dropout" : 0.42,
-    #     "fc_layers" : None,
-    #     "batch_size" : 64
+    best_params ={
+        "lr" : 2.53e-4,
+        "nhead" : 8,
+        "num_layers" : 4,
+        "hidden_size" : 1211,
+        "dropout" : 0.42,
+        "fc_layers" : None,
+        "batch_size" : 64
 
-    # }
+    }
 
     model = VecsetClassifierModule( 
                 lr = best_params["lr"],
@@ -118,22 +121,22 @@ def main():
 
     early_stop_callback = EarlyStopping(
             monitor='val_loss',     # oder "val_acc", je nachdem
-            patience=10,             # z. B. 5 Epochen ohne Verbesserung
+            patience=200,             # z. B. 5 Epochen ohne Verbesserung
             mode='min',             # "min" für loss, "max" für accuracy
             verbose=True
         )
     
     checkpoint_callback = ModelCheckpoint(
-        monitor='val_loss',           # oder z. B. "val_acc"
+        monitor='val_f1_score',           # oder z. B. "val_acc"
         save_top_k=1,                 # nur das beste Modell speichern
-        mode='min',                   # "min" für loss, "max" für acc
+        mode='max',                   # "min" für loss, "max" für acc
         dirpath=PATHS.DATA_MODELS.as_posix(),
         filename='vecsets-classifier',  # Dateinamenformat
         save_weights_only=False,      # speichert komplette Checkpoints
         verbose=True
     )
 
-    trainer = Trainer(max_epochs=500, logger=mlf_logger, callbacks=[early_stop_callback, checkpoint_callback], enable_checkpointing=True, enable_model_summary=False, log_every_n_steps=1)
+    trainer = Trainer(max_epochs=1000, logger=mlf_logger, callbacks=[early_stop_callback, checkpoint_callback], enable_checkpointing=True, enable_model_summary=False, log_every_n_steps=1)
     trainer.fit(model, train_loader, val_loader)
 
 
