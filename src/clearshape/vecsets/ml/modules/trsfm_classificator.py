@@ -101,12 +101,8 @@ class VecsetClassifierModule(pl.LightningModule):
     def configure_optimizers(self):
         optimizer = torch.optim.AdamW(self.parameters(), lr=self.hparams.lr)
 
-        scheduler = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(
-            optimizer,
-            T_0=20,          # Erste Periode (z. B. 10 Epochen)
-            T_mult=2,        # Jede Periode wird doppelt so lang
-            eta_min=1e-6     # Minimale Lernrate am Ende eines Zyklus
-        )
+
+        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, 1000, eta_min=1e-6, last_epoch=-1)
 
         return {
             "optimizer": optimizer,
