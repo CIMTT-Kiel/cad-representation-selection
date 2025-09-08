@@ -8,7 +8,7 @@ class FineTuneModel(nn.Module):
             self.features = original_model.features
             self.classifier = nn.Sequential(
                 nn.Dropout(),
-                nn.Linear(256 * 6 * 6, 4096),
+                nn.Linear(256 * 13 * 13, 4096),
                 nn.ReLU(inplace=True),
                 nn.Dropout(),
                 nn.Linear(4096, 4096),
@@ -40,7 +40,7 @@ class FineTuneModel(nn.Module):
     def forward(self, x):
         f = self.features(x)
         if self.modelName == 'alexnet' :
-            f = f.view(f.size(0), 256 * 6 * 6)
+            f = f.view(f.size(0), 256 * 13 * 13)
         elif self.modelName == 'vgg16':
             f = f.view(f.size(0), -1)
         elif self.modelName == 'resnet' :

@@ -8,10 +8,13 @@ from typing import Union
 from pathlib import Path
 import pickle
 import logging
+import random
 
 # third party libaries
 import torch
 from torch.utils.data import Dataset
+from torchvision.datasets.folder import default_loader
+import torchvision.transforms as transforms
 import torch.nn.functional as F
 import pandas as pd
 import numpy as np
@@ -31,6 +34,7 @@ stream_handler = logging.StreamHandler()
 stream_handler.setLevel(logging_level)
 stream_handler.setFormatter(formatter)
 logger.addHandler(stream_handler)
+
 
 class FabwaveDataset(Dataset):
     """
@@ -58,6 +62,15 @@ class FabwaveDataset(Dataset):
         self.data_type = data_type
         self.regression = regression
         self.classification = classification
+
+        # transform for images
+        normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                                     std=[0.229, 0.224, 0.225])
+        self.transform = transforms.Compose([
+        #            transforms.CenterCrop(224),
+                    transforms.ToTensor(),
+                    normalize,
+                ])
 
         #default for invariants
         self.inv_only = True
@@ -110,7 +123,7 @@ class FabwaveDataset(Dataset):
             self.cache[idx] = (data_representation, target, path)
         
         return data_representation, target, path
-
+    
     
     def parse_part(self, idx):
         """
@@ -131,7 +144,7 @@ class FabwaveDataset(Dataset):
         # Determine the correct folder based on the extracted folder name
         
         file_paths = {
-            'images': cons.PATHS.DATA_FEATURE / 'images/fabwave' / f"{row.path}.png",
+            'images': cons.PATHS.DATA_FEATURE / 'images/fabwave' / f"{row.path}",
             'trees': cons.PATHS.DATA_FEATURE  / 'trees/fabwave' / f"{row.path}.bin",
             'invariants': cons.PATHS.DATA_FEATURE / 'invariants/fabwave' / f"{row.path}.json",
             'vecsets': cons.PATHS.DATA_FEATURE / 'vecsets/fabwave' / f"{row.path}.npy"
@@ -176,8 +189,17 @@ class FabwaveDataset(Dataset):
             data_representation = torch.Tensor(np.load(file_path.as_posix(), allow_pickle=True))
 
         elif self.data_type == 'images':
-            raise NotImplementedError("Image data type not implemented yet.")
-            # data_representation = 
+            images_paths = list(file_path.glob('*.png'))
+            #shuffle image_paths
+
+            random.shuffle(images_paths)
+            images = []
+            for img_path in images_paths:
+                sample = default_loader(img_path)
+                sample = self.transform(sample)
+                images.append(sample)
+
+            data_representation = torch.stack(images, dim=0)
         else:
             raise ValueError(f"Unsupported file type: {file_path.suffix}")  # Raise error for unsupported formats
         
@@ -189,6 +211,8 @@ class FabwaveDataset(Dataset):
         
         path = row.path
         return data_representation, target, path
+    
+
     
 
 
