@@ -30,6 +30,8 @@ _path_dict = {
     "DATA_MODEL_OUTPUT":    _ROOT / "data/7_model_output",
     "DATA_REPORTING":       _ROOT / "data/8_reporting",
 
+    "MLFLOW_TRACKING_URI": _ROOT / "mlruns",
+
 }
 
 
