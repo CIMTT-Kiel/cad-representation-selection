@@ -29,7 +29,7 @@ from clearshape.models.modelstack import ModelStack
 from clearshape.models.treelstm import RootedInTreeEncoder
 from clearshape.constants import PATHS
 from clearshape.models.invariant_mlp import InvariantMLP 
-from clearshape.models.vecset_trnsf_encoder import VecsetClassifier
+from clearshape.models.trnsfm_encoder import VecsetClassifier
 from clearshape.rotationnet.rotnet_classifier import RotationNetModel
 
 # set up logger
