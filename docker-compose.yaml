@@ -12,7 +12,7 @@ services:
     build:
       context: ./
       dockerfile: .devcontainer/Dockerfile
-    container_name: devcontainer
+    #container_name: devcontainer
     volumes:
       - .:/clear-shape  # mount repository into dev container (nneeded to synch with local folder)
 
@@ -32,15 +32,15 @@ services:
 
       # Michel
       # model checkpoint for vecset_encoder - needed for preprocessing
-      #- /home/michelkruse/Nextcloud/Ressourcen-KI-Gruppe/Modelle/vecset_encoder/points_vec1024x32_dim1024_depth24_sdf_nb/checkpoint-110.pth:/clear-shape/src/clearshape/vecsets/preprocessing/vecset_model/ckpts/checkpoint-110.pth 
+      - /home/michelkruse/Nextcloud/Ressourcen-KI-Gruppe/Modelle/vecset_encoder/points_vec1024x32_dim1024_depth24_sdf_nb/checkpoint-110.pth:/clear-shape/src/clearshape/vecsets/preprocessing/vecset_model/ckpts/checkpoint-110.pth 
       # data-folders for fabwave dataset
-      #- /home/michelkruse/Nextcloud/Ressourcen-KI-Gruppe/Datensätze/fabwave/1_raw:/clear-shape/data/1_raw/
-      #- /home/michelkruse/Nextcloud/Ressourcen-KI-Gruppe/Datensätze/fabwave/3_primary:/clear-shape/data/3_primary/
-      #- /home/michelkruse/Nextcloud/Ressourcen-KI-Gruppe/Datensätze/fabwave/4_feature:/clear-shape/data/4_feature/
-      #- /home/michelkruse/Nextcloud/Ressourcen-KI-Gruppe/Datensätze/fabwave/5_model_input:/clear-shape/data/5_model_input/
-      #- /home/michelkruse/Nextcloud/Ressourcen-KI-Gruppe/Datensätze/fabwave/6_models:/clear-shape/data/6_models/
-      #- /home/michelkruse/Nextcloud/Ressourcen-KI-Gruppe/Datensätze/fabwave/7_model_output:/clear-shape/data/7_model_output/
-      #- /home/michelkruse/Nextcloud/Ressourcen-KI-Gruppe/Datensätze/fabwave/8_reporting:/clear-shape/data/8_reporting/
+      - /home/michelkruse/Nextcloud/Ressourcen-KI-Gruppe/Datensätze/fabwave/1_raw:/clear-shape/data/1_raw/
+      - /home/michelkruse/Nextcloud/Ressourcen-KI-Gruppe/Datensätze/fabwave/3_primary:/clear-shape/data/3_primary/
+      - /home/michelkruse/Nextcloud/Ressourcen-KI-Gruppe/Datensätze/fabwave/4_feature:/clear-shape/data/4_feature/
+      - /home/michelkruse/Nextcloud/Ressourcen-KI-Gruppe/Datensätze/fabwave/5_model_input:/clear-shape/data/5_model_input/
+      - /home/michelkruse/Nextcloud/Ressourcen-KI-Gruppe/Datensätze/fabwave/6_models:/clear-shape/data/6_models/
+      - /home/michelkruse/Nextcloud/Ressourcen-KI-Gruppe/Datensätze/fabwave/7_model_output:/clear-shape/data/7_model_output/
+      - /home/michelkruse/Nextcloud/Ressourcen-KI-Gruppe/Datensätze/fabwave/8_reporting:/clear-shape/data/8_reporting/
 
     networks:
       - container_net
