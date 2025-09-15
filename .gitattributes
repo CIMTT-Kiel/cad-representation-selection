@@ -1,1 +1,2 @@
-* text=auto  # normalize line endings to LF in the repository, dose not change working tree files.
+# Normalize line endings to LF in the repository, does not change working tree files.
+* text=auto
