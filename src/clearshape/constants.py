@@ -30,12 +30,44 @@ _path_dict = {
     "DATA_MODEL_OUTPUT":    _ROOT / "data/7_model_output",
     "DATA_REPORTING":       _ROOT / "data/8_reporting",
 
+    "MLFLOW_TRACKING_URI": _ROOT / "mlruns",
+
 }
 
 
 
 Paths = namedtuple("Paths", list(_path_dict.keys()))
 PATHS = Paths(**_path_dict)
+
+
+# RotationNet costants
+
+_rotnet_dict = {
+    "world_size":           1,
+    "dist_backend":         'gloo',
+    "dist_url":             'tcp://224.66.41.62:23456',
+    "distributed":          False,
+
+    "data":                 _ROOT / "Source/clear-shape/data",
+    "pretrained":           False, 
+    "evaluate":             False, 
+    "resume":               '',
+
+    "arch":                 'alexnet',
+    "lr":                   0.01,
+    "momentum":             0.9,
+    "weight_decay":         1e-4,
+    "start_epoch":          0,
+    "batch_size":           20,
+    "workers":              4,
+    "epochs":               90,
+    
+    "print_freq":           10,
+
+}
+
+RotNet = namedtuple("RotNet", list(_rotnet_dict.keys()))
+ROTNET = RotNet(**_rotnet_dict)
 
 # API URL
 API_URL = "http://step_api:8000/"
