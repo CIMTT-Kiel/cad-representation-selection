@@ -175,10 +175,10 @@ class ModelOutputToReportingPipeline:
             )
             results.extend(
                 [
-                    {"data_type": data_type, "metric": "accuracy_micro", "value": accuracy},
-                    {"data_type": data_type, "metric": "f1_score_micro", "value": f1_score},
-                    {"data_type": data_type, "metric": "recall_micro", "value": recall},
-                    {"data_type": data_type, "metric": "precision_micro", "value": precision},
+                    {"data_type": data_type, "metric": "accuracy_macro", "value": accuracy},
+                    {"data_type": data_type, "metric": "f1_score_macro", "value": f1_score},
+                    {"data_type": data_type, "metric": "recall_macro", "value": recall},
+                    {"data_type": data_type, "metric": "precision_macro", "value": precision},
                 ]
             )
         results_df = pd.DataFrame(results)
