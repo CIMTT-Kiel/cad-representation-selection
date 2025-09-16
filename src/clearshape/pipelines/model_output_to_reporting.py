@@ -165,13 +165,13 @@ class ModelOutputToReportingPipeline:
             logger.debug(class_ids_predicted)
             accuracy = metrics.accuracy_score(class_ids_true, class_ids_predicted)
             f1_score = metrics.f1_score(
-                class_ids_true, class_ids_predicted, average="micro"
+                class_ids_true, class_ids_predicted, average="macro"
             )
             recall = metrics.recall_score(
-                class_ids_true, class_ids_predicted, average="micro"
+                class_ids_true, class_ids_predicted, average="macro"
             )
             precision = metrics.precision_score(
-                class_ids_true, class_ids_predicted, average="micro"
+                class_ids_true, class_ids_predicted, average="macro"
             )
             results.extend(
                 [
