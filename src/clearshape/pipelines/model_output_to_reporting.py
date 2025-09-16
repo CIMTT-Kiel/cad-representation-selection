@@ -470,9 +470,12 @@ class ModelOutputToReportingPipeline:
             regressor_output_found = False
 
         if regressor_output_found:
+            # save regression metrics as csv table and plot
             regression_metrics = self._get_regression_metrics(regressor_output, test_data)
+            regression_metrics.to_csv(cons.PATHS.DATA_REPORTING / "regression_metrics_table.csv", index=False)
             self._save_regression_metrics_plot(regression_metrics)
 
+            # save error distributions as violin plot
             error_table = self._get_error_table(regressor_output, test_data)
             self._save_violin_plot(error_table)
 
