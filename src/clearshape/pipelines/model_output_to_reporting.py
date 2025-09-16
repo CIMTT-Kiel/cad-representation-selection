@@ -82,7 +82,7 @@ class ModelOutputToReportingPipeline:
         """
         logger.info(f"Filtering output for data type: {data_type}")
         data_subset = output.query("data_type == @data_type")
-        #assert all(data_subset["path"] == test_data["path"])
+        # assert all(data_subset["path"] == test_data["path"])
 
         if is_classifier:
             true_values = test_data["class_id"]
@@ -123,7 +123,7 @@ class ModelOutputToReportingPipeline:
         confusion_matrix = metrics.confusion_matrix(
             class_ids_true, class_ids_predicted, normalize="true"
         )
-        
+
         class_id_name_map = dict(sorted(class_id_name_map.items()))
         confusion_matrix = pd.DataFrame(
             confusion_matrix,
@@ -224,7 +224,7 @@ class ModelOutputToReportingPipeline:
                 )
 
         return pd.DataFrame(metrics_list)
-    
+
     def _save_regression_metrics_plot(self, regression_metrics:pd.DataFrame) -> None:
         """
         Builds and saves plot which compares regression metrics accross all approaches and attributes.
@@ -313,7 +313,9 @@ class ModelOutputToReportingPipeline:
         )
         return errors
 
-    def _save_classification_metrics_plot(self, classification_metrics: pd.DataFrame) -> None:
+    def _save_classification_metrics_plot(
+        self, classification_metrics: pd.DataFrame
+    ) -> None:
         """
         Creates and saves a bar plot for the classification metrics.
 
@@ -331,16 +333,29 @@ class ModelOutputToReportingPipeline:
         so.Plot
             A seaborn objects Plot instance representing the bar plot.
         """
+        # Overwrite string values for proper visualization
+        classification_metrics["data_type"] = classification_metrics[
+            "data_type"
+        ].str.capitalize()
+        for metric, display_name in zip(
+            ["accuracy", "f1_score", "recall", "precision"],
+            ["Accuracy", "F1", "Recall", "Precision"],
+        ):
+            classification_metrics.loc[
+                classification_metrics["metric"] == f"{metric}_macro", "metric"
+            ] = display_name
+
         plot = (
             so.Plot(classification_metrics, x="metric", y="value", color="data_type")
             .add(so.Bar(), so.Dodge())
             .label(
-                title="Classification Metrics by Data Type",
+                title="Classification Metrics (Macro Averaged)",
                 x="Metric",
                 y="Metric Value",
                 color="Data Type",
             )
         )
+
         plot.save(
             cons.PATHS.DATA_REPORTING / "classification_metrics_plot.png",
             format="png",
@@ -449,7 +464,6 @@ class ModelOutputToReportingPipeline:
                     class_ids_true, class_ids_predicted, data_type, class_id_to_class_name
                 )
                 self._save_confusion_matrix_plot(confusion_matrix, data_type)
-        
 
             # compute classification metrics and plot them for all models
             classification_metrics = self._get_classification_metrics(classifier_output, test_data)
@@ -479,7 +493,6 @@ class ModelOutputToReportingPipeline:
             error_table = self._get_error_table(regressor_output, test_data)
             self._save_violin_plot(error_table)
 
-        
         logger.info("Pipeline completed successfully.")
 
 
