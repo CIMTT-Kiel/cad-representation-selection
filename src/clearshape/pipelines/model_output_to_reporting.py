@@ -467,6 +467,9 @@ class ModelOutputToReportingPipeline:
 
             # compute classification metrics and plot them for all models
             classification_metrics = self._get_classification_metrics(classifier_output, test_data)
+            classification_metrics.to_csv(
+                cons.PATHS.DATA_REPORTING / "classification_metrics_table.csv", index=False
+            )
             self._save_classification_metrics_plot(classification_metrics)
 
         # === REGRESSION METRICS ===
