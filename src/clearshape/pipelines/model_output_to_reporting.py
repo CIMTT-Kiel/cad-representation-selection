@@ -18,7 +18,7 @@ import seaborn.objects as so
 import clearshape.constants as cons
 
 # set up logger
-logging_level = logging.DEBUG
+logging_level = logging.INFO  # <== set logging level here
 logger = logging.getLogger(__name__)
 logger.setLevel(logging_level)
 formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)8s - %(message)s")
@@ -80,9 +80,11 @@ class ModelOutputToReportingPipeline:
         tuple
             A tuple containing the true values and predicted values as pandas Series or DataFrames.
         """
-        logger.info(f"Filtering output for data type: {data_type}")
+        logger.debug(f"Entered _get_true_and_prediced_values with arguments:")
+        logger.debug(f"\tdata_type: {data_type}")
+        logger.debug(f"\tis_classifier: {is_classifier}")
         data_subset = output.query("data_type == @data_type")
-        #assert all(data_subset["path"] == test_data["path"])
+        # assert all(data_subset["path"] == test_data["path"])
 
         if is_classifier:
             true_values = test_data["class_id"]
@@ -119,11 +121,11 @@ class ModelOutputToReportingPipeline:
         -------
         None
         """
-        logger.info(f"Saving confusion matrix for data type: {data_type}")
+        logger.debug(f"Entered _get_confusion_matrix")
         confusion_matrix = metrics.confusion_matrix(
             class_ids_true, class_ids_predicted, normalize="true"
         )
-        
+
         class_id_name_map = dict(sorted(class_id_name_map.items()))
         confusion_matrix = pd.DataFrame(
             confusion_matrix,
@@ -154,31 +156,28 @@ class ModelOutputToReportingPipeline:
             DataFrame containing the classification metrics for each data type.
             The DataFrame has columns 'data_type', 'metric', and 'value'.
         """
-        logger.debug("Saving classification metrics")
+        logger.debug(f"Entered _get_classification_metrics")
         results = []
         for data_type in classifier_output["data_type"].unique():
             class_ids_true, class_ids_predicted = self._get_true_and_prediced_values(
                 classifier_output, test_data, data_type, is_classifier=True
             )
-            logger.debug(class_ids_true)
-            logger.debug("")
-            logger.debug(class_ids_predicted)
             accuracy = metrics.accuracy_score(class_ids_true, class_ids_predicted)
             f1_score = metrics.f1_score(
-                class_ids_true, class_ids_predicted, average="micro"
+                class_ids_true, class_ids_predicted, average="macro"
             )
             recall = metrics.recall_score(
-                class_ids_true, class_ids_predicted, average="micro"
+                class_ids_true, class_ids_predicted, average="macro"
             )
             precision = metrics.precision_score(
-                class_ids_true, class_ids_predicted, average="micro"
+                class_ids_true, class_ids_predicted, average="macro"
             )
             results.extend(
                 [
-                    {"data_type": data_type, "metric": "accuracy_micro", "value": accuracy},
-                    {"data_type": data_type, "metric": "f1_score_micro", "value": f1_score},
-                    {"data_type": data_type, "metric": "recall_micro", "value": recall},
-                    {"data_type": data_type, "metric": "precision_micro", "value": precision},
+                    {"data_type": data_type, "metric": "accuracy_macro", "value": accuracy},
+                    {"data_type": data_type, "metric": "f1_score_macro", "value": f1_score},
+                    {"data_type": data_type, "metric": "recall_macro", "value": recall},
+                    {"data_type": data_type, "metric": "precision_macro", "value": precision},
                 ]
             )
         results_df = pd.DataFrame(results)
@@ -203,7 +202,7 @@ class ModelOutputToReportingPipeline:
             DataFrame with columns 'data_type', 'attribute', 'metric', and 'value',
             summarizing regression metrics for each data type and attribute.
         """
-        logger.debug("Calculating regression metrics")
+        logger.debug("Entered _get_regression_metrics")
         metrics_list = []
 
         for data_type in regressor_output["data_type"].unique():
@@ -224,13 +223,14 @@ class ModelOutputToReportingPipeline:
                 )
 
         return pd.DataFrame(metrics_list)
-    
+
     def _save_regression_metrics_plot(self, regression_metrics:pd.DataFrame) -> None:
         """
         Builds and saves plot which compares regression metrics accross all approaches and attributes.
 
         MAE, R2 and MSE for each attribute and values grouped by data type.
         """
+        logger.debug("Entered _save_regression_metrics_plot")
         plot = (
             so.Plot(regression_metrics, x="metric", y="value", color="data_type", )
             .facet("attribute")
@@ -247,7 +247,6 @@ class ModelOutputToReportingPipeline:
             format="png",
             bbox_inches="tight",
         )
-
 
     def _get_error_table(
         self, regressor_output: pd.DataFrame, test_data: pd.DataFrame
@@ -269,7 +268,7 @@ class ModelOutputToReportingPipeline:
         errors : pd.DataFrame
             DataFrame containing the error table with columns 'path', 'data_type', 'error_type', 'value'
         """
-        logger.info("Calculating error table")
+        logger.debug("Entered _get_error_table")
         # for each data type and each cad model indentified by the path, calculate the relative error for each attribute
         errors = []
         for data_type in regressor_output["data_type"].unique():
@@ -310,10 +309,13 @@ class ModelOutputToReportingPipeline:
         errors = errors.melt(
             id_vars=["path", "data_type"],
             var_name="error_type",
+            value_name="value",
         )
         return errors
 
-    def _save_classification_metrics_plot(self, classification_metrics: pd.DataFrame) -> None:
+    def _save_classification_metrics_plot(
+        self, classification_metrics: pd.DataFrame
+    ) -> None:
         """
         Creates and saves a bar plot for the classification metrics.
 
@@ -331,23 +333,37 @@ class ModelOutputToReportingPipeline:
         so.Plot
             A seaborn objects Plot instance representing the bar plot.
         """
+        logger.debug("Entered _save_classification_metrics_plot")
+        # Overwrite string values for proper visualization
+        classification_metrics["data_type"] = classification_metrics[
+            "data_type"
+        ].str.capitalize()
+        for metric, display_name in zip(
+            ["accuracy", "f1_score", "recall", "precision"],
+            ["Accuracy", "F1", "Recall", "Precision"],
+        ):
+            classification_metrics.loc[
+                classification_metrics["metric"] == f"{metric}_macro", "metric"
+            ] = display_name
+
         plot = (
             so.Plot(classification_metrics, x="metric", y="value", color="data_type")
             .add(so.Bar(), so.Dodge())
             .label(
-                title="Classification Metrics by Data Type",
+                title="Classification Metrics (Macro Averaged)",
                 x="Metric",
                 y="Metric Value",
                 color="Data Type",
             )
         )
+
         plot.save(
             cons.PATHS.DATA_REPORTING / "classification_metrics_plot.png",
             format="png",
             bbox_inches="tight",
         )
 
-    def _save_violin_plot(self, error_table:pd.DataFrame):
+    def _save_violin_plot(self, error_table: pd.DataFrame):
         """
         Builds and saves a plot showing error distributions for each attribute and each data type approach.
 
@@ -360,16 +376,38 @@ class ModelOutputToReportingPipeline:
         -------
         None
         """
-        logger.info("Saving violin plot for error distributions")
+        logger.debug("Entered _save_violin_plot")
         # filter the error table to only include relative errors
-        error_table = error_table.query("error_type.str.contains('relative')").copy()
-        grid = sns.catplot(data=error_table, x="data_type", y="value", col="error_type", kind="violin")
-        grid.set_titles("{col_name}")
-        grid.savefig(cons.PATHS.DATA_REPORTING / "error_distributions.png", format="png", bbox_inches="tight")
+        error_table_relative_errors = error_table.query(
+            "error_type.str.contains('relative')"
+        ).copy()
+        ax = sns.violinplot(
+            data=error_table_relative_errors,
+            x="data_type",
+            y="value",
+            hue="error_type",
+        )
+        ax.set_title("Error Distributions of Regression Tasks")
+        ax.set_xlabel("Data Representation Type")
+        ax.set_ylabel("Relative Error")
+        # Set custom legend labels
+        legend_labels = ["Volume", "# of Faces", "# of Edges", "# of Vertices"]
+        legend = ax.get_legend()
+        legend.set_title("Regression Values")
+        for t, l in zip(legend.texts, legend_labels):
+            t.set_text(l)
+
+        ax.figure.set_size_inches(15, 8)
+        ax.figure.savefig(
+            cons.PATHS.DATA_REPORTING / "error_distributions.png",
+            format="png",
+            bbox_inches="tight",
+        )
 
     def _save_confusion_matrix_plot(self, confusion_matrix: pd.DataFrame, data_type: str) -> None:
         """
         """
+        logger.debug("Entered _save_confusion_matrix_plot")
         ax = sns.heatmap(
             confusion_matrix,
             annot=True,
@@ -402,9 +440,10 @@ class ModelOutputToReportingPipeline:
         logger.info("Starting Model Output to Reporting Pipeline...")
 
         # === CLASSIFICATION METRICS ===
-        logger.info("Compute classifier metrics.")
+        logger.info("=== COMPUTE CLASSIFIER METRICS ===")
         # load predictions and test data
         try:
+            logger.info("Loading classifier output and test data.")
             classifier_output = pd.read_csv(
                 cons.PATHS.DATA_MODEL_OUTPUT / "classifiers_output.csv"
             )
@@ -413,12 +452,13 @@ class ModelOutputToReportingPipeline:
             ]
             classifier_output_found = True
         except FileNotFoundError:
+            logger.warning("No classifier output found. Skipping classification metrics.")
             classifier_output_found = False
 
         if classifier_output_found:
             # calculate and save confusion matrices for each data type
             for data_type in classifier_output["data_type"].unique():
-                logger.info(f"Processing data type: {data_type}")
+                logger.info(f"Calculating and saving confusion matrix for: {data_type}")
                 class_ids_true, class_ids_predicted = self._get_true_and_prediced_values(
                     classifier_output, test_data, data_type, is_classifier=True
                 )
@@ -427,16 +467,20 @@ class ModelOutputToReportingPipeline:
                     class_ids_true, class_ids_predicted, data_type, class_id_to_class_name
                 )
                 self._save_confusion_matrix_plot(confusion_matrix, data_type)
-        
 
             # compute classification metrics and plot them for all models
+            logger.info("Calculating and saving classification metrics.")
             classification_metrics = self._get_classification_metrics(classifier_output, test_data)
+            classification_metrics.to_csv(
+                cons.PATHS.DATA_REPORTING / "classification_metrics_table.csv", index=False
+            )
             self._save_classification_metrics_plot(classification_metrics)
 
         # === REGRESSION METRICS ===
-        logger.info("Compute regression metrics.")
+        logger.info("=== COMPUTE REGRESSION METRICS ===")
         # load predictions and test data
         try:
+            logger.info("Loading regressor output and test data.")
             regressor_output = pd.read_csv(
                 cons.PATHS.DATA_MODEL_OUTPUT / "regressors_output.csv"
             )
@@ -445,16 +489,21 @@ class ModelOutputToReportingPipeline:
             ]
             regressor_output_found = True
         except FileNotFoundError:
+            logger.warning("No regressor output found. Skipping regression metrics.")
             regressor_output_found = False
 
         if regressor_output_found:
+            # save regression metrics as csv table and plot
+            logger.info("Calculating and saving regression metrics.")
             regression_metrics = self._get_regression_metrics(regressor_output, test_data)
+            regression_metrics.to_csv(cons.PATHS.DATA_REPORTING / "regression_metrics_table.csv", index=False)
             self._save_regression_metrics_plot(regression_metrics)
 
+            # save error distributions as violin plot
+            logger.info("Calculating and saving error distributions. (Violin Plot)")
             error_table = self._get_error_table(regressor_output, test_data)
             self._save_violin_plot(error_table)
 
-        
         logger.info("Pipeline completed successfully.")
 
 
