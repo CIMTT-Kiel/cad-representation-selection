@@ -248,7 +248,6 @@ class ModelOutputToReportingPipeline:
             bbox_inches="tight",
         )
 
-
     def _get_error_table(
         self, regressor_output: pd.DataFrame, test_data: pd.DataFrame
     ) -> pd.DataFrame:
@@ -310,6 +309,7 @@ class ModelOutputToReportingPipeline:
         errors = errors.melt(
             id_vars=["path", "data_type"],
             var_name="error_type",
+            value_name="value",
         )
         return errors
 
@@ -347,7 +347,7 @@ class ModelOutputToReportingPipeline:
             bbox_inches="tight",
         )
 
-    def _save_violin_plot(self, error_table:pd.DataFrame):
+    def _save_violin_plot(self, error_table: pd.DataFrame):
         """
         Builds and saves a plot showing error distributions for each attribute and each data type approach.
 
@@ -362,10 +362,32 @@ class ModelOutputToReportingPipeline:
         """
         logger.info("Saving violin plot for error distributions")
         # filter the error table to only include relative errors
-        error_table = error_table.query("error_type.str.contains('relative')").copy()
-        grid = sns.catplot(data=error_table, x="data_type", y="value", col="error_type", kind="violin")
-        grid.set_titles("{col_name}")
-        grid.savefig(cons.PATHS.DATA_REPORTING / "error_distributions.png", format="png", bbox_inches="tight")
+        error_table_relative_errors = error_table.query(
+            "error_type.str.contains('relative')"
+        ).copy()
+        ax = sns.violinplot(
+            data=error_table_relative_errors,
+            x="data_type",
+            y="value",
+            hue="error_type",
+        )
+        logger.debug(type(ax))
+        ax.set_title("Error Distributions of Regression Tasks")
+        ax.set_xlabel("Data Representation Type")
+        ax.set_ylabel("Relative Error")
+        # Set custom legend labels
+        legend_labels = ["Volume", "# of Faces", "# of Edges", "# of Vertices"]
+        legend = ax.get_legend()
+        legend.set_title("Regression Values")
+        for t, l in zip(legend.texts, legend_labels):
+            t.set_text(l)
+
+        ax.figure.set_size_inches(15, 8)
+        ax.figure.savefig(
+            cons.PATHS.DATA_REPORTING / "error_distributions.png",
+            format="png",
+            bbox_inches="tight",
+        )
 
     def _save_confusion_matrix_plot(self, confusion_matrix: pd.DataFrame, data_type: str) -> None:
         """
