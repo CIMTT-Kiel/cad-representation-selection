@@ -29,7 +29,8 @@ from clearshape.models.modelstack import ModelStack
 from clearshape.models.treelstm import RootedInTreeEncoder
 from clearshape.constants import PATHS
 from clearshape.models.invariant_mlp import InvariantMLP 
-from clearshape.models.vecset_trnsf_encoder import VecsetClassifier
+from clearshape.models.trnsfm_encoder import VecsetClassifier
+from clearshape.rotationnet.rotnet_classifier import RotationNetModel
 
 # set up logger
 logging_level = logging.DEBUG
@@ -179,10 +180,38 @@ class ModelsModelOutputPipeline:
         return model
 
     # TODO: Implement the image model initialization
-    def _initialize_image_model(
-        self,
-    ) -> torch.nn.Module:
-        pass
+    def _initialize_image_model(self, task_type) -> torch.nn.Module:
+        """
+        Initialize the RotationNetModel model for classification tasks.
+
+        This method loads the best trained checkpoint for the image model from a saved
+        `.ckpt` file, extracts the hyperparameters and state dictionary, adapts the state
+        dictionary keys if necessary, and instantiates the model with the loaded parameters.
+
+        Returns
+        -------
+        torch.nn.Module
+            An InvariantMLP model initialized with the best saved weights and hyperparameters.
+
+        Notes
+        -----
+        - The checkpoint is assumed to be stored in the `data/6_models/invariants_classification.ckpt` file.
+        - The hyperparameter dictionary inside the checkpoint contains parameters used to
+        instantiate the `InvariantMLP`. The learning rate (`lr`) key is removed before model initialization.
+        - The keys in the `state_dict` may have a "model." prefix, which is stripped before loading.
+        - This method assumes the model class `InvariantMLP` is already imported and available.
+        """
+        #TODO implement for regression
+
+        logger.info(f"Initializing Images-model")
+
+        checkpoint_path = PATHS.DATA_MODELS / "images-classifier-v1.ckpt"
+        # hyperparams = checkpoint["hyper_parameters"]
+        # del hyperparams["lr"]
+
+        model = RotationNetModel.load_from_checkpoint(checkpoint_path)#**hyperparams)
+
+        return model
 
     # TODO: Implement the invariant model initialization
     def _initialize_invariant_model(self, task_type) -> torch.nn.Module:
@@ -352,7 +381,7 @@ class ModelsModelOutputPipeline:
         )
         match data_type:
             case "images":
-                data_loader = DataLoader(data_set, batch_size=256, shuffle=False)
+                data_loader = DataLoader(data_set, batch_size=20, shuffle=False)
             case "invariants":
                 data_loader = DataLoader(data_set, batch_size=256, shuffle=False)
             case "vecsets":
@@ -402,6 +431,7 @@ class ModelsModelOutputPipeline:
 
         for model in classifier_models:
             logger.info(f"Processing classifier model: {model}")
+            model_name = model
             data_type = model.split("-")[0]  # images, trees or invariants
             model = self._load_model(classifier_models[model]["path"])
             test_data_loader = self._get_data_loader("classification", data_type)
@@ -411,9 +441,13 @@ class ModelsModelOutputPipeline:
             ):
 
                 input_data = input_data.to(device)
-                prediction = model(input_data)
-                prediction = prediction.cpu().detach()
-                prediction = prediction.argmax(dim=1).numpy()
+                if model_name == 'images-classifier':
+                    prediction = model.predict_step(input_data)
+                    prediction = prediction.cpu().detach()
+                else:
+                    prediction = model(input_data)
+                    prediction = prediction.cpu().detach()
+                    prediction = prediction.argmax(dim=1).numpy()
                 predictions["path"].extend(part_path)
                 predictions["data_type"].extend([data_type] * len(prediction))
                 predictions["pred_class_id"].extend(prediction.tolist())

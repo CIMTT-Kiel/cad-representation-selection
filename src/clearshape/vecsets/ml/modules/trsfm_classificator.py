@@ -5,7 +5,7 @@ import torch.nn as nn
 from torchmetrics.classification import Accuracy
 from torchmetrics import F1Score
 #custom imports
-from clearshape.models.vecset_trnsf_encoder import VecsetClassifier
+from clearshape.models.trnsfm_encoder import VecsetClassifier
 
 
 class VecsetClassifierModule(pl.LightningModule):
