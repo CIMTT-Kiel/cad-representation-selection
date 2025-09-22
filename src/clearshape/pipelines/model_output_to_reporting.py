@@ -13,6 +13,7 @@ import pandas as pd
 import sklearn.metrics as metrics
 import seaborn as sns
 import seaborn.objects as so
+import matplotlib.pyplot as plt
 
 # custom packages
 import clearshape.constants as cons
@@ -403,6 +404,7 @@ class ModelOutputToReportingPipeline:
             format="png",
             bbox_inches="tight",
         )
+        plt.close(ax.figure)
 
     def _save_confusion_matrix_plot(self, confusion_matrix: pd.DataFrame, data_type: str) -> None:
         """
@@ -428,6 +430,7 @@ class ModelOutputToReportingPipeline:
             format="png",
             bbox_inches="tight",
         )
+        plt.close(ax.figure)
 
     def run(self):
         """
