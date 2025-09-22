@@ -33,7 +33,7 @@ from clearshape.models.trnsfm_encoder import VecsetClassifier
 from clearshape.rotationnet.rotnet_classifier import RotationNetModel
 
 # set up logger
-logging_level = logging.DEBUG
+logging_level = logging.INFO
 logger = logging.getLogger(__name__)
 logger.setLevel(logging_level)
 formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)8s - %(message)s")
@@ -313,7 +313,7 @@ class ModelsModelOutputPipeline:
         ValueError
             If the `data_type` or `model_type` extracted from the filename is invalid.
         """
-        logger.info(f"Loading model from {path}")
+        logger.debug(f"Entering '_load_model' with path: {path}")
         model = None
         model_type = path.stem.split("-")[-1]  # regressor or classifier
         data_type = path.stem.split("-")[0]  # images, trees or invariants
@@ -371,7 +371,7 @@ class ModelsModelOutputPipeline:
         DataLoader or GraphDataLoader
             A DataLoader object for "images" and "invariants" data types, or a GraphDataLoader object for "trees" data type.
         """
-
+        logger.debug("Calling'_get_data_loader'.")
         data_set = FabwaveDataset(
             cons.PATHS.DATA_MODEL_INPUT / "test.csv",
             data_type=data_type,
@@ -409,6 +409,7 @@ class ModelsModelOutputPipeline:
         object
             The deserialized scaler object.
         """
+        logger.debug("Calling '_get_scaler'.")
         with open(path, "rb") as scaler_file:
             return pickle.load(scaler_file)
 
@@ -420,6 +421,7 @@ class ModelsModelOutputPipeline:
         logger.info("Starting pipeline to output model predictions.")
 
         # process classifiers
+        logger.info("=== Processing classifier models ===")
         classifier_models = self._get_models_by_type("classifier")
 
         # for each classifier model, load the model, compute predictions and save them to a csv file
@@ -430,7 +432,7 @@ class ModelsModelOutputPipeline:
         predictions = {"path": [], "data_type": [], "pred_class_id": []}
 
         for model in classifier_models:
-            logger.info(f"Processing classifier model: {model}")
+            logger.info(f"Computing output for {model} model")
             model_name = model
             data_type = model.split("-")[0]  # images, trees or invariants
             model = self._load_model(classifier_models[model]["path"])
@@ -457,7 +459,7 @@ class ModelsModelOutputPipeline:
         )
 
         # process regressors
-        logger.info("Processing regressor models...")
+        logger.info("=== Processing regressor models ===")
         regressor_models = self._get_models_by_type("regressor")
 
         predictions = {
@@ -469,7 +471,7 @@ class ModelsModelOutputPipeline:
             "pred_vertices": [],
         }
         for model in regressor_models:
-            logger.info(f"Processing regressor model: {model}")
+            logger.info(f"Computing output for {model} model")
             data_type = model.split("-")[0]
             model = self._load_model(regressor_models[model]["path"])
             scaler = self._get_scaler(cons.PATHS.DATA_MODEL_INPUT / "log_scaler.pkl")
