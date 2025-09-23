@@ -1,8 +1,8 @@
 ---
-n_trials: 1 # number of trials per stage
+n_trials: 10 # number of trials per stage
 n_jobs: 1  # number of parallel jobs
 stages: [train, validation, test]  # list of stages to run if possibel. (valid: train, validation, test)
-n_epochs: 2
+n_epochs: 300
 input_size: 32
 output_shape: 4
 loss_function: mean_squared_error
@@ -16,23 +16,23 @@ file_best_parameter: tree-lstm-regressor-best-parameter.yaml
 train:
 
   # fixed hyperparameters for training stage
-  batch_size: 512  # preferably high for faster training
-  learning_rate: 0.04
+  batch_size: 256  # preferably high for faster training
+  learning_rate: 0.0009
   optimizer: adam
-  dropout_rate: 0.1
+  dropout_rate: 0.16
   
   # hyperparameters to tune during training stage
 
   encoder:
-    encoding_size_min: 100
-    encoding_size_max: 100
+    encoding_size_min: 150
+    encoding_size_max: 300
     encoding_size_step: 50
 
   predictor:
     layers_total_min: 3
     layers_total_max: 10
     units_per_layer_min: 128
-    units_per_layer_max: 128
+    units_per_layer_max: 512
 # ------------------------------------
 
 # Hyperparameters to optimize on validation data
@@ -40,7 +40,7 @@ train:
 validation:
 
   # fixed hyperparameters for validation stage
-  batch_size: 512  # preferably high for faster training
+  batch_size: 256  # preferably high for faster training
   optimizer: adam
 
   # hyperparameters to tune during validation stage
