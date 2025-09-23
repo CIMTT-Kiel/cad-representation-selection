@@ -129,14 +129,14 @@ class TreeLSTMTuningPipeline():
 
     def _load_scaler(self):
         """
-        Load the MinMaxScaler object from a pickle file.
+        Load the Log-Scaler object from a pickle file.
 
         Returns
         -------
         MinMaxScaler
             The MinMaxScaler object.
         """
-        with open(cons.PATHS.DATA_MODEL_INPUT / "robust_scaler.pkl", "rb") as f:
+        with open(cons.PATHS.DATA_MODEL_INPUT / "log_scaler.pkl", "rb") as f:
             return pickle.load(f)
 
     def _load_data_sets(self):
