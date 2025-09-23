@@ -101,21 +101,30 @@ class TreeLSTMTuningPipeline():
         optuna.study.Study
             An Optuna study object.
         """
+        match self._conf.test_metric:
+            case "mean_squared_error" | "cross_entropy":
+                direction = "minimize"
+            case "f1":
+                direction = "maximize"
+            case _:
+                logger.critical(f"Uncleary whether to minimize or maximize the objective function for {self._conf.test_metric}. Please specify in the code.")
+                raise ValueError(f"Unclear whether to minimize or maximize the objective function for {self._conf.test_metric}. Please specify in the code.")
+            
         match self._current_stage:
             case "train":
                 return optuna.create_study(
-                    direction="minimize",
+                    direction=direction,
                     pruner=optuna.pruners.MedianPruner(
                         n_startup_trials=3, n_warmup_steps=30
                     ),
                 )
             case "validation":
                 return optuna.create_study(
-                    direction="minimize",
+                    direction=direction,
                 )
             case "test":
                 return optuna.create_study(
-                    direction="minimize",
+                    direction=direction,
                 )
 
     def _load_scaler(self):
