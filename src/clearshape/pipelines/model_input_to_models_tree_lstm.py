@@ -115,16 +115,22 @@ class TreeLSTMTuningPipeline():
                 return optuna.create_study(
                     direction=direction,
                     pruner=optuna.pruners.MedianPruner(
-                        n_startup_trials=3, n_warmup_steps=30
+                        n_startup_trials=3, n_warmup_steps=100
                     ),
                 )
             case "validation":
                 return optuna.create_study(
                     direction=direction,
+                    pruner=optuna.pruners.MedianPruner(
+                        n_startup_trials=3, n_warmup_steps=100
+                    ),
                 )
             case "test":
                 return optuna.create_study(
                     direction=direction,
+                    pruner=optuna.pruners.MedianPruner(
+                        n_startup_trials=3, n_warmup_steps=100
+                    ),
                 )
 
     def _load_scaler(self):
@@ -136,7 +142,7 @@ class TreeLSTMTuningPipeline():
         MinMaxScaler
             The MinMaxScaler object.
         """
-        with open(cons.PATHS.DATA_MODEL_INPUT / "robust_scaler.pkl", "rb") as f:
+        with open(cons.PATHS.DATA_MODEL_INPUT / "log_scaler.pkl", "rb") as f:
             return pickle.load(f)
 
     def _load_data_sets(self):
