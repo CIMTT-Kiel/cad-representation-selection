@@ -17,13 +17,11 @@ logger = logging.getLogger(__name__)
 
 class VecsetClassifier(nn.Module):
     def __init__(self, input_dim=32, d_model=1024, nhead=4, num_layers=4, num_classes=40,
-                 dim_feedforward=512, dropout=0.1, fc_layers=None, use_pos_embedding=True):
+                 dim_feedforward=512, dropout=0.1, fc_layers=None):
         super().__init__()
 
-        self.use_pos_embedding = use_pos_embedding
 
         self.input_proj = nn.Linear(input_dim, d_model)
-        self.pos_embedding = nn.Parameter(torch.randn(1, 1024, d_model))
         
         encoder_layer = TransformerEncoderLayer(
             d_model=d_model, nhead=nhead, dim_feedforward=dim_feedforward,
@@ -48,8 +46,6 @@ class VecsetClassifier(nn.Module):
 
     def forward(self, x):
         x = self.input_proj(x)
-        if self.use_pos_embedding:
-            x = x + self.pos_embedding
         encoded = self.encoder(x)
         cls_token = encoded[:, 0, :]
         out = self.classifier(cls_token)

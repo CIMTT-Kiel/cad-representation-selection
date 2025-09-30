@@ -19,13 +19,12 @@ class VecsetClassifierModule(pl.LightningModule):
                  dim_feedforward=2048, 
                  fc_layers=None,
                  dropout=0.3, 
-                 use_pos_embedding=True, 
+                 weight_decay=1e-3
                  ):
         super().__init__()
         self.save_hyperparameters()
 
-        self.use_pos_embbeding = use_pos_embedding
-
+        self.weight_decay = weight_decay
         self.model = VecsetClassifier(
                                     input_dim=input_dim, 
                                     d_model=d_model, 
@@ -35,7 +34,6 @@ class VecsetClassifierModule(pl.LightningModule):
                                     num_classes=num_classes,
                                     dim_feedforward=dim_feedforward, 
                                     dropout=dropout, 
-                                    use_pos_embedding=use_pos_embedding
                                     )
         
         #metrics
@@ -99,17 +97,17 @@ class VecsetClassifierModule(pl.LightningModule):
 
 
     def configure_optimizers(self):
-        optimizer = torch.optim.AdamW(self.parameters(), lr=self.hparams.lr)
+        optimizer = torch.optim.AdamW(self.parameters(), lr=self.hparams.lr, weight_decay=self.weight_decay)
 
 
-        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, 1000, eta_min=1e-6, last_epoch=-1)
+        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, 500, eta_min=1e-6, last_epoch=-1)
 
         return {
             "optimizer": optimizer,
             "lr_scheduler": {
                 "scheduler": scheduler,
-                "interval": "epoch",     # oder "step", je nachdem wie du willst
-                "monitor": "val_loss",   # optional, z. B. bei ReduceLROnPlateau
+                "interval": "epoch",    
+                "monitor": "val_loss",  
             }
         }
     

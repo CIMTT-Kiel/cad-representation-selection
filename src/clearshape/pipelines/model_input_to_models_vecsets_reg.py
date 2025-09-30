@@ -99,7 +99,7 @@ class LogTransformDataset(torch.utils.data.Dataset):
             
             y_transformed = torch.FloatTensor(y_transformed.flatten())
             
-            self.transformed_data.append((x, y_transformed, metadata))
+            self.transformed_data.append((x, y_transformed, metadata ))
     
     def __len__(self):
         return len(self.base_dataset)
