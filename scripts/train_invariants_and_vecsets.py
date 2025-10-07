@@ -1,12 +1,14 @@
 import subprocess
 import sys
 
+from clearshape.constants import PATHS
+
 # Liste der Python-Skripte, die nacheinander ausgeführt werden sollen
 scripts = [
-    r"../src/clearshape/pipelines/model_input_to_models_invs_cls.py",
-    r"../src/clearshape/pipelines/model_input_to_models_vecsets_cls.py",
-    r"../src/clearshape/pipelines/model_input_to_models_invs_reg.py",
-    r"../src/clearshape/pipelines/model_input_to_models_vecsets_reg.py", 
+    #PATHS.ROOT / "src/clearshape/pipelines/model_input_to_models_invs_cls.py",
+    PATHS.ROOT / "src/clearshape/pipelines/model_input_to_models_vecsets_cls.py",
+    PATHS.ROOT / "src/clearshape/pipelines/model_input_to_models_invs_reg.py",
+    PATHS.ROOT / "src/clearshape/pipelines/model_input_to_models_vecsets_reg.py", 
 ]
 
 def run_scripts():

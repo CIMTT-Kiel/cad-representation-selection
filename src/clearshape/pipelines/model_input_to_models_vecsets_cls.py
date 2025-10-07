@@ -62,20 +62,24 @@ def objective(trial):
     # MLflow Run für diesen Trial starten
     with mlflow.start_run(run_name=f"trial_{trial.number}", nested=True):
         # Hyperparameter-Sampling
-        dropout = trial.suggest_float("dropout", 0.3, 0.5)
-        lr = trial.suggest_float("lr", 1e-5, 1e-3, log=True)
-        weight_decay = trial.suggest_float("weight_decay", 1e-6, 1e-3, log=True)
+        dropout = trial.suggest_float("dropout", 0.4, 0.5)
+        #lr = trial.suggest_float("lr", 1e-5, 1e-3, log=True)
+        lr = 0.000015
+        #weight_decay = trial.suggest_float("weight_decay", 1e-6, 1e-3, log=True)
+        weight_decay = 0.0005
         batch_size = trial.suggest_categorical("batch_size", [64])
         
         # D_model (fixiert, aber könnte auch variabel sein)
-        d_model = 1024  # Oder: trial.suggest_categorical("d_model", [512, 1024, 2048])
+        d_model = trial.suggest_int("d_model", 1024, 2048)
         
         # Transformer-specific hyperparameters mit mehr Optionen
-        nhead = trial.suggest_categorical("nhead", [2, 4, 8, 16, 32])
-        num_layers = trial.suggest_int("num_layers", 2, 8)
+        # nhead = trial.suggest_categorical("nhead", [2, 4, 8, 16, 32])
+        nhead = 2
+        num_layers = trial.suggest_int("num_layers", 4, 6)
         
         # Feedforward network size
-        dim_feedforward = trial.suggest_int("dim_feedforward", 128, 2048)
+        #dim_feedforward = trial.suggest_int("dim_feedforward", 128, 2048)
+        dim_feedforward = 1205
         
         # CONSTRAINT: d_model muss durch nhead teilbar sein
         if d_model % nhead != 0:
@@ -138,18 +142,18 @@ def objective(trial):
         # Early Stopping
         early_stop_callback = EarlyStopping(
             monitor='val_loss',
-            patience=50,
+            patience=5,
             mode='min',
             verbose=False
         )
         
         trainer = Trainer(
-            max_epochs=200,
+            max_epochs=50,
             logger=mlf_logger,
             enable_checkpointing=False,
             enable_model_summary=True,
             enable_progress_bar=True,
-            log_every_n_steps=50,
+            log_every_n_steps=2,
             callbacks=[early_stop_callback]
         )
         
@@ -158,7 +162,7 @@ def objective(trial):
         # Metriken extrahieren - robust gegen Tensor und Float
         val_loss = trainer.callback_metrics.get("val_loss", float('inf'))
         val_f1_score = trainer.callback_metrics.get("val_f1_score", 0.0)
-        val_accuracy = trainer.callback_metrics.get("val_accuracy", 0.0)
+        val_accuracy = trainer.callback_metrics.get("val_acc", 0.0)
         
         # Konvertiere zu Python float falls Tensor
         if torch.is_tensor(val_loss):
@@ -172,7 +176,7 @@ def objective(trial):
         mlflow.log_metrics({
             "val_loss": val_loss,
             "val_f1_score": val_f1_score,
-            "val_accuracy": val_accuracy,
+            "val_acc": val_accuracy,
             "final_epoch": trainer.current_epoch
         })
         
@@ -194,7 +198,7 @@ def main():
         
         # Optuna Study
         study = optuna.create_study(direction="maximize")  # Maximiere F1-Score
-        study.optimize(objective, n_trials=100)  
+        study.optimize(objective, n_trials=15)  
         
         # Beste Parameter loggen
         best_params = study.best_trial.params
@@ -249,7 +253,7 @@ def main():
         # Callbacks für finales Training
         early_stop_callback = EarlyStopping(
             monitor='val_loss',
-            patience=200,  # Mehr Geduld für finales Training
+            patience=20,  # Mehr Geduld für finales Training
             mode='min',
             verbose=False
         )

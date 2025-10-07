@@ -139,7 +139,7 @@ def objective(trial):
         # Metriken extrahieren - robust gegen Tensor und Float
         val_loss = trainer.callback_metrics.get("val_loss", float('inf'))
         val_f1_score = trainer.callback_metrics.get("val_f1_score", 0.0)
-        val_accuracy = trainer.callback_metrics.get("val_accuracy", 0.0)
+        val_accuracy = trainer.callback_metrics.get("val_acc", 0.0)
         
         # Konvertiere zu Python float falls Tensor
         if torch.is_tensor(val_loss):
@@ -153,7 +153,7 @@ def objective(trial):
         mlflow.log_metrics({
             "val_loss": val_loss,
             "val_f1_score": val_f1_score,
-            "val_accuracy": val_accuracy,
+            "val_acc": val_accuracy,
             "final_epoch": trainer.current_epoch
         })
         
