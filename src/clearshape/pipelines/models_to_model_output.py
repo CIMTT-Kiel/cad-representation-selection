@@ -29,7 +29,7 @@ from clearshape.models.modelstack import ModelStack
 from clearshape.models.treelstm import RootedInTreeEncoder
 from clearshape.constants import PATHS
 from clearshape.models.invariant_mlp import InvariantMLP 
-from clearshape.models.trnsfm_encoder import VecsetClassifier
+from clearshape.models.trnsfm_encoder import VecsetClassifier, TransformerRegressor
 from clearshape.rotationnet.rotnet_classifier import RotationNetModel
 
 # set up logger
@@ -280,11 +280,28 @@ class ModelsModelOutputPipeline:
         #TODO implement for regression
         logger.info(f"Initializing Vecset-model")
 
-        checkpoint = torch.load((PATHS.DATA_MODELS / "vecsets-classifier.ckpt").as_posix())
-        hyperparams = checkpoint["hyper_parameters"]
-        del hyperparams["lr"]
+        if task_type == "classifier":
 
-        model = VecsetClassifier(**hyperparams)
+            checkpoint = torch.load((PATHS.DATA_MODELS / "vecsets-classifier.ckpt").as_posix())
+            hyperparams = checkpoint["hyper_parameters"]
+            del hyperparams["lr"]
+            del hyperparams["weight_decay"]
+
+            model = VecsetClassifier(**hyperparams)
+        
+        elif task_type == "regressor":
+            checkpoint = torch.load((PATHS.DATA_MODELS / "vecsets-regressor.ckpt").as_posix())
+            hyperparams = checkpoint["hyper_parameters"]
+            del hyperparams["lr"]
+            del hyperparams["weight_decay"]
+            del hyperparams["max_epochs"]
+            del hyperparams["warmup_epochs"]
+            del hyperparams["target_names"]
+            
+
+            model = TransformerRegressor(**hyperparams)
+
+            
 
 
         return model
@@ -413,6 +430,44 @@ class ModelsModelOutputPipeline:
         with open(path, "rb") as scaler_file:
             return pickle.load(scaler_file)
 
+    def _process_batch_in_chunks(self, model, input_data, chunk_size=32):
+        """
+        Process a large batch in smaller chunks to avoid GPU memory overflow.
+
+        This method splits a large input batch into smaller sub-batches,
+        processes each sub-batch separately, and concatenates the results.
+
+        Parameters
+        ----------
+        model : torch.nn.Module
+            The model to use for prediction.
+        input_data : torch.Tensor
+            The input data batch to process.
+        chunk_size : int, optional
+            The size of each sub-batch. Default is 32.
+
+        Returns
+        -------
+        torch.Tensor
+            The concatenated predictions from all sub-batches.
+        """
+        predictions = []
+        num_samples = input_data.shape[0]
+
+        for i in range(0, num_samples, chunk_size):
+            end_idx = min(i + chunk_size, num_samples)
+            chunk = input_data[i:end_idx]
+
+            with torch.no_grad():
+                chunk_pred = model(chunk)
+                predictions.append(chunk_pred.cpu())
+
+            # Clear GPU cache after each chunk
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
+
+        return torch.cat(predictions, dim=0)
+
     def run(self):
         """
         Execute the pipeline to generate predictions from classifier
@@ -446,6 +501,11 @@ class ModelsModelOutputPipeline:
                 if model_name == 'images-classifier':
                     prediction = model.predict_step(input_data)
                     prediction = prediction.cpu().detach()
+                elif model_name == 'vecsets-classifier':
+                    # Use chunking for vecsets-classifier to avoid GPU memory issues
+                    prediction = self._process_batch_in_chunks(model, input_data, chunk_size=32)
+                    prediction = prediction.detach()
+                    prediction = prediction.argmax(dim=1).numpy()
                 else:
                     prediction = model(input_data)
                     prediction = prediction.cpu().detach()
@@ -484,8 +544,15 @@ class ModelsModelOutputPipeline:
             ):
 
                 input_data = input_data.to(device)
-                prediction = model(input_data)
-                prediction = prediction.cpu().detach().numpy()
+
+                # Use chunking for vecsets-regressor to avoid GPU memory issues
+                if data_type == 'vecsets':
+                    prediction = self._process_batch_in_chunks(model, input_data, chunk_size=32)
+                    prediction = prediction.detach().numpy()
+                else:
+                    prediction = model(input_data)
+                    prediction = prediction.cpu().detach().numpy()
+
                 prediction = scaler.inverse_transform(prediction)
 
                 predictions["path"].extend(part_path)
