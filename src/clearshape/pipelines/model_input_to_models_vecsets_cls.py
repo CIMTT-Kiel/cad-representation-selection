@@ -57,29 +57,25 @@ def objective(trial):
     """Optuna Objective für Hyperparameter-Tuning mit Constraint-Checking"""
 
     num_classes = get_num_classes()
-    
-    
+
+
     # MLflow Run für diesen Trial starten
     with mlflow.start_run(run_name=f"trial_{trial.number}", nested=True):
         # Hyperparameter-Sampling
-        dropout = trial.suggest_float("dropout", 0.4, 0.5)
-        #lr = trial.suggest_float("lr", 1e-5, 1e-3, log=True)
-        lr = 0.000015
-        #weight_decay = trial.suggest_float("weight_decay", 1e-6, 1e-3, log=True)
-        weight_decay = 0.0005
-        batch_size = trial.suggest_categorical("batch_size", [64])
-        
-        # D_model (fixiert, aber könnte auch variabel sein)
-        d_model = trial.suggest_int("d_model", 1024, 2048)
-        
-        # Transformer-specific hyperparameters mit mehr Optionen
-        # nhead = trial.suggest_categorical("nhead", [2, 4, 8, 16, 32])
-        nhead = 2
-        num_layers = trial.suggest_int("num_layers", 4, 6)
-        
+        dropout = trial.suggest_float("dropout", 0.3, 0.5)
+        lr = trial.suggest_float("lr", 1e-5, 1e-3, log=True)
+        weight_decay = trial.suggest_float("weight_decay", 1e-6, 1e-3, log=True)
+        batch_size = trial.suggest_categorical("batch_size", [64, 128, 256])
+
+        # D_model must be divisible by nhead
+        d_model = trial.suggest_categorical("d_model", [512, 768, 1024, 1536, 2048])
+
+        # Transformer-specific hyperparameters
+        nhead = trial.suggest_categorical("nhead", [2, 4, 8, 16])
+        num_layers = trial.suggest_int("num_layers", 2, 8)
+
         # Feedforward network size
-        #dim_feedforward = trial.suggest_int("dim_feedforward", 128, 2048)
-        dim_feedforward = 1205
+        dim_feedforward = trial.suggest_int("dim_feedforward", 512, 2048, step=128)
         
         # CONSTRAINT: d_model muss durch nhead teilbar sein
         if d_model % nhead != 0:
@@ -148,12 +144,12 @@ def objective(trial):
         )
         
         trainer = Trainer(
-            max_epochs=50,
+            max_epochs=50,  # Genug Epochs für Trials
             logger=mlf_logger,
             enable_checkpointing=False,
-            enable_model_summary=True,
+            enable_model_summary=False,
             enable_progress_bar=True,
-            log_every_n_steps=2,
+            log_every_n_steps=10,
             callbacks=[early_stop_callback]
         )
         
@@ -187,38 +183,48 @@ def objective(trial):
 
 def main():
     """Hauptfunktion für Hyperparameter-Tuning und finales Training"""
-    
+
     # MLflow Setup
     mlflow.set_tracking_uri(PATHS.MLFLOW_TRACKING_URI.as_posix())
     mlflow.set_experiment("vecsets-classification")
-    
+
     # Hauptrun für das gesamte Experiment starten
     with mlflow.start_run(run_name="hyperparameter_optimization"):
         print("Starting hyperparameter optimization for Vecsets Classification...")
-        
-        # Optuna Study
-        study = optuna.create_study(direction="maximize")  # Maximiere F1-Score
-        study.optimize(objective, n_trials=15)  
-        
+
+        # Optuna Study mit Pruning für bessere Effizienz
+        study = optuna.create_study(
+            direction="maximize",  # Maximiere F1-Score
+            sampler=optuna.samplers.TPESampler(n_startup_trials=10),
+            pruner=optuna.pruners.MedianPruner(n_startup_trials=5, n_warmup_steps=10)
+        )
+        study.optimize(objective, n_trials=30)  # 30 Trials für gute Exploration
+
         # Beste Parameter loggen
         best_params = study.best_trial.params
         best_value = study.best_trial.value
-        
+
         mlflow.log_params(best_params)
         mlflow.log_metric("best_val_f1_score", best_value)
-        
+        mlflow.log_metric("n_trials", len(study.trials))
+        mlflow.log_metric("n_completed_trials", len([t for t in study.trials if t.state.name == 'COMPLETE']))
+
         print(f"\nBest trial: {study.best_trial.number}")
         print(f"Best F1-Score: {best_value:.4f}")
         print(f"Best parameters: {best_params}")
-    
+
+        # Save Optuna study
+        study_path = PATHS.DATA_MODELS / "vecsets_classifier_optuna_study.joblib"
+        joblib.dump(study, study_path)
+        mlflow.log_artifact(str(study_path), "optuna_study")
+
     print("\nTraining final model with best parameters...")
     
     # Finales Training mit besten Parametern
     with mlflow.start_run(run_name="final_best_model"):
-        
+        num_classes = get_num_classes()
         mlflow.log_params(best_params)
         mlflow.log_param("model_type", "final_best_model")
-        mlflow.log_param("d_model", 1024)
         mlflow.log_param("input_dim", 32)
         mlflow.log_param("num_classes", num_classes)
         
@@ -227,7 +233,6 @@ def main():
             batch_size=best_params.get("batch_size", 64)
         )
         
-        num_classes = get_num_classes()
 
         # Finales Model mit besten Parametern
         model = VecsetClassifierModule( 
