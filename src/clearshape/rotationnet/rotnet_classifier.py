@@ -28,7 +28,7 @@ import clearshape.constants as constants
 
 class RotationNetModel(pl.LightningModule):
 
-    def __init__(self, arch='alexnet', num_classes=40, pretrained=False, criterion=None):
+    def __init__(self, arch='alexnet', num_classes=40, pretrained=True, criterion=None):
         super(RotationNetModel, self).__init__()
         self.arch = arch
         self.num_classes = num_classes
@@ -48,8 +48,8 @@ class RotationNetModel(pl.LightningModule):
         # self.model.features = torch.nn.DataParallel(self.model.features)
         # self.model.cuda()
 
-        self.val_acc = Accuracy(task="multiclass", num_classes=num_classes)
-        self.f1_score = F1Score(task="multiclass", num_classes=num_classes)
+        self.val_acc = Accuracy(task="multiclass", num_classes=num_classes, average='macro')
+        self.f1_score = F1Score(task="multiclass", num_classes=num_classes, average='macro')
 
 
     def forward(self, x):
