@@ -47,14 +47,14 @@ def main():
     train_loader, val_loader = get_dataloaders()
 
     early_stop_callback = EarlyStopping(
-            monitor='f1_score',     # oder "val_acc", je nachdem
+            monitor='val_f1_score',     # oder "val_acc", je nachdem
             patience=30,             # z. B. 5 Epochen ohne Verbesserung
             mode='max',             # "min" für loss, "max" für accuracy
             verbose=True
         )
     
     checkpoint_callback = ModelCheckpoint(
-        monitor='f1_score',           # oder z. B. "val_acc"
+        monitor='val_f1_score',           # oder z. B. "val_acc"
         save_top_k=1,                 # nur das beste Modell speichern
         mode='max',                   # "min" für loss, "max" für acc
         dirpath=constants.PATHS.DATA_MODELS.as_posix(),
