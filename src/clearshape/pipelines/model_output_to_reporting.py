@@ -232,22 +232,57 @@ class ModelOutputToReportingPipeline:
         MAE, R2 and MSE for each attribute and values grouped by data type.
         """
         logger.debug("Entered _save_regression_metrics_plot")
-        plot = (
-            so.Plot(regression_metrics, x="metric", y="value", color="data_type", )
-            .facet("attribute")
-            .add(so.Bar(), so.Dodge())
-            .label(
-                x="Metric",
-                y="Value",
-                color="Data Type",
+
+        # Create separate plots for each metric type to handle different scales
+        for metric_type in ['mae', 'r2', 'mse']:
+            metric_data = regression_metrics[regression_metrics['metric'] == metric_type].copy()
+
+            # Capitalize data_type for better visualization
+            metric_data['data_type'] = metric_data['data_type'].str.capitalize()
+            metric_data['attribute'] = metric_data['attribute'].str.capitalize()
+
+            # Set up the plot
+            fig, axes = plt.subplots(1, 4, figsize=(16, 4))
+            fig.suptitle(f'Regression Metrics: {metric_type.upper()}', fontsize=14, fontweight='bold')
+
+            attributes = ['Volume', 'Faces', 'Edges', 'Vertices']
+            for idx, attribute in enumerate(attributes):
+                attr_data = metric_data[metric_data['attribute'] == attribute]
+
+                if not attr_data.empty:
+                    ax = axes[idx]
+                    # Create bar plot
+                    data_types = attr_data['data_type'].unique()
+                    x_pos = range(len(data_types))
+                    values = [attr_data[attr_data['data_type'] == dt]['value'].values[0] for dt in data_types]
+
+                    bars = ax.bar(x_pos, values, color=['#4C72B0', '#DD8452'])
+                    ax.set_xlabel('Data Type')
+                    ax.set_ylabel(metric_type.upper())
+                    ax.set_title(attribute)
+                    ax.set_xticks(x_pos)
+                    ax.set_xticklabels(data_types, rotation=45, ha='right')
+
+                    # Add value labels on bars
+                    for bar, value in zip(bars, values):
+                        height = bar.get_height()
+                        if metric_type == 'r2':
+                            label = f'{value:.3f}'
+                        elif metric_type == 'mse' and value > 1000:
+                            label = f'{value:.2e}'
+                        else:
+                            label = f'{value:.1f}'
+                        ax.text(bar.get_x() + bar.get_width()/2., height,
+                               label, ha='center', va='bottom', fontsize=9)
+
+            plt.tight_layout()
+            plt.savefig(
+                cons.PATHS.DATA_REPORTING / f"regression_metrics_{metric_type}_plot.png",
+                format="png",
+                bbox_inches="tight",
+                dpi=150
             )
-            .layout(size=(15, 5))
-        )
-        plot.save(
-            cons.PATHS.DATA_REPORTING / "regression_metrics_plot.png",
-            format="png",
-            bbox_inches="tight",
-        )
+            plt.close(fig)
 
     def _get_error_table(
         self, regressor_output: pd.DataFrame, test_data: pd.DataFrame
@@ -382,29 +417,235 @@ class ModelOutputToReportingPipeline:
         error_table_relative_errors = error_table.query(
             "error_type.str.contains('relative')"
         ).copy()
-        ax = sns.violinplot(
-            data=error_table_relative_errors,
-            x="data_type",
-            y="value",
-            hue="error_type",
-        )
-        ax.set_title("Error Distributions of Regression Tasks")
-        ax.set_xlabel("Data Representation Type")
-        ax.set_ylabel("Relative Error")
-        # Set custom legend labels
-        legend_labels = ["Volume", "# of Faces", "# of Edges", "# of Vertices"]
-        legend = ax.get_legend()
-        legend.set_title("Regression Values")
-        for t, l in zip(legend.texts, legend_labels):
-            t.set_text(l)
 
-        ax.figure.set_size_inches(15, 8)
-        ax.figure.savefig(
+        # Capitalize data types for better visualization
+        error_table_relative_errors['data_type'] = error_table_relative_errors['data_type'].str.capitalize()
+
+        # Create figure with subplots for each attribute
+        fig, axes = plt.subplots(2, 2, figsize=(16, 12))
+        fig.suptitle("Error Distributions of Regression Tasks", fontsize=16, fontweight='bold')
+
+        attributes = [
+            ('volume_relative_error', 'Volume', axes[0, 0]),
+            ('faces_relative_error', '# of Faces', axes[0, 1]),
+            ('edges_relative_error', '# of Edges', axes[1, 0]),
+            ('vertices_relative_error', '# of Vertices', axes[1, 1])
+        ]
+
+        for error_type, label, ax in attributes:
+            attr_data = error_table_relative_errors[
+                error_table_relative_errors['error_type'] == error_type
+            ].copy()
+
+            if not attr_data.empty:
+                # Calculate quantiles to handle outliers
+                q95 = attr_data['value'].quantile(0.95)
+                q99 = attr_data['value'].quantile(0.99)
+
+                # Create violin plot
+                sns.violinplot(
+                    data=attr_data,
+                    x="data_type",
+                    y="value",
+                    ax=ax,
+                    cut=0,
+                    inner="box",
+                )
+
+                # Set y-limit to 95th percentile for better visualization
+                ax.set_ylim(0, max(q95 * 1.1, 0.1))
+
+                ax.set_title(f'{label}\n(showing up to 95th percentile)', fontsize=12)
+                ax.set_xlabel('Data Representation Type', fontsize=10)
+                ax.set_ylabel('Relative Error', fontsize=10)
+
+                # Add statistics text
+                for i, data_type in enumerate(attr_data['data_type'].unique()):
+                    dt_data = attr_data[attr_data['data_type'] == data_type]['value']
+                    median = dt_data.median()
+                    mean = dt_data.mean()
+                    outliers = (dt_data > q95).sum()
+                    total = len(dt_data)
+
+                    stats_text = f'Med: {median:.2f}\nMean: {mean:.2f}\nOutliers: {outliers}/{total}'
+                    ax.text(i, ax.get_ylim()[1] * 0.7, stats_text,
+                           ha='center', va='center', fontsize=8,
+                           bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.5))
+
+        plt.tight_layout()
+        plt.savefig(
             cons.PATHS.DATA_REPORTING / "error_distributions.png",
             format="png",
             bbox_inches="tight",
+            dpi=150
         )
-        plt.close(ax.figure)
+        plt.close(fig)
+
+    def _save_prediction_scatter_plots(self, regressor_output: pd.DataFrame, test_data: pd.DataFrame):
+        """
+        Creates scatter plots comparing predicted vs actual values for each attribute and data type.
+
+        Parameters
+        ----------
+        regressor_output : pd.DataFrame
+            DataFrame containing the regressor output.
+        test_data : pd.DataFrame
+            DataFrame containing the test data with true values.
+
+        Returns
+        -------
+        None
+        """
+        logger.debug("Entered _save_prediction_scatter_plots")
+
+        attributes = ['volume', 'faces', 'edges', 'vertices']
+        fig, axes = plt.subplots(len(attributes), 2, figsize=(14, 16))
+        fig.suptitle('Predicted vs Actual Values', fontsize=16, fontweight='bold')
+
+        for row_idx, attribute in enumerate(attributes):
+            for col_idx, data_type in enumerate(regressor_output['data_type'].unique()):
+                ax = axes[row_idx, col_idx]
+
+                # Get data for this combination
+                true_values, predicted_values = self._get_true_and_prediced_values(
+                    regressor_output, test_data, data_type, is_classifier=False
+                )
+
+                y_true = true_values[attribute].values
+                y_pred = predicted_values[f'pred_{attribute}'].values
+
+                # Create scatter plot
+                ax.scatter(y_true, y_pred, alpha=0.5, s=20)
+
+                # Add perfect prediction line
+                min_val = min(y_true.min(), y_pred.min())
+                max_val = max(y_true.max(), y_pred.max())
+                ax.plot([min_val, max_val], [min_val, max_val], 'r--', lw=2, label='Perfect prediction')
+
+                # Calculate R²
+                from sklearn.metrics import r2_score
+                r2 = r2_score(y_true, y_pred)
+
+                ax.set_xlabel(f'Actual {attribute.capitalize()}', fontsize=10)
+                ax.set_ylabel(f'Predicted {attribute.capitalize()}', fontsize=10)
+                ax.set_title(f'{data_type.capitalize()} - {attribute.capitalize()}\nR² = {r2:.3f}', fontsize=11)
+                ax.legend(fontsize=8)
+                ax.grid(True, alpha=0.3)
+
+        plt.tight_layout()
+        plt.savefig(
+            cons.PATHS.DATA_REPORTING / "prediction_vs_actual_scatter.png",
+            format="png",
+            bbox_inches="tight",
+            dpi=150
+        )
+        plt.close(fig)
+
+    def _save_model_comparison_summary(self, classification_metrics: pd.DataFrame, regression_metrics: pd.DataFrame):
+        """
+        Creates a summary plot comparing all models across classification and regression tasks.
+
+        Parameters
+        ----------
+        classification_metrics : pd.DataFrame
+            DataFrame with classification metrics.
+        regression_metrics : pd.DataFrame
+            DataFrame with regression metrics.
+
+        Returns
+        -------
+        None
+        """
+        logger.debug("Entered _save_model_comparison_summary")
+
+        fig = plt.figure(figsize=(16, 10))
+        gs = fig.add_gridspec(2, 2, hspace=0.3, wspace=0.3)
+
+        # Classification metrics comparison
+        ax1 = fig.add_subplot(gs[0, :])
+        class_data = classification_metrics.copy()
+        class_data['data_type'] = class_data['data_type'].str.capitalize()
+
+        # Pivot for grouped bar chart
+        class_pivot = class_data.pivot(index='metric', columns='data_type', values='value')
+        class_pivot.plot(kind='bar', ax=ax1, rot=0, color=['#4C72B0', '#DD8452'])
+        ax1.set_title('Classification Metrics Comparison', fontsize=14, fontweight='bold')
+        ax1.set_xlabel('Metric', fontsize=11)
+        ax1.set_ylabel('Score', fontsize=11)
+        ax1.set_ylim(0, 1)
+        ax1.legend(title='Data Type', fontsize=10)
+        ax1.grid(axis='y', alpha=0.3)
+
+        # Regression R² comparison
+        ax2 = fig.add_subplot(gs[1, 0])
+        r2_data = regression_metrics[regression_metrics['metric'] == 'r2'].copy()
+        r2_data['data_type'] = r2_data['data_type'].str.capitalize()
+        r2_data['attribute'] = r2_data['attribute'].str.capitalize()
+
+        r2_pivot = r2_data.pivot(index='attribute', columns='data_type', values='value')
+        r2_pivot.plot(kind='bar', ax=ax2, rot=45, color=['#4C72B0', '#DD8452'])
+        ax2.set_title('R² Score Comparison (Regression)', fontsize=12, fontweight='bold')
+        ax2.set_xlabel('Attribute', fontsize=10)
+        ax2.set_ylabel('R² Score', fontsize=10)
+        ax2.axhline(y=0, color='red', linestyle='--', linewidth=1, alpha=0.5)
+        ax2.legend(title='Data Type', fontsize=9)
+        ax2.grid(axis='y', alpha=0.3)
+
+        # Regression MAE comparison - excluding Volume for better scale
+        ax3 = fig.add_subplot(gs[1, 1])
+        mae_data = regression_metrics[regression_metrics['metric'] == 'mae'].copy()
+        mae_data['data_type'] = mae_data['data_type'].str.capitalize()
+        mae_data['attribute'] = mae_data['attribute'].str.capitalize()
+
+        # Split Volume from other attributes for separate visualization
+        mae_data_no_volume = mae_data[mae_data['attribute'] != 'Volume']
+        mae_data_volume = mae_data[mae_data['attribute'] == 'Volume']
+
+        # Plot non-volume attributes on primary y-axis
+        mae_pivot_no_volume = mae_data_no_volume.pivot(index='attribute', columns='data_type', values='value')
+        mae_pivot_no_volume.plot(kind='bar', ax=ax3, rot=45, color=['#4C72B0', '#DD8452'], width=0.7, position=1)
+        ax3.set_ylabel('MAE (Faces, Edges, Vertices)', fontsize=10, color='black')
+        ax3.tick_params(axis='y', labelcolor='black')
+        ax3.grid(axis='y', alpha=0.3)
+
+        # Create secondary y-axis for Volume
+        ax3_twin = ax3.twinx()
+
+        # Plot Volume on secondary y-axis
+        mae_pivot_volume = mae_data_volume.pivot(index='attribute', columns='data_type', values='value')
+        x_pos = len(mae_pivot_no_volume)  # Position after other attributes
+        width = 0.35
+        data_types = ['Vecsets', 'Invariants']
+        colors = ['#4C72B0', '#DD8452']
+
+        for i, dtype in enumerate(data_types):
+            if dtype in mae_pivot_volume.columns:
+                value = mae_pivot_volume[dtype].values[0]
+                ax3_twin.bar(x_pos + i * width - width/2, value, width,
+                           color=colors[i], alpha=0.8, label=dtype if x_pos == len(mae_pivot_no_volume) else "")
+
+        ax3_twin.set_ylabel('MAE (Volume)', fontsize=10, color='#8B4513')
+        ax3_twin.tick_params(axis='y', labelcolor='#8B4513')
+
+        # Update x-axis to include Volume
+        all_attributes = list(mae_pivot_no_volume.index) + ['Volume']
+        ax3.set_xticks(range(len(all_attributes)))
+        ax3.set_xticklabels(all_attributes, rotation=45, ha='right')
+
+        ax3.set_title('MAE Comparison (Regression)\n(Volume on right axis)', fontsize=12, fontweight='bold')
+        ax3.set_xlabel('Attribute', fontsize=10)
+
+        # Combine legends
+        lines1, labels1 = ax3.get_legend_handles_labels()
+        ax3.legend(lines1, labels1, title='Data Type', fontsize=9, loc='upper left')
+
+        plt.savefig(
+            cons.PATHS.DATA_REPORTING / "model_comparison_summary.png",
+            format="png",
+            bbox_inches="tight",
+            dpi=150
+        )
+        plt.close(fig)
 
     def _save_confusion_matrix_plot(self, confusion_matrix: pd.DataFrame, data_type: str) -> None:
         """
@@ -506,6 +747,15 @@ class ModelOutputToReportingPipeline:
             logger.info("Calculating and saving error distributions. (Violin Plot)")
             error_table = self._get_error_table(regressor_output, test_data)
             self._save_violin_plot(error_table)
+
+            # save prediction vs actual scatter plots
+            logger.info("Creating prediction vs actual scatter plots.")
+            self._save_prediction_scatter_plots(regressor_output, test_data)
+
+        # Create combined summary plot if both metrics are available
+        if classifier_output_found and regressor_output_found:
+            logger.info("Creating model comparison summary.")
+            self._save_model_comparison_summary(classification_metrics, regression_metrics)
 
         logger.info("Pipeline completed successfully.")
 

@@ -99,7 +99,7 @@ class LogTransformDataset(torch.utils.data.Dataset):
             
             y_transformed = torch.FloatTensor(y_transformed.flatten())
             
-            self.transformed_data.append((x, y_transformed, metadata))
+            self.transformed_data.append((x, y_transformed, metadata ))
     
     def __len__(self):
         return len(self.base_dataset)
@@ -242,52 +242,59 @@ def main():
     
     # Hauptrun für das gesamte Experiment starten
     with mlflow.start_run(run_name="transformer_hyperparameter_optimization"):
-        
+
         mlflow.log_param("model_architecture", "transformer")
         mlflow.log_param("optimization_algorithm", "optuna_tpe")
-        
+
         # Optuna Study mit Transformer-spezifischen Einstellungen
         study = optuna.create_study(
             direction="minimize",
             sampler=optuna.samplers.TPESampler(n_startup_trials=10),  # Besserer Sampler
             pruner=optuna.pruners.MedianPruner(n_startup_trials=5, n_warmup_steps=10)  # Pruning
         )
-        
-        study.optimize(objective, n_trials=30, timeout=3600*6)  # 6 Stunden Timeout
-        
+
+        study.optimize(objective, n_trials=30)  # 30 Trials für gute Balance
+
         # Beste Parameter loggen
         best_params = study.best_trial.params
         best_value = study.best_trial.value
-        
+
         mlflow.log_params(best_params)
         mlflow.log_metric("best_val_mse", best_value)
         mlflow.log_metric("n_trials", len(study.trials))
         mlflow.log_metric("n_completed_trials", len([t for t in study.trials if t.state.name == 'COMPLETE']))
-        
-        
+
+        print(f"\nBest trial: {study.best_trial.number}")
+        print(f"Best MSE: {best_value:.6f}")
+        print(f"Best parameters: {best_params}")
+
+        # Save Optuna study
+        study_path = PATHS.DATA_MODELS / "vecsets_regressor_optuna_study.joblib"
+        joblib.dump(study, study_path)
+        mlflow.log_artifact(str(study_path), "optuna_study")
+
         # Optuna Study Visualisierung (optional)
         try:
             import optuna.visualization as vis
-            import plotly
-            
+
             fig_importance = vis.plot_param_importances(study)
             fig_optimization = vis.plot_optimization_history(study)
-            
+
             # Speichere Plots
             importance_path = PATHS.DATA_MODELS / "transformer_param_importance.html"
             history_path = PATHS.DATA_MODELS / "transformer_optimization_history.html"
-            
-            fig_importance.write_html(importance_path)
-            fig_optimization.write_html(history_path)
-            
+
+            fig_importance.write_html(str(importance_path))
+            fig_optimization.write_html(str(history_path))
+
             mlflow.log_artifact(str(importance_path), "plots")
             mlflow.log_artifact(str(history_path), "plots")
-            
+
             print("Optuna visualizations saved and logged to MLflow!")
         except ImportError:
             print("Optuna visualization not available - install plotly for plots")
-    
 
+    print("\nTraining final model with best parameters...")
 
     
     with mlflow.start_run(run_name="final_best_transformer_model"):
@@ -329,14 +336,14 @@ def main():
         
         # Callbacks 
         early_stop_callback = EarlyStopping(
-            monitor='val_mse_original',
+            monitor='val_loss',
             patience=40,  
             mode='min',
             verbose=False
         )
         
         checkpoint_callback = ModelCheckpoint(
-            monitor='val_mse_original',
+            monitor='val_loss',
             save_top_k=1,
             mode='min',
             dirpath=PATHS.DATA_MODELS.as_posix(),
@@ -355,7 +362,7 @@ def main():
             gradient_clip_val=1.0,
             precision='16-mixed' if torch.cuda.is_available() else '32',
             accumulate_grad_batches=1,
-            log_every_n_steps=10,
+            log_every_n_steps=1,
             check_val_every_n_epoch=1,
             detect_anomaly=False  
         )
@@ -377,16 +384,17 @@ def main():
 
         scaler_path = PATHS.DATA_MODELS / "transformer_log_scaler.joblib"
         best_params_path = PATHS.DATA_MODELS / "transformer_best_params.joblib"
-        study_path = PATHS.DATA_MODELS / "transformer_optuna_study.joblib"
-        
+
         joblib.dump(log_scaler, scaler_path)
         joblib.dump(best_params, best_params_path)
-        joblib.dump(study, study_path)
         
         # Zu MLflow hinzufügen
         mlflow.log_artifact(str(scaler_path), "scaler")
         mlflow.log_artifact(str(best_params_path), "parameters")
-        mlflow.log_artifact(str(study_path), "optuna_study")
+
+        print(f"Scaler saved to: {scaler_path}")
+        print(f"Best params saved to: {best_params_path}")
+        print("Final training completed!")
         
 
 
