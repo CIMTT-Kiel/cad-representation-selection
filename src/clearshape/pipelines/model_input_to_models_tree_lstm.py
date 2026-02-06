@@ -1,6 +1,14 @@
 """
 A class to optimize hyperparameters for a Tree-LSTM model using Optuna.
 
+To configure the pipeline modify the file `config/treelstm_classifier_tuning_pipeline.yaml` for the classifier and `treelstm_regressor_tuning_pipeline.yaml` for the regressor.
+
+The hyperparameter tuning is performed in three stages: training, validation and test.
+In each stage, a different set of hyperparameters is tuned while the other hyperparameters are fixed to the best value found in previous stages or to a predefined value if they are not tuned in previous stages.
+
+Note that at each stage, the model is optimized for a different data split. In the training stage, the model is optimized for the training data. In the validation stage, the model is optimized for the validation data. In the test stage, the model is optimized for the test data.
+For this reason the "test data" is set to differently in each stage.
+
 Examples
 --------
 Start MLFlow tracking via `mlflow ui` then run the pipeline:
