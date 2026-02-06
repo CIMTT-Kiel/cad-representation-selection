@@ -22,8 +22,14 @@ services:
       #- D:\3 Resources\Nextcloud FH Kiel\Ressourcen-KI-Gruppe\Modelle\VecsetEncoder\points_vec1024x32_dim1024_depth24_sdf_nb:/clear-shape/src/clearshape/vecsets/preprocessing/vecset_model/ckpts/
 
       # data-folders for fabwave dataset
-      #- D:\3 Resources\Nextcloud FH Kiel\Ressourcen-KI-Gruppe\Datensätze\fabwave\1_raw:/clear-shape/data/1_raw/
-      #- D:\3 Resources\Nextcloud FH Kiel\Ressourcen-KI-Gruppe\Datensätze\fabwave\3_primary:/clear-shape/data/3_primary/
+      - /data/shared/datasets/fabwave/1_raw/:/clear-shape/data/1_raw/
+      - /data/shared/datasets/fabwave/3_primary/:/clear-shape/data/3_primary/
+      - /data/shared/datasets/fabwave/4_feature/:/clear-shape/data/4_feature/
+      - /data/shared/datasets/fabwave/5_model_input/:/clear-shape/data/5_model_input/
+      - /data/shared/datasets/fabwave/6_models/:/clear-shape/data/6_models/
+      - /data/shared/datasets/fabwave/7_model_output/:/clear-shape/data/7_model_output/
+      - /data/shared/datasets/fabwave/8_reporting/:/clear-shape/data/8_reporting/
+      #- D:\3 Resources\Nextcloud FH Kiel\Ressourcen-KI-Gruppe\Datensätze\fabwave\1_raw:      #- D:\3 Resources\Nextcloud FH Kiel\Ressourcen-KI-Gruppe\Datensätze\fabwave\3_primary:/clear-shape/data/3_primary/
       #- D:\3 Resources\Nextcloud FH Kiel\Ressourcen-KI-Gruppe\Datensätze\fabwave\4_feature:/clear-shape/data/4_feature/
       #- D:\3 Resources\Nextcloud FH Kiel\Ressourcen-KI-Gruppe\Datensätze\fabwave\5_model_input:/clear-shape/data/5_model_input/
       #- D:\3 Resources\Nextcloud FH Kiel\Ressourcen-KI-Gruppe\Datensätze\fabwave\6_models:/clear-shape/data/6_models/
@@ -44,15 +50,15 @@ services:
 
       #clearshape-user
       # model checkpoint for vecset_encoder - needed for preprocessing
-      - /home/clearshape/model-repo/points_vec1024x32_dim1024_depth24_sdf_nb/checkpoint-110.pth:/clear-shape/src/clearshape/vecsets/preprocessing/vecset_model/ckpts/checkpoint-110.pth 
-      # data-folders for fabwave dataset
-      - /home/clearshape/data-reposfabwave/1_raw:/clear-shape/data/1_raw/
-      - /home/clearshape/data-reposfabwave/3_primary:/clear-shape/data/3_primary/
-      - /home/clearshape/data-reposfabwave/4_feature:/clear-shape/data/4_feature/
-      - /home/clearshape/data-reposfabwave/5_model_input:/clear-shape/data/5_model_input/
-      - /home/clearshape/data-reposfabwave/6_models:/clear-shape/data/6_models/
-      - /home/clearshape/data-reposfabwave/7_model_output:/clear-shape/data/7_model_output/
-      - /home/clearshape/data-reposfabwave/8_reporting:/clear-shape/data/8_reporting/
+      # - /home/clearshape/model-repo/points_vec1024x32_dim1024_depth24_sdf_nb/checkpoint-110.pth:/clear-shape/src/clearshape/vecsets/preprocessing/vecset_model/ckpts/checkpoint-110.pth 
+      # # data-folders for fabwave dataset
+      # - /home/clearshape/data-reposfabwave/1_raw:/clear-shape/data/1_raw/
+      # - /home/clearshape/data-reposfabwave/3_primary:/clear-shape/data/3_primary/
+      # - /home/clearshape/data-reposfabwave/4_feature:/clear-shape/data/4_feature/
+      # - /home/clearshape/data-reposfabwave/5_model_input:/clear-shape/data/5_model_input/
+      # - /home/clearshape/data-reposfabwave/6_models:/clear-shape/data/6_models/
+      # - /home/clearshape/data-reposfabwave/7_model_output:/clear-shape/data/7_model_output/
+      # - /home/clearshape/data-reposfabwave/8_reporting:/clear-shape/data/8_reporting/
 
 
 
