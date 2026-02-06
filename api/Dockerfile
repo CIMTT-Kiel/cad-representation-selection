@@ -5,8 +5,8 @@ WORKDIR /app
 # Python 3.12 in der base-Umgebung installieren
 RUN conda install -y python=3.12
 
-RUN conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/main
-RUN conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/r
+#RUN conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/main
+#RUN conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/r
 RUN pip install open3d
 RUN pip install cascadio
 RUN conda install conda-forge::freecad
