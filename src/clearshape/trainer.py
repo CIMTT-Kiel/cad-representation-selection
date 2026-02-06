@@ -13,15 +13,8 @@ import mlflow
 
 # custom packages
 
-# set up logger
-logging_level = logging.INFO
+# set up module logger
 logger = logging.getLogger(__name__)
-logger.setLevel(logging_level)
-formatter = logging.Formatter("%(asctime)s %(levelname)8s - %(message)s")
-stream_handler = logging.StreamHandler()
-stream_handler.setLevel(logging_level)
-stream_handler.setFormatter(formatter)
-logger.addHandler(stream_handler)
 
 
 class Trainer:
@@ -162,6 +155,7 @@ class Trainer:
             Average loss on the training set.
         """
         logger.debug("Starting to calculate loss on training set.")
+        logger.debug(f"{self.device}")
         self.model.eval()
         loss_total = 0
         with torch.no_grad():

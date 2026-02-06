@@ -36,15 +36,20 @@ from clearshape.models.modelstack import ModelStack
 from clearshape.models.treelstm import RootedInTreeEncoder
 from clearshape.trainer import Trainer
 
-# set up logger
+# configure root logger
 logging_level = logging.DEBUG
-logger = logging.getLogger(__name__)
-logger.setLevel(logging_level)
-formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)8s - %(message)s")
+format = "%(asctime)s - %(name)s - %(levelname)8s - %(message)s"
+
+formatter = logging.Formatter(format)
 stream_handler = logging.StreamHandler()
 stream_handler.setLevel(logging_level)
 stream_handler.setFormatter(formatter)
-logger.addHandler(stream_handler)
+logging.getLogger().addHandler(stream_handler)
+logging.getLogger().setLevel(logging_level)
+logging.basicConfig(format=format, level=logging_level)
+
+# setup logger (and configure) logger for this module
+logger = logging.getLogger(__name__)
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 logger.info(f"Using device: {device}")
