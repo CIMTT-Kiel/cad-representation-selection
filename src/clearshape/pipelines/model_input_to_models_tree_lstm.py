@@ -709,7 +709,8 @@ class TreeLSTMTuningPipeline():
                      0.905812,
                      0.899800,
                      0.991984,
-                     0.765531]))
+                     0.765531]).to(device)
+                )
             case "f1":
                 return MulticlassF1Score(num_classes=model.models[-1].layers[-2].out_features)
             case _ :
