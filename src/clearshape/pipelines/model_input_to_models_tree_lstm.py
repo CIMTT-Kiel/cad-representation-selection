@@ -830,7 +830,7 @@ class TreeLSTMTuningPipeline():
         """
         logger.info(f"Starting pipeline. Tuning {'classifier' if self.classification else 'regressor'} model.")
         logger.info("Setting up mlflow. Tracking URI: http://localhost:5000")
-        mlflow.set_tracking_uri("http://localhost:5000")
+        mlflow.set_tracking_uri("sqlite:///mlflow.db")
 
         if "train" in self._conf.stages:
             logger.info("Starting optimization on train data.")
