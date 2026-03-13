@@ -54,7 +54,7 @@ class ModelsModelOutputPipeline:
 
     This pipeline handles both classifiers and regressors separately. Predictions
     from all classifiers are saved in a single output file, and predictions from
-    all regressors are saved in another output file.
+    all regressors are saved in another output file. Existing output files will be overwritten.
 
     - `data/7_model_output/classifiers_output.csv`
     - `data/7_model_output/regressors_output.csv`

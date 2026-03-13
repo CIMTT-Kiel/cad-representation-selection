@@ -1,8 +1,8 @@
 ---
-n_trials: 20 # number of trials per stage
+n_trials: 1 # number of trials per stage
 n_jobs: 1  # number of parallel jobs
-stages: [train, validation, test]  # list of stages to run if possibel. (valid: train, validation, test)
-n_epochs: 600
+stages: [test]  # list of stages to run if possibel. (valid: train, validation, test)
+n_epochs: 10000
 input_size: 32
 loss_function: cross_entropy  # valid options: cross_entropy, mean_squared_error
 test_metric: f1  # TODO use f1_score for classification
@@ -15,7 +15,7 @@ file_best_parameter: tree-lstm-classifier-best-parameter.yaml
 train:
 
   # fixed hyperparameters for training stage
-  batch_size: 256  # preferably high for faster training
+  batch_size: 512  # preferably high for faster training
   learning_rate: 0.0002
   optimizer: adam
   dropout_rate: 0.1
@@ -24,12 +24,12 @@ train:
 
   encoder:
     encoding_size_min: 200
-    encoding_size_max: 300
-    encoding_size_step: 10
+    encoding_size_max: 400
+    encoding_size_step: 50
 
   predictor:
-    layers_total_min: 1
-    layers_total_max: 3
+    layers_total_min: 3
+    layers_total_max: 20
     units_per_layer_min: 256
     units_per_layer_max: 1024
 # ------------------------------------
@@ -59,6 +59,6 @@ test:
   optimizer: adam
 
   # hyperparameters to tune during test stage
-  batch_size_min: 32
-  batch_size_max: 256
+  batch_size_min: 1024
+  batch_size_max: 1024
   batch_size_step: 32

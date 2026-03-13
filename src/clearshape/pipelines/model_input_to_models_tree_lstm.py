@@ -1,6 +1,14 @@
 """
 A class to optimize hyperparameters for a Tree-LSTM model using Optuna.
 
+To configure the pipeline modify the file `config/treelstm_classifier_tuning_pipeline.yaml` for the classifier and `treelstm_regressor_tuning_pipeline.yaml` for the regressor.
+
+The hyperparameter tuning is performed in three stages: training, validation and test.
+In each stage, a different set of hyperparameters is tuned while the other hyperparameters are fixed to the best value found in previous stages or to a predefined value if they are not tuned in previous stages.
+
+Note that at each stage, the model is optimized for a different data split. In the training stage, the model is optimized for the training data. In the validation stage, the model is optimized for the validation data. In the test stage, the model is optimized for the test data.
+For this reason the "test data" is set to differently in each stage.
+
 Examples
 --------
 Start MLFlow tracking via `mlflow ui` then run the pipeline:
@@ -36,15 +44,20 @@ from clearshape.models.modelstack import ModelStack
 from clearshape.models.treelstm import RootedInTreeEncoder
 from clearshape.trainer import Trainer
 
-# set up logger
+# configure root logger
 logging_level = logging.DEBUG
-logger = logging.getLogger(__name__)
-logger.setLevel(logging_level)
-formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)8s - %(message)s")
+format = "%(asctime)s - %(name)s - %(levelname)8s - %(message)s"
+
+formatter = logging.Formatter(format)
 stream_handler = logging.StreamHandler()
 stream_handler.setLevel(logging_level)
 stream_handler.setFormatter(formatter)
-logger.addHandler(stream_handler)
+logging.getLogger().addHandler(stream_handler)
+logging.getLogger().setLevel(logging_level)
+logging.basicConfig(format=format, level=logging_level)
+
+# setup logger (and configure) logger for this module
+logger = logging.getLogger(__name__)
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 logger.info(f"Using device: {device}")
@@ -566,7 +579,7 @@ class TreeLSTMTuningPipeline():
         -------
         None
         """
-        epochs_to_train_in_a_row = 5
+        epochs_to_train_in_a_row = 100
         for _ in range(self._conf.n_epochs // epochs_to_train_in_a_row):
             training_loss = trainer.train(n_epochs=epochs_to_train_in_a_row)
             test_score = trainer.test()
@@ -704,7 +717,8 @@ class TreeLSTMTuningPipeline():
                      0.905812,
                      0.899800,
                      0.991984,
-                     0.765531]))
+                     0.765531]).to(device)
+                )
             case "f1":
                 return MulticlassF1Score(num_classes=model.models[-1].layers[-2].out_features)
             case _ :
@@ -816,7 +830,7 @@ class TreeLSTMTuningPipeline():
         """
         logger.info(f"Starting pipeline. Tuning {'classifier' if self.classification else 'regressor'} model.")
         logger.info("Setting up mlflow. Tracking URI: http://localhost:5000")
-        mlflow.set_tracking_uri("http://localhost:5000")
+        mlflow.set_tracking_uri("sqlite:///mlflow.db")
 
         if "train" in self._conf.stages:
             logger.info("Starting optimization on train data.")
