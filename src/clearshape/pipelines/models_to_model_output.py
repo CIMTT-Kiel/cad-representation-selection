@@ -205,7 +205,7 @@ class ModelsModelOutputPipeline:
 
         logger.info(f"Initializing Images-model")
 
-        checkpoint_path = PATHS.DATA_MODELS / "images-classifier-v1.ckpt"
+        checkpoint_path = PATHS.DATA_MODELS / "images-classifier.ckpt"
         # hyperparams = checkpoint["hyper_parameters"]
         # del hyperparams["lr"]
 
