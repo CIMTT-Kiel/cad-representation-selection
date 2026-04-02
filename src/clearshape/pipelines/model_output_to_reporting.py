@@ -669,7 +669,7 @@ class ModelOutputToReportingPipeline:
             xticklabels=confusion_matrix.columns,
             yticklabels=confusion_matrix.index,
         )
-        ax.set_title(f"Confusion Matrix for {data_type}")
+        ax.set_title(f"Confusion Matrix for {data_type[:-1]} representation", fontweight="bold")
         ax.set_xlabel("Predicted Class")
         ax.set_ylabel("True Class")
         ax.figure.set_size_inches(15, 8)
@@ -762,9 +762,9 @@ class ModelOutputToReportingPipeline:
             self._save_prediction_scatter_plots(regressor_output, test_data)
 
         # Create combined summary plot if both metrics are available
-        if classifier_output_found and regressor_output_found:
-            logger.info("Creating model comparison summary.")
-            self._save_model_comparison_summary(classification_metrics, regression_metrics)
+        # if classifier_output_found and regressor_output_found:
+        #     logger.info("Creating model comparison summary.")
+        #     self._save_model_comparison_summary(classification_metrics, regression_metrics)
 
         logger.info("Pipeline completed successfully.")
 
