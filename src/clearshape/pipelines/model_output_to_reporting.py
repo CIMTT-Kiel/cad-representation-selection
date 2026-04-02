@@ -28,6 +28,10 @@ stream_handler.setLevel(logging_level)
 stream_handler.setFormatter(formatter)
 logger.addHandler(stream_handler)
 
+# set seaborn style for all plots
+sns.set_theme(context="paper",
+              style="darkgrid",
+              )
 
 class ModelOutputToReportingPipeline:
     """
