@@ -508,7 +508,7 @@ class ModelOutputToReportingPipeline:
 
         attributes = ['volume', 'faces', 'edges', 'vertices']
         fig, axes = plt.subplots(len(attributes), len(regressor_output['data_type'].unique()), figsize=(14, 16))
-        fig.suptitle('Predicted vs Actual Values', fontsize=16, fontweight='bold')
+        fig.suptitle('Predicted vs Actual Values\n', fontweight='bold')
 
         for row_idx, attribute in enumerate(attributes):
             for col_idx, data_type in enumerate(regressor_output['data_type'].unique()):
