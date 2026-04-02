@@ -247,7 +247,7 @@ class ModelOutputToReportingPipeline:
 
             # Set up the plot
             fig, axes = plt.subplots(1, 4, figsize=(16, 4))
-            fig.suptitle(f'Regression Metrics: {metric_type.upper()}', fontsize=14, fontweight='bold')
+            fig.suptitle(f'Regression Metrics: {metric_type.upper()}', fontweight='bold')
 
             attributes = ['Volume', 'Faces', 'Edges', 'Vertices']
             for idx, attribute in enumerate(attributes):
@@ -261,7 +261,7 @@ class ModelOutputToReportingPipeline:
                     values = [attr_data[attr_data['data_type'] == dt]['value'].values[0] for dt in data_types]
 
                     bars = ax.bar(x_pos, values, color=['#4C72B0', '#DD8452'])
-                    ax.set_xlabel('Data Type')
+                    ax.set_xlabel('Representation Type')
                     ax.set_ylabel(metric_type.upper())
                     ax.set_title(attribute)
                     ax.set_xticks(x_pos)
