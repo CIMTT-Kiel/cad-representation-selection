@@ -59,7 +59,7 @@ logging.basicConfig(format=format, level=logging_level)
 # setup logger (and configure) logger for this module
 logger = logging.getLogger(__name__)
 
-device = "cuda" if torch.cuda.is_available() else "cpu"
+device = "cuda:1" if torch.cuda.is_available() else "cpu"
 logger.info(f"Using device: {device}")
 
 torch.manual_seed(42)

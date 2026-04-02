@@ -1,8 +1,8 @@
 ---
-n_trials: 40 # number of trials per stage
-n_jobs: 4  # number of parallel jobs
-stages: [train]  # list of stages to run if possibel. (valid: train, validation, test)
-n_epochs: 300
+n_trials: 1 # number of trials per stage
+n_jobs: 1  # number of parallel jobs
+stages: [test]  # list of stages to run if possibel. (valid: train, validation, test)
+n_epochs: 20000
 input_size: 32
 output_shape: 4
 loss_function: mean_squared_error
@@ -60,7 +60,7 @@ test:
   optimizer: adam
 
   # hyperparameters to tune during test stage
-  batch_size_min: 256
+  batch_size_min: 1024
   batch_size_max: 1024
   batch_size_step: 256
 
