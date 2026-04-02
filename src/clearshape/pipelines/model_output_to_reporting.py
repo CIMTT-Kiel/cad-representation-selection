@@ -386,18 +386,22 @@ class ModelOutputToReportingPipeline:
                 classification_metrics["metric"] == f"{metric}_macro", "metric"
             ] = display_name
 
+        fig, ax = plt.subplots()
         plot = (
             so.Plot(classification_metrics, x="metric", y="value", color="data_type")
-            .add(so.Bar(), so.Dodge())
+            .add(so.Bar(edgewidth=0), so.Dodge())
             .label(
                 title="Classification Metrics (Macro Averaged)",
                 x="Metric",
                 y="Metric Value",
-                color="Data Type",
+                color="Representation Type",
             )
+            .on(ax)
+            .plot()
         )
 
-        plot.save(
+        plt.tight_layout()
+        plt.savefig(
             cons.PATHS.DATA_REPORTING / "classification_metrics_plot.png",
             format="png",
             bbox_inches="tight",
