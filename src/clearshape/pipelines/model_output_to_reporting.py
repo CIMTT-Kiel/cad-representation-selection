@@ -430,14 +430,14 @@ class ModelOutputToReportingPipeline:
         error_table_relative_errors['data_type'] = error_table_relative_errors['data_type'].str.capitalize()
 
         # Create figure with subplots for each attribute
-        fig, axes = plt.subplots(2, 2, figsize=(16, 12))
-        fig.suptitle("Error Distributions of Regression Tasks", fontsize=16, fontweight='bold')
+        fig, axes = plt.subplots(2, 2, figsize=(12, 10))
+        fig.suptitle("Distributions of Absolute Errors of Regression Tasks", fontsize=16, fontweight='bold')
 
         attributes = [
             ('volume_relative_error', 'Volume', axes[0, 0]),
-            ('faces_relative_error', '# of Faces', axes[0, 1]),
-            ('edges_relative_error', '# of Edges', axes[1, 0]),
-            ('vertices_relative_error', '# of Vertices', axes[1, 1])
+            ('faces_relative_error', 'Number of Faces', axes[0, 1]),
+            ('edges_relative_error', 'Number of Edges', axes[1, 0]),
+            ('vertices_relative_error', 'Number of Vertices', axes[1, 1])
         ]
 
         for error_type, label, ax in attributes:
@@ -446,9 +446,6 @@ class ModelOutputToReportingPipeline:
             ].copy()
 
             if not attr_data.empty:
-                # Calculate quantiles to handle outliers
-                q95 = attr_data['value'].quantile(0.95)
-                q99 = attr_data['value'].quantile(0.99)
 
                 # Create violin plot
                 sns.violinplot(
@@ -459,26 +456,21 @@ class ModelOutputToReportingPipeline:
                     cut=0,
                     inner="box",
                 )
-
-                # Set y-limit to 95th percentile for better visualization
-                ax.set_ylim(0, max(q95 * 1.1, 0.1))
-
-                ax.set_title(f'{label}\n(showing up to 95th percentile)', fontsize=12)
+                ax.semilogy()
+                ax.set_title(f'{label}', fontsize=12)
                 ax.set_xlabel('Data Representation Type', fontsize=10)
                 ax.set_ylabel('Relative Error', fontsize=10)
 
                 # Add statistics text
-                for i, data_type in enumerate(attr_data['data_type'].unique()):
+                for data_type_index, data_type in enumerate(attr_data['data_type'].unique()):
                     dt_data = attr_data[attr_data['data_type'] == data_type]['value']
                     median = dt_data.median()
                     mean = dt_data.mean()
-                    outliers = (dt_data > q95).sum()
-                    total = len(dt_data)
 
-                    stats_text = f'Med: {median:.2f}\nMean: {mean:.2f}\nOutliers: {outliers}/{total}'
-                    ax.text(i, ax.get_ylim()[1] * 0.7, stats_text,
+                    stats_text = f'Median: {median:.2f}\nMean: {mean:.2f}'
+                    ax.text(data_type_index, ax.get_ylim()[1] * 0.3, stats_text,
                            ha='center', va='center', fontsize=8,
-                           bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.5))
+                           bbox=dict(boxstyle='round', facecolor='white', edgecolor='black', alpha=0.5))
 
         plt.tight_layout()
         plt.savefig(
