@@ -28,6 +28,10 @@ stream_handler.setLevel(logging_level)
 stream_handler.setFormatter(formatter)
 logger.addHandler(stream_handler)
 
+# set seaborn style for all plots
+sns.set_theme(context="paper",
+              style="darkgrid",
+              )
 
 class ModelOutputToReportingPipeline:
     """
@@ -243,7 +247,7 @@ class ModelOutputToReportingPipeline:
 
             # Set up the plot
             fig, axes = plt.subplots(1, 4, figsize=(16, 4))
-            fig.suptitle(f'Regression Metrics: {metric_type.upper()}', fontsize=14, fontweight='bold')
+            fig.suptitle(f'Regression Metrics: {metric_type.upper()}', fontweight='bold')
 
             attributes = ['Volume', 'Faces', 'Edges', 'Vertices']
             for idx, attribute in enumerate(attributes):
@@ -257,7 +261,7 @@ class ModelOutputToReportingPipeline:
                     values = [attr_data[attr_data['data_type'] == dt]['value'].values[0] for dt in data_types]
 
                     bars = ax.bar(x_pos, values, color=['#4C72B0', '#DD8452'])
-                    ax.set_xlabel('Data Type')
+                    ax.set_xlabel('Representation Type')
                     ax.set_ylabel(metric_type.upper())
                     ax.set_title(attribute)
                     ax.set_xticks(x_pos)
@@ -382,18 +386,22 @@ class ModelOutputToReportingPipeline:
                 classification_metrics["metric"] == f"{metric}_macro", "metric"
             ] = display_name
 
+        fig, ax = plt.subplots()
         plot = (
             so.Plot(classification_metrics, x="metric", y="value", color="data_type")
-            .add(so.Bar(), so.Dodge())
+            .add(so.Bar(edgewidth=0), so.Dodge())
             .label(
                 title="Classification Metrics (Macro Averaged)",
                 x="Metric",
                 y="Metric Value",
-                color="Data Type",
+                color="Representation Type",
             )
+            .on(ax)
+            .plot()
         )
 
-        plot.save(
+        plt.tight_layout()
+        plt.savefig(
             cons.PATHS.DATA_REPORTING / "classification_metrics_plot.png",
             format="png",
             bbox_inches="tight",
@@ -422,14 +430,14 @@ class ModelOutputToReportingPipeline:
         error_table_relative_errors['data_type'] = error_table_relative_errors['data_type'].str.capitalize()
 
         # Create figure with subplots for each attribute
-        fig, axes = plt.subplots(2, 2, figsize=(16, 12))
-        fig.suptitle("Error Distributions of Regression Tasks", fontsize=16, fontweight='bold')
+        fig, axes = plt.subplots(2, 2, figsize=(12, 10))
+        fig.suptitle("Distributions of Absolute Errors of Regression Tasks", fontsize=16, fontweight='bold')
 
         attributes = [
             ('volume_relative_error', 'Volume', axes[0, 0]),
-            ('faces_relative_error', '# of Faces', axes[0, 1]),
-            ('edges_relative_error', '# of Edges', axes[1, 0]),
-            ('vertices_relative_error', '# of Vertices', axes[1, 1])
+            ('faces_relative_error', 'Number of Faces', axes[0, 1]),
+            ('edges_relative_error', 'Number of Edges', axes[1, 0]),
+            ('vertices_relative_error', 'Number of Vertices', axes[1, 1])
         ]
 
         for error_type, label, ax in attributes:
@@ -438,9 +446,6 @@ class ModelOutputToReportingPipeline:
             ].copy()
 
             if not attr_data.empty:
-                # Calculate quantiles to handle outliers
-                q95 = attr_data['value'].quantile(0.95)
-                q99 = attr_data['value'].quantile(0.99)
 
                 # Create violin plot
                 sns.violinplot(
@@ -451,26 +456,21 @@ class ModelOutputToReportingPipeline:
                     cut=0,
                     inner="box",
                 )
-
-                # Set y-limit to 95th percentile for better visualization
-                ax.set_ylim(0, max(q95 * 1.1, 0.1))
-
-                ax.set_title(f'{label}\n(showing up to 95th percentile)', fontsize=12)
+                ax.semilogy()
+                ax.set_title(f'{label}', fontsize=12)
                 ax.set_xlabel('Data Representation Type', fontsize=10)
                 ax.set_ylabel('Relative Error', fontsize=10)
 
                 # Add statistics text
-                for i, data_type in enumerate(attr_data['data_type'].unique()):
+                for data_type_index, data_type in enumerate(attr_data['data_type'].unique()):
                     dt_data = attr_data[attr_data['data_type'] == data_type]['value']
                     median = dt_data.median()
                     mean = dt_data.mean()
-                    outliers = (dt_data > q95).sum()
-                    total = len(dt_data)
 
-                    stats_text = f'Med: {median:.2f}\nMean: {mean:.2f}\nOutliers: {outliers}/{total}'
-                    ax.text(i, ax.get_ylim()[1] * 0.7, stats_text,
+                    stats_text = f'Median: {median:.2f}\nMean: {mean:.2f}'
+                    ax.text(data_type_index, ax.get_ylim()[1] * 0.3, stats_text,
                            ha='center', va='center', fontsize=8,
-                           bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.5))
+                           bbox=dict(boxstyle='round', facecolor='white', edgecolor='black', alpha=0.5))
 
         plt.tight_layout()
         plt.savefig(
@@ -500,7 +500,7 @@ class ModelOutputToReportingPipeline:
 
         attributes = ['volume', 'faces', 'edges', 'vertices']
         fig, axes = plt.subplots(len(attributes), len(regressor_output['data_type'].unique()), figsize=(14, 16))
-        fig.suptitle('Predicted vs Actual Values', fontsize=16, fontweight='bold')
+        fig.suptitle('Predicted vs Actual Values\n', fontweight='bold')
 
         for row_idx, attribute in enumerate(attributes):
             for col_idx, data_type in enumerate(regressor_output['data_type'].unique()):
@@ -661,7 +661,7 @@ class ModelOutputToReportingPipeline:
             xticklabels=confusion_matrix.columns,
             yticklabels=confusion_matrix.index,
         )
-        ax.set_title(f"Confusion Matrix for {data_type}")
+        ax.set_title(f"Confusion Matrix for {data_type[:-1]} representation", fontweight="bold")
         ax.set_xlabel("Predicted Class")
         ax.set_ylabel("True Class")
         ax.figure.set_size_inches(15, 8)
@@ -754,9 +754,9 @@ class ModelOutputToReportingPipeline:
             self._save_prediction_scatter_plots(regressor_output, test_data)
 
         # Create combined summary plot if both metrics are available
-        if classifier_output_found and regressor_output_found:
-            logger.info("Creating model comparison summary.")
-            self._save_model_comparison_summary(classification_metrics, regression_metrics)
+        # if classifier_output_found and regressor_output_found:
+        #     logger.info("Creating model comparison summary.")
+        #     self._save_model_comparison_summary(classification_metrics, regression_metrics)
 
         logger.info("Pipeline completed successfully.")
 
