@@ -2,8 +2,8 @@ PWD d:/1 Projects/Vergleichs Paper/clear-shape/reports/PROCIR__CIRPe_2026__Tex_T
 INPUT c:/texlive/2026/texmf.cnf
 INPUT c:/texlive/2026/texmf-dist/web2c/texmf.cnf
 INPUT c:/texlive/2026/texmf-var/web2c/pdftex/pdflatex.fmt
-INPUT d:/1 Projects/Vergleichs Paper/clear-shape/reports/PROCIR__CIRPe_2026__Tex_Template/PROCIR _CIRPe 2026.tex
-OUTPUT PROCIR _CIRPe 2026.log
+INPUT d:/1 Projects/Vergleichs Paper/clear-shape/reports/PROCIR__CIRPe_2026__Tex_Template/paper.tex
+OUTPUT paper.log
 INPUT ./elsarticle.cls
 INPUT elsarticle.cls
 INPUT c:/texlive/2026/texmf-dist/tex/latex/txfonts/txfonts.sty
@@ -38,12 +38,12 @@ INPUT c:/texlive/2026/texmf-dist/tex/latex/psnfss/upsy.fd
 INPUT c:/texlive/2026/texmf-dist/tex/latex/psnfss/upsy.fd
 INPUT c:/texlive/2026/texmf-dist/tex/latex/psnfss/upsy.fd
 INPUT c:/texlive/2026/texmf-dist/fonts/tfm/adobe/symbol/psyr.tfm
-INPUT ./PROCIR _CIRPe 2026.spl
-INPUT ./PROCIR _CIRPe 2026.spl
-INPUT PROCIR _CIRPe 2026.spl
+INPUT ./paper.spl
+INPUT ./paper.spl
+INPUT paper.spl
 INPUT c:/texlive/2026/texmf-dist/tex/latex/natbib/natbib.sty
 INPUT c:/texlive/2026/texmf-dist/tex/latex/natbib/natbib.sty
-OUTPUT PROCIR _CIRPe 2026.spl
+OUTPUT paper.spl
 INPUT c:/texlive/2026/texmf-dist/tex/latex/geometry/geometry.sty
 INPUT c:/texlive/2026/texmf-dist/tex/latex/geometry/geometry.sty
 INPUT c:/texlive/2026/texmf-dist/tex/generic/iftex/ifvtex.sty
@@ -125,10 +125,10 @@ INPUT c:/texlive/2026/texmf-dist/tex/latex/txfonts/ot1txr.fd
 INPUT c:/texlive/2026/texmf-dist/fonts/tfm/public/txfonts/txr.tfm
 INPUT c:/texlive/2026/texmf-dist/tex/latex/l3backend/l3backend-pdftex.def
 INPUT c:/texlive/2026/texmf-dist/tex/latex/l3backend/l3backend-pdftex.def
-INPUT ./PROCIR _CIRPe 2026.aux
-INPUT ./PROCIR _CIRPe 2026.aux
-INPUT PROCIR _CIRPe 2026.aux
-OUTPUT PROCIR _CIRPe 2026.aux
+INPUT ./paper.aux
+INPUT ./paper.aux
+INPUT paper.aux
+OUTPUT paper.aux
 INPUT c:/texlive/2026/texmf-dist/tex/latex/txfonts/omltxmi.fd
 INPUT c:/texlive/2026/texmf-dist/tex/latex/txfonts/omltxmi.fd
 INPUT c:/texlive/2026/texmf-dist/tex/latex/txfonts/omltxmi.fd
@@ -157,7 +157,7 @@ INPUT c:/texlive/2026/texmf-dist/tex/latex/graphics-cfg/color.cfg
 INPUT c:/texlive/2026/texmf-dist/tex/latex/graphics/mathcolor.ltx
 INPUT c:/texlive/2026/texmf-dist/tex/latex/graphics/mathcolor.ltx
 INPUT c:/texlive/2026/texmf-dist/tex/latex/graphics/mathcolor.ltx
-OUTPUT PROCIR _CIRPe 2026.pdf
+OUTPUT paper.pdf
 INPUT c:/texlive/2026/texmf-dist/fonts/tfm/public/txfonts/txr.tfm
 INPUT c:/texlive/2026/texmf-dist/fonts/tfm/public/txfonts/txb.tfm
 INPUT c:/texlive/2026/texmf-dist/tex/latex/txfonts/ts1txr.fd
@@ -279,7 +279,6 @@ INPUT c:/texlive/2026/texmf-dist/fonts/tfm/public/txfonts/txsyc.tfm
 INPUT c:/texlive/2026/texmf-dist/fonts/tfm/public/txfonts/txsyc.tfm
 INPUT c:/texlive/2026/texmf-dist/fonts/tfm/public/txfonts/txexa.tfm
 INPUT c:/texlive/2026/texmf-dist/fonts/tfm/public/txfonts/txexa.tfm
-INPUT c:/texlive/2026/texmf-dist/fonts/tfm/public/txfonts/tcxr.tfm
 INPUT ./elsevier-logo-5p.pdf
 INPUT ./elsevier-logo-5p.pdf
 INPUT ./elsevier-logo-5p.pdf
@@ -354,6 +353,7 @@ INPUT c:/texlive/2026/texmf-dist/fonts/tfm/public/txfonts/rtxptmb.tfm
 INPUT c:/texlive/2026/texmf-dist/fonts/tfm/public/txfonts/rtxb.tfm
 INPUT c:/texlive/2026/texmf-dist/fonts/vf/public/txfonts/tcxr.vf
 INPUT c:/texlive/2026/texmf-dist/fonts/tfm/public/txfonts/rtcxr.tfm
+INPUT c:/texlive/2026/texmf-dist/fonts/tfm/public/txfonts/tcxr.tfm
 INPUT c:/texlive/2026/texmf-dist/fonts/vf/public/txfonts/tcxr.vf
 INPUT c:/texlive/2026/texmf-dist/fonts/tfm/public/txfonts/rtcxr.tfm
 INPUT ./gr1.pdf
@@ -364,18 +364,18 @@ INPUT c:/texlive/2026/texmf-dist/fonts/tfm/public/txfonts/txbi.tfm
 INPUT c:/texlive/2026/texmf-dist/fonts/vf/public/txfonts/txr.vf
 INPUT c:/texlive/2026/texmf-dist/fonts/tfm/public/txfonts/rtxptmr.tfm
 INPUT c:/texlive/2026/texmf-dist/fonts/tfm/public/txfonts/rtxr.tfm
-INPUT c:/texlive/2026/texmf-dist/fonts/vf/public/txfonts/txmi.vf
-INPUT c:/texlive/2026/texmf-dist/fonts/tfm/public/txfonts/rtxmi.tfm
-INPUT c:/texlive/2026/texmf-dist/fonts/vf/public/txfonts/txbi.vf
-INPUT c:/texlive/2026/texmf-dist/fonts/tfm/public/txfonts/rtxptmbi.tfm
-INPUT c:/texlive/2026/texmf-dist/fonts/tfm/public/txfonts/rtxbi.tfm
 INPUT c:/texlive/2026/texmf-dist/fonts/vf/public/txfonts/txr.vf
 INPUT c:/texlive/2026/texmf-dist/fonts/tfm/public/txfonts/rtxptmr.tfm
 INPUT c:/texlive/2026/texmf-dist/fonts/tfm/public/txfonts/rtxr.tfm
 INPUT c:/texlive/2026/texmf-dist/fonts/vf/public/txfonts/txmi.vf
 INPUT c:/texlive/2026/texmf-dist/fonts/tfm/public/txfonts/rtxmi.tfm
+INPUT c:/texlive/2026/texmf-dist/fonts/vf/public/txfonts/txbi.vf
+INPUT c:/texlive/2026/texmf-dist/fonts/tfm/public/txfonts/rtxptmbi.tfm
+INPUT c:/texlive/2026/texmf-dist/fonts/tfm/public/txfonts/rtxbi.tfm
+INPUT c:/texlive/2026/texmf-dist/fonts/vf/public/txfonts/txmi.vf
+INPUT c:/texlive/2026/texmf-dist/fonts/tfm/public/txfonts/rtxmi.tfm
 INPUT c:/texlive/2026/texmf-dist/fonts/tfm/public/txfonts/rtxptmri.tfm
-INPUT PROCIR _CIRPe 2026.aux
+INPUT paper.aux
 INPUT c:/texlive/2026/texmf-dist/fonts/type1/public/txfonts/rtcxr.pfb
 INPUT c:/texlive/2026/texmf-dist/fonts/type1/public/txfonts/rtxi.pfb
 INPUT c:/texlive/2026/texmf-dist/fonts/type1/public/txfonts/rtxmi.pfb
