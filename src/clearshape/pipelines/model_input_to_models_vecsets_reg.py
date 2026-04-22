@@ -12,6 +12,10 @@ import warnings
 import logging
 import sys
 
+# Enable Flash Attention via PyTorch SDPA backend (requires CUDA + PyTorch >= 2.0)
+if torch.cuda.is_available():
+    torch.backends.cuda.enable_flash_sdp(True)
+
 # Custom imports
 from clearshape.vecsets.ml.modules.trsfm_regressor import VecsetTransformerRegressor
 from pytorch_lightning.callbacks import EarlyStopping, ModelCheckpoint
@@ -34,14 +38,14 @@ def get_dataloaders_with_scaler(batch_size):
     """
     # Datasets laden
     train_dataset = FabwaveDataset(
-        csv_file="/clear-shape/data/5_model_input/train.csv", 
+        csv_file= PATHS.DATA_MODEL_INPUT / "train.csv", 
         classification=False,  
         regression=True,
         data_type="vecsets"
     )
     
     val_dataset = FabwaveDataset(
-        csv_file="/clear-shape/data/5_model_input/validation.csv", 
+        csv_file= PATHS.DATA_MODEL_INPUT / "validation.csv", 
         classification=False,  
         regression=True,
         data_type="vecsets"
@@ -132,7 +136,7 @@ def objective(trial):
         # Architecture options
         use_target_heads = trial.suggest_categorical("use_target_heads", [True, False])
         
-        batch_size = 64
+        batch_size = trial.suggest_categorical("batch_size", [2048])
         
         # Hyperparameter zu MLflow loggen
         mlflow.log_params({
@@ -199,10 +203,11 @@ def objective(trial):
                 log_every_n_steps=50,
                 callbacks=[early_stop_callback],
                 gradient_clip_val=1.0,  
-                precision='16-mixed' if torch.cuda.is_available() else '32',  # Mixed precision
+                precision="bf16-mixed" if torch.cuda.is_available() else '32',  # Mixed precision
                 accumulate_grad_batches=1,
                 deterministic=False,  
-                accelerator="auto"
+                accelerator="auto",
+                devices=1
             )
             
             trainer.fit(model, train_loader, val_loader)
@@ -346,7 +351,7 @@ def main():
             monitor='val_loss',
             save_top_k=1,
             mode='min',
-            dirpath=PATHS.DATA_MODELS.as_posix(),
+            dirpath=PATHS.DATA_MODELS,
             filename='vecset-regressor',
             save_weights_only=False,
             verbose=False
@@ -360,11 +365,12 @@ def main():
             enable_checkpointing=True,
             enable_progress_bar=True,  
             gradient_clip_val=1.0,
-            precision='16-mixed' if torch.cuda.is_available() else '32',
+            precision="bf16-mixed" if torch.cuda.is_available() else '32',
             accumulate_grad_batches=1,
             log_every_n_steps=1,
             check_val_every_n_epoch=1,
-            detect_anomaly=False  
+            detect_anomaly=False ,
+            devices=1
         )
         
         
@@ -460,7 +466,8 @@ def evaluate_transformer(model_path=None, scaler_path=None):
             logger=mlf_logger,
             enable_checkpointing=False,
             enable_progress_bar=False,
-            precision='16-mixed' if torch.cuda.is_available() else '32'
+            precision="bf16-mixed" if torch.cuda.is_available() else '32',
+            devices=1
         )
         
         results = trainer.test(model, test_loader)

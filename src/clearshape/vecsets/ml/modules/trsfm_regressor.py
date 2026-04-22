@@ -122,8 +122,8 @@ class VecsetTransformerRegressor(pl.LightningModule):
         if self.log_scaler is None:
             return {}
         
-        pred_np = predictions.detach().cpu().numpy()
-        true_np = targets.detach().cpu().numpy()
+        pred_np = predictions.detach().float().cpu().numpy()
+        true_np = targets.detach().float().cpu().numpy()
         
         pred_original = self.log_scaler.inverse_transform(pred_np)
         true_original = self.log_scaler.inverse_transform(true_np)

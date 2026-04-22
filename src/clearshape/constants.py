@@ -13,6 +13,9 @@ from pathlib import Path
 
 from collections import namedtuple
 
+class TrackingURI(str):
+    def as_posix(self) -> str:
+        return self
 
 # Paths
 _ROOT = Path(__file__).parents[2]
@@ -30,7 +33,7 @@ _path_dict = {
     "DATA_MODEL_OUTPUT":    _ROOT / "data/7_model_output",
     "DATA_REPORTING":       _ROOT / "data/8_reporting",
 
-    "MLFLOW_TRACKING_URI": _ROOT / "mlruns",
+    "MLFLOW_TRACKING_URI": _ROOT / "mlruns"
 
 }
 

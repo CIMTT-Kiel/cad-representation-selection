@@ -11,6 +11,10 @@ import warnings
 import logging
 import pandas as pd
 
+# Enable Flash Attention via PyTorch SDPA backend (requires CUDA + PyTorch >= 2.0)
+if torch.cuda.is_available():
+    torch.backends.cuda.enable_flash_sdp(True)
+
 # Custom imports
 from clearshape.vecsets.ml.modules.trsfm_classificator import VecsetClassifierModule
 from pytorch_lightning.callbacks import EarlyStopping, ModelCheckpoint
@@ -32,7 +36,7 @@ def get_dataloaders(batch_size=32):
     """
     train_loader = DataLoader(
         FabwaveDataset(
-            csv_file="/clear-shape/data/5_model_input/train.csv", 
+            csv_file=PATHS.DATA_MODEL_INPUT/ "train.csv", 
             classification=True, 
             data_type="vecsets"
         ), 
@@ -42,7 +46,7 @@ def get_dataloaders(batch_size=32):
     
     validation_loader = DataLoader(
         FabwaveDataset(
-            csv_file="/clear-shape/data/5_model_input/validation.csv", 
+            csv_file=PATHS.DATA_MODEL_INPUT / "validation.csv", 
             classification=True, 
             data_type="vecsets"
         ), 
@@ -65,17 +69,17 @@ def objective(trial):
         dropout = trial.suggest_float("dropout", 0.3, 0.5)
         lr = trial.suggest_float("lr", 1e-5, 1e-3, log=True)
         weight_decay = trial.suggest_float("weight_decay", 1e-6, 1e-3, log=True)
-        batch_size = trial.suggest_categorical("batch_size", [64, 128, 256])
+        batch_size = trial.suggest_categorical("batch_size", [256])
 
         # D_model must be divisible by nhead
-        d_model = trial.suggest_categorical("d_model", [512, 768, 1024, 1536, 2048])
+        d_model = trial.suggest_categorical("d_model", [64, 128, 256, 512, 768, 1024])
 
         # Transformer-specific hyperparameters
         nhead = trial.suggest_categorical("nhead", [2, 4, 8, 16])
         num_layers = trial.suggest_int("num_layers", 2, 8)
 
         # Feedforward network size
-        dim_feedforward = trial.suggest_int("dim_feedforward", 512, 2048, step=128)
+        dim_feedforward = trial.suggest_categorical("dim_feedforward", [64, 128, 512, 1024])
         
         # CONSTRAINT: d_model muss durch nhead teilbar sein
         if d_model % nhead != 0:
@@ -150,7 +154,9 @@ def objective(trial):
             enable_model_summary=False,
             enable_progress_bar=True,
             log_every_n_steps=10,
-            callbacks=[early_stop_callback]
+            callbacks=[early_stop_callback],
+            precision="bf16-mixed" if torch.cuda.is_available() else '32',  # Mixed precision
+            devices=1
         )
         
         trainer.fit(model, train_loader, val_loader)
@@ -198,7 +204,7 @@ def main():
             sampler=optuna.samplers.TPESampler(n_startup_trials=10),
             pruner=optuna.pruners.MedianPruner(n_startup_trials=5, n_warmup_steps=10)
         )
-        study.optimize(objective, n_trials=30)  # 30 Trials für gute Exploration
+        study.optimize(objective, n_trials=100)  # 30 Trials für gute Exploration
 
         # Beste Parameter loggen
         best_params = study.best_trial.params
@@ -281,7 +287,9 @@ def main():
             enable_checkpointing=True,
             enable_model_summary=False,
             enable_progress_bar=True,
-            log_every_n_steps=10
+            log_every_n_steps=10,
+            precision="bf16-mixed" if torch.cuda.is_available() else '32',  # Mixed precision
+            devices=1
         )
         
         # Training
@@ -378,7 +386,9 @@ def train_with_manual_params():
             enable_checkpointing=True, 
             enable_model_summary=False, 
             enable_progress_bar=True,
-            log_every_n_steps=10
+            log_every_n_steps=10,
+            precision="bf16-mixed" if torch.cuda.is_available() else '32',  # Mixed precision
+            devices=1
         )
         
         trainer.fit(model, train_loader, val_loader)
@@ -431,7 +441,9 @@ def evaluate_model(model_path=None):
         # Evaluation
         trainer = Trainer(
             logger=mlf_logger,
-            enable_progress_bar=True
+            enable_progress_bar=True,
+            precision="bf16-mixed" if torch.cuda.is_available() else '32',  # Mixed precision
+            devices=1
         )
         
         results = trainer.test(model, test_loader)
