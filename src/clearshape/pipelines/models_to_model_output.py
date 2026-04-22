@@ -31,6 +31,9 @@ from clearshape.constants import PATHS
 from clearshape.models.invariant_mlp import InvariantMLP 
 from clearshape.models.trnsfm_encoder import VecsetClassifier, TransformerRegressor
 from clearshape.rotationnet.rotnet_classifier import RotationNetModel
+from clearshape.invariants.ml.modules.invs_regressor import InvariantRegressor 
+from clearshape.invariants.ml.modules.invs_classificator import InvariantClassifier
+
 
 # set up logger
 logging_level = logging.INFO
@@ -235,17 +238,22 @@ class ModelsModelOutputPipeline:
         - The keys in the `state_dict` may have a "model." prefix, which is stripped before loading.
         - This method assumes the model class `InvariantMLP` is already imported and available.
         """
-        #TODO implement for regression
-
         logger.info(f"Initializing Invariants-model")
+        if task_type == "classifier":
 
-        checkpoint = torch.load((PATHS.DATA_MODELS / "invariants-classifier.ckpt").as_posix())
-        hyperparams = checkpoint["hyper_parameters"]
-        del hyperparams["lr"]
+            logger.debug(f"Initializing Invariants-model - classifier")
+            model = InvariantClassifier.load_from_checkpoint((PATHS.DATA_MODELS / "invariants-classifier.ckpt").as_posix())
+            model.eval();
 
-        model = InvariantMLP(**hyperparams)
+            return model
+        
+        elif task_type == "regressor":
+            logger.debug(f"Initializing Invariants-model - classifier")
 
-        return model
+            model = InvariantRegressor.load_from_checkpoint((PATHS.DATA_MODELS / "invariants-regressor.ckpt").as_posix())
+            model.eval();
+
+            return model
     
     def _initialize_vecset_model(self, task_type) -> torch.nn.Module:
         """
