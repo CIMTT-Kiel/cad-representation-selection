@@ -20,6 +20,7 @@ import torch.nn as nn
 from omegaconf import OmegaConf
 from sklearn.preprocessing import MinMaxScaler
 from torch.utils.data import DataLoader
+from pytorch_lightning import LightningModule
 
 # custom packages
 import clearshape.constants as cons
@@ -28,11 +29,13 @@ from clearshape.models.feedforward_mlp import FeedforwardMLP
 from clearshape.models.modelstack import ModelStack
 from clearshape.models.treelstm import RootedInTreeEncoder
 from clearshape.constants import PATHS
-from clearshape.models.invariant_mlp import InvariantMLP 
-from clearshape.models.trnsfm_encoder import VecsetClassifier, TransformerRegressor
 from clearshape.rotationnet.rotnet_classifier import RotationNetModel
 from clearshape.invariants.ml.modules.invs_regressor import InvariantRegressor 
 from clearshape.invariants.ml.modules.invs_classificator import InvariantClassifier
+from clearshape.vecsets.ml.modules.trsfm_classificator import VecsetClassifierModule
+from clearshape.vecsets.ml.modules.trsfm_regressor import VecsetTransformerRegressor
+
+
 
 
 # set up logger
@@ -233,10 +236,6 @@ class ModelsModelOutputPipeline:
         Notes
         -----
         - The checkpoint is assumed to be stored in the `data/6_models/invariants_classification.ckpt` file.
-        - The hyperparameter dictionary inside the checkpoint contains parameters used to
-        instantiate the `InvariantMLP`. The learning rate (`lr`) key is removed before model initialization.
-        - The keys in the `state_dict` may have a "model." prefix, which is stripped before loading.
-        - This method assumes the model class `InvariantMLP` is already imported and available.
         """
         logger.info(f"Initializing Invariants-model")
         if task_type == "classifier":
@@ -254,6 +253,8 @@ class ModelsModelOutputPipeline:
             model.eval();
 
             return model
+
+        return None
     
     def _initialize_vecset_model(self, task_type) -> torch.nn.Module:
         """
@@ -290,29 +291,22 @@ class ModelsModelOutputPipeline:
 
         if task_type == "classifier":
 
-            checkpoint = torch.load((PATHS.DATA_MODELS / "vecsets-classifier.ckpt").as_posix())
-            hyperparams = checkpoint["hyper_parameters"]
-            del hyperparams["lr"]
-            del hyperparams["weight_decay"]
-
-            model = VecsetClassifier(**hyperparams)
+            model = VecsetClassifierModule.load_from_checkpoint((PATHS.DATA_MODELS / "vecsets-classifier.ckpt").as_posix())
+            model.eval();
+        
+            return model
         
         elif task_type == "regressor":
-            checkpoint = torch.load((PATHS.DATA_MODELS / "vecsets-regressor.ckpt").as_posix())
-            hyperparams = checkpoint["hyper_parameters"]
-            del hyperparams["lr"]
-            del hyperparams["weight_decay"]
-            del hyperparams["max_epochs"]
-            del hyperparams["warmup_epochs"]
-            del hyperparams["target_names"]
-            
 
-            model = TransformerRegressor(**hyperparams)
 
             
 
+            model = VecsetTransformerRegressor.load_from_checkpoint((PATHS.DATA_MODELS / "vecsets-regressor.ckpt").as_posix())
+            model.eval();
 
-        return model
+            return model
+
+        return None
 
     def _load_model(self, path) -> None:
         """
@@ -364,11 +358,15 @@ class ModelsModelOutputPipeline:
                 f"Invalid model type: {data_type}-{model_type}. Supported types are: images, trees, invariants for data and regressor, classifier for model type."
             )
 
-        if path.suffix == ".pth":
+        # LightningModules haben Weights schon geladen
+        if isinstance(model, LightningModule):
+            model.to(device)
+            model.eval()
+            return model  
+
+        elif path.suffix == ".pth":
             state_dict = torch.load(path, weights_only=False, map_location=device)
-        elif path.suffix == ".ckpt":
-            checkpoint = torch.load(path.as_posix(), map_location=device)
-            state_dict = {k.replace("model.", ""): v for k, v in checkpoint["state_dict"].items()}
+
         else:
             raise NotImplementedError(f"Loading model format {path.suffix} is not implemented")
 
@@ -486,6 +484,7 @@ class ModelsModelOutputPipeline:
         # process classifiers
         logger.info("=== Processing classifier models ===")
         classifier_models = self._get_models_by_type("classifier")
+
 
         # for each classifier model, load the model, compute predictions and save them to a csv file
         # the csv file has the following columns:
