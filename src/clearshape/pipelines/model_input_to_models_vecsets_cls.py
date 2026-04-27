@@ -66,20 +66,20 @@ def objective(trial):
     # MLflow Run für diesen Trial starten
     with mlflow.start_run(run_name=f"trial_{trial.number}", nested=True):
         # Hyperparameter-Sampling
-        dropout = trial.suggest_float("dropout", 0.3, 0.5)
+        dropout = trial.suggest_float("dropout", 0.0, 0.3)
         lr = trial.suggest_float("lr", 1e-5, 1e-3, log=True)
         weight_decay = trial.suggest_float("weight_decay", 1e-6, 1e-3, log=True)
-        batch_size = trial.suggest_categorical("batch_size", [256])
+        batch_size = trial.suggest_categorical("batch_size", [256,2048])
 
         # D_model must be divisible by nhead
-        d_model = trial.suggest_categorical("d_model", [64, 128, 256, 512, 768, 1024])
+        d_model = trial.suggest_categorical("d_model", [64, 128, 256, 512])
 
         # Transformer-specific hyperparameters
         nhead = trial.suggest_categorical("nhead", [2, 4, 8, 16])
         num_layers = trial.suggest_int("num_layers", 2, 8)
 
         # Feedforward network size
-        dim_feedforward = trial.suggest_categorical("dim_feedforward", [64, 128, 512, 1024])
+        dim_feedforward = trial.suggest_categorical("dim_feedforward", [64, 128, 512])
         
         # CONSTRAINT: d_model muss durch nhead teilbar sein
         if d_model % nhead != 0:
@@ -123,7 +123,7 @@ def objective(trial):
             lr=lr,
             weight_decay=weight_decay,
             input_dim=32, 
-            d_model=d_model,  # Verwende die Variable statt hartkodiert 1024
+            d_model=d_model,  
             nhead=nhead, 
             num_layers=num_layers, 
             num_classes=num_classes, 
@@ -142,20 +142,20 @@ def objective(trial):
         # Early Stopping
         early_stop_callback = EarlyStopping(
             monitor='val_loss',
-            patience=5,
+            patience=25,
             mode='min',
             verbose=False
         )
         
         trainer = Trainer(
-            max_epochs=50,  # Genug Epochs für Trials
+            max_epochs=100,  
             logger=mlf_logger,
             enable_checkpointing=False,
             enable_model_summary=False,
             enable_progress_bar=True,
             log_every_n_steps=10,
             callbacks=[early_stop_callback],
-            precision="bf16-mixed" if torch.cuda.is_available() else '32',  # Mixed precision
+            precision="bf16-mixed" if torch.cuda.is_available() else '32',  
             devices=1
         )
         
@@ -195,6 +195,7 @@ def main():
     mlflow.set_experiment("vecsets-classification")
 
     # Hauptrun für das gesamte Experiment starten
+
     with mlflow.start_run(run_name="hyperparameter_optimization"):
         print("Starting hyperparameter optimization for Vecsets Classification...")
 
@@ -219,12 +220,9 @@ def main():
         print(f"Best F1-Score: {best_value:.4f}")
         print(f"Best parameters: {best_params}")
 
-        # Save Optuna study
-        study_path = PATHS.DATA_MODELS / "vecsets_classifier_optuna_study.joblib"
-        joblib.dump(study, study_path)
-        mlflow.log_artifact(str(study_path), "optuna_study")
-
     print("\nTraining final model with best parameters...")
+
+
     
     # Finales Training mit besten Parametern
     with mlflow.start_run(run_name="final_best_model"):
@@ -264,7 +262,7 @@ def main():
         # Callbacks für finales Training
         early_stop_callback = EarlyStopping(
             monitor='val_loss',
-            patience=20,  # Mehr Geduld für finales Training
+            patience=200,  # Mehr Geduld für finales Training
             mode='min',
             verbose=False
         )
@@ -274,14 +272,14 @@ def main():
             save_top_k=1,
             mode='max',
             dirpath=PATHS.DATA_MODELS.as_posix(),
-            filename='vecsets-classifier',
+            filename='vecsets-classifier_t',
             save_weights_only=False,
             verbose=False
         )
         
         # Finaler Trainer
         trainer = Trainer(
-            max_epochs=1000,
+            max_epochs=2000,
             logger=mlf_logger,
             callbacks=[early_stop_callback, checkpoint_callback],
             enable_checkpointing=True,
