@@ -10,7 +10,7 @@ import numpy as np
 import joblib
 import warnings
 import logging
-import sys
+import pickle
 
 # Enable Flash Attention via PyTorch SDPA backend (requires CUDA + PyTorch >= 2.0)
 if torch.cuda.is_available():
@@ -51,16 +51,11 @@ def get_dataloaders_with_scaler(batch_size):
         data_type="vecsets"
     )
     
-    # Log Scaler auf Trainingsdaten fitten
-    train_targets = []
-    for i in range(len(train_dataset)):
-        _, targets, _ = train_dataset[i]
-        train_targets.append(targets.numpy())
-    
-    train_targets = np.array(train_targets)
-    
-    log_scaler = LogScaler(epsilon=1e-8)
-    log_scaler.fit(train_targets)
+    def get_scaler(path):
+        with open(path, "rb") as scaler_file:
+            return pickle.load(scaler_file)
+        
+    log_scaler = get_scaler(PATHS.DATA_MODEL_INPUT / "log_scaler.pkl")
     
     train_loader = DataLoader(
         LogTransformDataset(train_dataset, log_scaler, fit_scaler=False), 
@@ -118,25 +113,25 @@ def objective(trial):
     # MLflow Run für diesen Trial starten
     with mlflow.start_run(run_name=f"transformer_trial_{trial.number}", nested=True):
 
-        embed_dim = trial.suggest_int("embed_dim", 128, 512, step=64)  
-        num_heads = trial.suggest_int("num_heads", 4, 16, step=2)      
+        embed_dim = trial.suggest_int("embed_dim", 128, 400, step=32)  
+        num_heads = trial.suggest_int("num_heads", 4, 10, step=1)      
         
         # check if embed_dim is divisible by num_heads - if not, prune the trial
         if embed_dim % num_heads != 0:
             raise optuna.TrialPruned(f"embed_dim={embed_dim} not divisible by num_heads={num_heads}")
         
-        num_layers = trial.suggest_int("num_layers", 2, 8)
-        dropout = trial.suggest_float("dropout", 0.05, 0.3)
+        num_layers = trial.suggest_int("num_layers", 2, 4)
+        dropout = trial.suggest_float("dropout", 0.0, 0.25)
         
         # Training Hyperparameter
         lr = trial.suggest_float("lr", 1e-5, 1e-3, log=True)
-        weight_decay = trial.suggest_float("weight_decay", 1e-6, 1e-2, log=True)
-        warmup_epochs = trial.suggest_int("warmup_epochs", 5, 20)
+        weight_decay = trial.suggest_float("weight_decay", 0.01, 0.1, log=True)
+        warmup_epochs = 10
         
         # Architecture options
-        use_target_heads = trial.suggest_categorical("use_target_heads", [True, False])
+        use_target_heads = trial.suggest_categorical("use_target_heads", [False])
         
-        batch_size = trial.suggest_categorical("batch_size", [2048])
+        batch_size = 2048
         
         # Hyperparameter zu MLflow loggen
         mlflow.log_params({
@@ -188,19 +183,19 @@ def objective(trial):
             # Early Stopping für Transformer
             early_stop_callback = EarlyStopping(
                 monitor='val_mse_original',  
-                patience=20,  
+                patience=50,  
                 mode='min',
                 verbose=False
             )
             
             # Trainer 
             trainer = Trainer(
-                max_epochs=150,
+                max_epochs=400,
                 logger=mlf_logger,
                 enable_checkpointing=False,
                 enable_model_summary=True,
                 enable_progress_bar=True,  
-                log_every_n_steps=50,
+                log_every_n_steps=5,
                 callbacks=[early_stop_callback],
                 gradient_clip_val=1.0,  
                 precision="bf16-mixed" if torch.cuda.is_available() else '32',  # Mixed precision
@@ -258,7 +253,7 @@ def main():
             pruner=optuna.pruners.MedianPruner(n_startup_trials=5, n_warmup_steps=10)  # Pruning
         )
 
-        study.optimize(objective, n_trials=30)  # 30 Trials für gute Balance
+        study.optimize(objective, n_trials=100)  
 
         # Beste Parameter loggen
         best_params = study.best_trial.params
@@ -273,34 +268,17 @@ def main():
         print(f"Best MSE: {best_value:.6f}")
         print(f"Best parameters: {best_params}")
 
-        # Save Optuna study
-        study_path = PATHS.DATA_MODELS / "vecsets_regressor_optuna_study.joblib"
-        joblib.dump(study, study_path)
-        mlflow.log_artifact(str(study_path), "optuna_study")
-
-        # Optuna Study Visualisierung (optional)
-        try:
-            import optuna.visualization as vis
-
-            fig_importance = vis.plot_param_importances(study)
-            fig_optimization = vis.plot_optimization_history(study)
-
-            # Speichere Plots
-            importance_path = PATHS.DATA_MODELS / "transformer_param_importance.html"
-            history_path = PATHS.DATA_MODELS / "transformer_optimization_history.html"
-
-            fig_importance.write_html(str(importance_path))
-            fig_optimization.write_html(str(history_path))
-
-            mlflow.log_artifact(str(importance_path), "plots")
-            mlflow.log_artifact(str(history_path), "plots")
-
-            print("Optuna visualizations saved and logged to MLflow!")
-        except ImportError:
-            print("Optuna visualization not available - install plotly for plots")
-
     print("\nTraining final model with best parameters...")
 
+    #best_params = {
+    #    "embed_dim": 192,
+    #    "num_heads": 6,
+    #    "num_layers": 2,
+    #    "dropout": 0.015635204783671967,
+    #    "lr": 0.0009831535003260007,
+    #    "weight_decay": 0.08128238806177594,
+    #    "use_target_heads": False
+    #}
     
     with mlflow.start_run(run_name="final_best_transformer_model"):
 
@@ -308,7 +286,7 @@ def main():
         mlflow.log_param("model_type", "final_best_transformer_model")
 
         train_loader, val_loader, log_scaler = get_dataloaders_with_scaler(
-            batch_size=best_params["batch_size"]
+            batch_size=2048
         )
         
 
@@ -322,8 +300,8 @@ def main():
             use_target_specific_heads=best_params["use_target_heads"],
             lr=best_params["lr"],
             weight_decay=best_params["weight_decay"],
-            max_epochs=300,  # Mehr Epochs für finales Training
-            warmup_epochs=best_params["warmup_epochs"],
+            max_epochs=1000,  
+            warmup_epochs=10,
             log_scaler=log_scaler,
             target_names=['VOLUME', 'FACES', 'EDGES', 'VERTICES']
         )
@@ -339,27 +317,27 @@ def main():
             run_id=mlflow.active_run().info.run_id
         )
         
-        # Callbacks 
+        # Callbacks
         early_stop_callback = EarlyStopping(
-            monitor='val_loss',
-            patience=40,  
+            monitor='val_mae',
+            patience=1000,
             mode='min',
             verbose=False
         )
-        
+
         checkpoint_callback = ModelCheckpoint(
-            monitor='val_loss',
+            monitor='val_mae',
             save_top_k=1,
             mode='min',
             dirpath=PATHS.DATA_MODELS,
-            filename='vecset-regressor',
+            filename='vecsets-regressor',
             save_weights_only=False,
             verbose=False
         )
         
         # final trainer
         trainer = Trainer(
-            max_epochs=300,
+            max_epochs=5000,
             logger=mlf_logger,
             callbacks=[early_stop_callback, checkpoint_callback],
             enable_checkpointing=True,
@@ -387,19 +365,6 @@ def main():
             mlflow.log_artifact(best_model_path, "model")
             print(f"Best model saved to: {best_model_path}")
         
-
-        scaler_path = PATHS.DATA_MODELS / "transformer_log_scaler.joblib"
-        best_params_path = PATHS.DATA_MODELS / "transformer_best_params.joblib"
-
-        joblib.dump(log_scaler, scaler_path)
-        joblib.dump(best_params, best_params_path)
-        
-        # Zu MLflow hinzufügen
-        mlflow.log_artifact(str(scaler_path), "scaler")
-        mlflow.log_artifact(str(best_params_path), "parameters")
-
-        print(f"Scaler saved to: {scaler_path}")
-        print(f"Best params saved to: {best_params_path}")
         print("Final training completed!")
         
 
