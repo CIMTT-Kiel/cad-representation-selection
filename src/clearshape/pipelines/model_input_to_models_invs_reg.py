@@ -10,6 +10,7 @@ from pathlib import Path
 import numpy as np
 import warnings
 import logging
+import pickle
 
 # Custom imports
 from clearshape.invariants.ml.modules.invs_regressor import InvariantRegressor 
@@ -26,50 +27,73 @@ warnings.filterwarnings("ignore")
 
 def get_dataloaders_with_scaler(batch_size):
     """
-    DataLoader mit Log-Transformation für Regression
+    DataLoader mit Log-Transformation für Transformer Regression
     """
     # Datasets laden
     train_dataset = FabwaveDataset(
         csv_file= PATHS.DATA_MODEL_INPUT / "train.csv", 
         classification=False,  
         regression=True,
-        data_type="invariants"
+        data_type="vecsets"
     )
     
     val_dataset = FabwaveDataset(
         csv_file= PATHS.DATA_MODEL_INPUT / "validation.csv", 
-        classification=False, 
+        classification=False,  
         regression=True,
-        data_type="invariants"
+        data_type="vecsets"
     )
     
-    # Log Scaler auf Trainingsdaten fitten
-    # Annahme: Dataset gibt (X, y) zurück, wobei y die 4 Targets sind
-    train_targets = []
-    for i in range(len(train_dataset)):
-        _, targets, _ = train_dataset[i]
-        train_targets.append(targets.numpy())
+    def get_scaler(path):
+        with open(path, "rb") as scaler_file:
+            return pickle.load(scaler_file)
+        
+    log_scaler = get_scaler(PATHS.DATA_MODEL_INPUT / "log_scaler.pkl")
     
-    train_targets = np.array(train_targets)
-    
-    # Log Scaler erstellen und fitten
-    log_scaler = LogScaler(epsilon=1e-8)
-    log_scaler.fit(train_targets)
-    
-    # Transformierte Datasets erstellen
     train_loader = DataLoader(
         LogTransformDataset(train_dataset, log_scaler, fit_scaler=False), 
         batch_size=batch_size,
-        shuffle=True
+        shuffle=True,
     )
     
     val_loader = DataLoader(
         LogTransformDataset(val_dataset, log_scaler, fit_scaler=False), 
         batch_size=batch_size,
-        shuffle=False
+        shuffle=False,
     )
     
     return train_loader, val_loader, log_scaler
+
+
+class LogTransformDataset(torch.utils.data.Dataset):
+    """
+    Wrapper Dataset für Log-Transformation
+    """
+    def __init__(self, base_dataset, log_scaler, fit_scaler=False):
+        self.base_dataset = base_dataset
+        self.log_scaler = log_scaler
+        
+        self.transformed_data = []
+        
+        for i in range(len(base_dataset)):
+            x, y, metadata = base_dataset[i]
+            
+            # Y transformieren
+            y_np = y.numpy().reshape(1, -1)  # (1, n_targets) für scaler
+            if fit_scaler and i == 0:
+                y_transformed = self.log_scaler.fit_transform(y_np)
+            else:
+                y_transformed = self.log_scaler.transform(y_np)
+            
+            y_transformed = torch.FloatTensor(y_transformed.flatten())
+            
+            self.transformed_data.append((x, y_transformed, metadata ))
+    
+    def __len__(self):
+        return len(self.base_dataset)
+    
+    def __getitem__(self, idx):
+        return self.transformed_data[idx]
 
 
 class LogTransformDataset(torch.utils.data.Dataset):
@@ -141,9 +165,9 @@ def objective(trial):
         current_size = hidden_size // 4
         for i in range(n_layers):
             fc_layers.append(current_size)
-            if i < n_layers // 2:  # Erste Hälfte: vergrößern
+            if i < n_layers // 2: 
                 current_size = min(current_size * 2, hidden_size)
-            else:  # Zweite Hälfte: verkleinern
+            else:  
                 current_size = max(current_size // 2, hidden_size // 8)
         
         # Regressionsmodell erstellen
@@ -159,14 +183,14 @@ def objective(trial):
             target_names=['VOLUME', 'FACES', 'EDGES', 'VERTICES']
         )
         
-        # MLflow Logger für Lightning
+        # MLflow Logger 
         mlf_logger = MLFlowLogger(
             experiment_name="invariants-regression",
             tracking_uri=PATHS.MLFLOW_TRACKING_URI.as_posix(),
             run_id=mlflow.active_run().info.run_id  
         )
         
-        # Early Stopping für Regression
+        # Early Stopping 
         early_stop_callback = EarlyStopping(
             monitor='val_mse_original',  
             patience=100,
@@ -212,42 +236,29 @@ def main():
     mlflow.set_tracking_uri(PATHS.MLFLOW_TRACKING_URI.as_posix())
     mlflow.set_experiment("invariants-regression")
 
-    # Hauptrun für das gesamte Experiment starten
-    #with mlflow.start_run(run_name="hyperparameter_optimization"):
-    #    print("Starting hyperparameter optimization...")
-    #    
-    #    # Optuna Study
-    #    study = optuna.create_study(direction="minimize")  # Minimiere MSE
-    #    study.optimize(objective, n_trials=200)  
-    #    
-    #    # Beste Parameter loggen
-    #    best_params = study.best_trial.params
-    #    best_value = study.best_trial.value
-    #    
-    #    mlflow.log_params(best_params)
-    #    mlflow.log_metric("best_val_mse", best_value)
-    #    
-    #    print(f"\nBest trial: {study.best_trial.number}")
-    #    print(f"Best MSE: {best_value:.6f}")
-    #    print(f"Best parameters: {best_params}")
+
+    with mlflow.start_run(run_name="hyperparameter_optimization"):
+        print("Starting hyperparameter optimization...")
+        
+        # Optuna Study
+        study = optuna.create_study(direction="minimize")  # Minimiere MSE
+        study.optimize(objective, n_trials=200)  
+        
+        # Beste Parameter loggen
+        best_params = study.best_trial.params
+        best_value = study.best_trial.value
+        
+        mlflow.log_params(best_params)
+        mlflow.log_metric("best_val_mse", best_value)
+        
+        print(f"\nBest trial: {study.best_trial.number}")
+        print(f"Best MSE: {best_value:.6f}")
+        print(f"Best parameters: {best_params}")
     
 
     print("\nTraining final model with best parameters...")
     
     with mlflow.start_run(run_name="final_best_model"):
-
-        best_params={
-            'dropout' : 0.18243074649601815,
-            'lr' : 0.0026224079062513784,
-            'weight_decay' : 1.050686152787924e-05,
-            'hidden_size' : 1676,
-            'n_layers' : 8,
-            'use_target_heads' : False,
-            'batch_size' : 2048,
-            'in_dim' : 16,
-            'fc_layers' : [419, 838, 1676, 1676, 1676, 838, 419, 209],
-            'use_target_specific_heads' : False,
-        }
 
         mlflow.log_params(best_params)
         mlflow.log_param("model_type", "final_best_model")
@@ -290,7 +301,7 @@ def main():
             run_id=mlflow.active_run().info.run_id
         )
         
-        # Callbacks für finales Training
+        # Callbacks 
         early_stop_callback = EarlyStopping(
             monitor='val_loss',
             patience=100,  
@@ -310,11 +321,11 @@ def main():
         
         # Finaler Trainer
         trainer = Trainer(
-            max_epochs=1000,  # Mehr Epochs für finales Training
+            max_epochs=1000, 
             logger=mlf_logger,
             callbacks=[early_stop_callback, checkpoint_callback],
             enable_checkpointing=True,
-            enable_progress_bar=True,  # Für finales Training anzeigen
+            enable_progress_bar=True,  
             log_every_n_steps=10,
             accelerator="cuda",
             devices=1

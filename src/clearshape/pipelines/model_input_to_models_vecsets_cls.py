@@ -68,18 +68,18 @@ def objective(trial):
         # Hyperparameter-Sampling
         dropout = trial.suggest_float("dropout", 0.0, 0.3)
         lr = trial.suggest_float("lr", 1e-5, 1e-3, log=True)
-        weight_decay = trial.suggest_float("weight_decay", 1e-6, 1e-3, log=True)
-        batch_size = trial.suggest_categorical("batch_size", [256,2048])
+        weight_decay = trial.suggest_float("weight_decay", 0.01, 0.1, log=True)
+        batch_size = trial.suggest_categorical("batch_size", [128, 256])
 
-        # D_model must be divisible by nhead
-        d_model = trial.suggest_categorical("d_model", [64, 128, 256, 512])
+        # D_model must be divisible by nhea
+        d_model = trial.suggest_int("d_model", 1024, 1408, step=32)
 
         # Transformer-specific hyperparameters
-        nhead = trial.suggest_categorical("nhead", [2, 4, 8, 16])
-        num_layers = trial.suggest_int("num_layers", 2, 8)
+        nhead = trial.suggest_categorical("nhead", [4, 8, 16])
+        num_layers = trial.suggest_int("num_layers", 7, 10)
 
         # Feedforward network size
-        dim_feedforward = trial.suggest_categorical("dim_feedforward", [64, 128, 512])
+        dim_feedforward = trial.suggest_categorical("dim_feedforward", [256, 512])
         
         # CONSTRAINT: d_model muss durch nhead teilbar sein
         if d_model % nhead != 0:
@@ -205,7 +205,7 @@ def main():
             sampler=optuna.samplers.TPESampler(n_startup_trials=10),
             pruner=optuna.pruners.MedianPruner(n_startup_trials=5, n_warmup_steps=10)
         )
-        study.optimize(objective, n_trials=100)  # 30 Trials für gute Exploration
+        study.optimize(objective, n_trials=100)  
 
         # Beste Parameter loggen
         best_params = study.best_trial.params
@@ -262,7 +262,7 @@ def main():
         # Callbacks für finales Training
         early_stop_callback = EarlyStopping(
             monitor='val_loss',
-            patience=200,  # Mehr Geduld für finales Training
+            patience=200,  
             mode='min',
             verbose=False
         )
@@ -286,7 +286,7 @@ def main():
             enable_model_summary=False,
             enable_progress_bar=True,
             log_every_n_steps=10,
-            precision="bf16-mixed" if torch.cuda.is_available() else '32',  # Mixed precision
+            precision="bf16-mixed" if torch.cuda.is_available() else '32',
             devices=1
         )
         

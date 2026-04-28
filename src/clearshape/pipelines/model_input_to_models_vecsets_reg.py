@@ -270,15 +270,6 @@ def main():
 
     print("\nTraining final model with best parameters...")
 
-    #best_params = {
-    #    "embed_dim": 192,
-    #    "num_heads": 6,
-    #    "num_layers": 2,
-    #    "dropout": 0.015635204783671967,
-    #    "lr": 0.0009831535003260007,
-    #    "weight_decay": 0.08128238806177594,
-    #    "use_target_heads": False
-    #}
     
     with mlflow.start_run(run_name="final_best_transformer_model"):
 
