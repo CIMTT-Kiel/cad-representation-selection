@@ -32,7 +32,7 @@ def get_dataloaders(batch_size):
     """
     train_loader = DataLoader(
         FabwaveDataset(
-            csv_file="/clear-shape/data/5_model_input/train.csv", 
+            csv_file= PATHS.DATA_MODEL_INPUT / "train.csv", 
             classification=True, 
             data_type="invariants"
         ), 
@@ -42,7 +42,7 @@ def get_dataloaders(batch_size):
     
     validation_loader = DataLoader(
         FabwaveDataset(
-            csv_file="/clear-shape/data/5_model_input/validation.csv", 
+            csv_file=PATHS.DATA_MODEL_INPUT / "validation.csv", 
             classification=True, 
             data_type="invariants"
         ), 
@@ -82,25 +82,22 @@ def objective(trial):
         train_loader, val_loader = get_dataloaders(batch_size=batch_size)
         num_classes = get_num_classes()
         mlflow.log_param("num_classes", num_classes)
-        
-        # Dynamische Layer-Konfiguration basierend auf hidden_size und n_layers
+
+        #depricated
         fc_layers = []
         
-        # Start klein und baue auf
         current_size = hidden_size // 4
         for i in range(n_layers):
             fc_layers.append(current_size)
             
-            # Erste Hälfte: vergrößern bis hidden_size
             if i < n_layers // 2:
                 current_size = min(current_size * 2, hidden_size)
-            # Zweite Hälfte: wieder verkleinern
             else:
                 current_size = max(current_size // 2, hidden_size // 4)
         
         mlflow.log_param("fc_layers", str(fc_layers))
         
-        # Model erstellen
+
         model = InvariantClassifier(
             in_dim=16,
             num_classes=num_classes,
@@ -109,7 +106,6 @@ def objective(trial):
             lr=lr
         )
         
-        # MLflow Logger für Lightning
         mlf_logger = MLFlowLogger(
             experiment_name="invariants-classification",
             tracking_uri=PATHS.MLFLOW_TRACKING_URI.as_posix(),
@@ -136,12 +132,10 @@ def objective(trial):
         
         trainer.fit(model, train_loader, val_loader)
         
-        # Metriken extrahieren - robust gegen Tensor und Float
         val_loss = trainer.callback_metrics.get("val_loss", float('inf'))
         val_f1_score = trainer.callback_metrics.get("val_f1_score", 0.0)
         val_accuracy = trainer.callback_metrics.get("val_acc", 0.0)
         
-        # Konvertiere zu Python float falls Tensor
         if torch.is_tensor(val_loss):
             val_loss = val_loss.item()
         if torch.is_tensor(val_f1_score):
@@ -149,7 +143,6 @@ def objective(trial):
         if torch.is_tensor(val_accuracy):
             val_accuracy = val_accuracy.item()
         
-        # Metriken zu MLflow loggen
         mlflow.log_metrics({
             "val_loss": val_loss,
             "val_f1_score": val_f1_score,
@@ -169,7 +162,6 @@ def main():
     mlflow.set_tracking_uri(PATHS.MLFLOW_TRACKING_URI.as_posix())
     mlflow.set_experiment("invariants-classification")
     
-    # Hauptrun für das gesamte Experiment starten
     with mlflow.start_run(run_name="hyperparameter_optimization"):
         print("Starting hyperparameter optimization for Invariants Classification...")
         
@@ -177,7 +169,6 @@ def main():
         study = optuna.create_study(direction="maximize")  # Maximiere F1-Score
         study.optimize(objective, n_trials=100)  
         
-        # Beste Parameter loggen
         best_params = study.best_trial.params
         best_value = study.best_trial.value
         
@@ -190,14 +181,12 @@ def main():
     
     print("\nTraining final model with best parameters...")
     
-    # Finales Training mit besten Parametern
     with mlflow.start_run(run_name="final_best_model"):
         
         mlflow.log_params(best_params)
         mlflow.log_param("model_type", "final_best_model")
         mlflow.log_param("in_dim", 16)
         
-        # DataLoader mit besten Parametern
         train_loader, val_loader = get_dataloaders(
             batch_size=best_params["batch_size"]
         )
@@ -220,7 +209,6 @@ def main():
         
         mlflow.log_param("fc_layers", str(fc_layers))
         
-        # Finales Model mit besten Parametern
         model = InvariantClassifier(
             in_dim=16,
             num_classes=num_classes,
@@ -229,17 +217,15 @@ def main():
             lr=best_params["lr"]
         )
         
-        # MLflow Logger für finales Training
         mlf_logger = MLFlowLogger(
             experiment_name="invariants-classification",
             tracking_uri=PATHS.MLFLOW_TRACKING_URI.as_posix(),
             run_id=mlflow.active_run().info.run_id
         )
         
-        # Callbacks für finales Training
         early_stop_callback = EarlyStopping(
             monitor='val_f1_score',
-            patience=100,  # Mehr Geduld für finales Training
+            patience=100,  
             mode='max',
             verbose=False
         )
