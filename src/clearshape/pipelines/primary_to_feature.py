@@ -8,8 +8,6 @@ See `PrimaryFeaturePipeline` for more details.
 import logging
 from pathlib import Path
 from tqdm import tqdm
-import time
-import threading
 import csv
 
 # third party imports
@@ -17,13 +15,19 @@ import pandas as pd
 from omegaconf import OmegaConf
 import dgl
 import numpy as np
+from stl import mesh as stl_mesh
+import stltovoxel.slice as stl_slice
+from PIL import Image
+import cascadio
+import trimesh
 
 # custom imports
 from clearshape import constants as cons
 from clearshape.step_tree.step_tree import StepTree
 from clearshape.invariants.invariant import InvariantCalculator
 from clearshape.targets.STEP_targets import RegressionTargetExtractor
-from clearshape.vecsets.preprocessing.conversions import CAD_Converter
+
+#from clearshape.vecsets.preprocessing.conversions import CAD_Converter
 
 # set up logger
 logging_level = logging.WARNING
@@ -250,6 +254,84 @@ class PrimaryFeaturePipeline:
 
         self._vecset = CAD_Converter(self._file_to_process).to_vecset()
 
+    def _convert_to_voxel(self, resolution: int = 128) -> None:
+        """
+        Convert the STEP file to a voxel representation.
+
+        Converts the STEP file to a binary voxel grid of shape (resolution³),
+        preserving the aspect ratio of the original model and centering it
+        within the grid.
+        """
+        logger.debug("Converting CAD model to voxel representation")
+        self._voxel_resolution = resolution
+
+        temp_obj = self._file_to_process.with_suffix(".obj")
+        temp_stl = self._file_to_process.with_suffix(".stl")
+
+        try:
+            # --- Mesh laden ---
+            if self._file_to_process.suffix.lower() in {".step", ".stp"}:
+                cascadio.step_to_obj(str(self._file_to_process), str(temp_obj))
+                mesh = trimesh.load(str(temp_obj), file_type="obj")
+            else:
+                mesh = trimesh.load(str(self._file_to_process))
+
+            if not isinstance(mesh, trimesh.Trimesh):
+                mesh = trimesh.util.concatenate(list(mesh.geometry.values()))
+
+            mesh.export(str(temp_stl), file_type="stl")
+
+            # --- voxel_size so wählen dass longest axis = resolution-2 Voxel ---
+            extents = mesh.extents
+            voxel_size = extents.max() / (resolution - 2)
+            logger.debug(f"Extents: {extents.round(2)}, voxel_size: {voxel_size:.4f}")
+
+            # --- Direkt über stltovoxel interne API voxelisieren ---
+            stl_obj = stl_mesh.Mesh.from_file(str(temp_stl))
+            org_mesh = np.hstack((
+                stl_obj.v0[:, np.newaxis],
+                stl_obj.v1[:, np.newaxis],
+                stl_obj.v2[:, np.newaxis],
+            ))
+
+            mesh_min, mesh_max = stl_slice.calculate_mesh_limits([org_mesh])
+            scale, shift, shape = stl_slice.calculate_scale_and_shift(
+                mesh_min, mesh_max, resolution=None, voxel_size=voxel_size
+            )
+            vol = np.zeros(shape[::-1], dtype=np.int8)
+            stl_slice.scale_and_shift_mesh(org_mesh, scale, shift)
+            cur_vol = stl_slice.mesh_to_plane(org_mesh, shape, parallel=False)
+            vol[cur_vol] = 1
+
+            logger.debug(f"Vol shape vor padding: {vol.shape}")
+
+            # --- Zentriert in resolution³ einbetten ---
+            result = np.zeros((resolution, resolution, resolution), dtype=np.uint8)
+            z, y, x = vol.shape
+            oz = (resolution - z) // 2
+            oy = (resolution - y) // 2
+            ox = (resolution - x) // 2
+            result[oz:oz+z, oy:oy+y, ox:ox+x] = (vol > 0).astype(np.uint8)
+
+            self._voxel_binary = result
+            self._occupied_indices = np.argwhere(result)
+
+            logger.info(
+                f"Voxel completed: shape={result.shape}, "
+                f"occupied={len(self._occupied_indices):,} "
+                f"({len(self._occupied_indices) / resolution**3 * 100:.2f}%)"
+            )
+
+            assert self._voxel_binary.shape == (resolution, resolution, resolution), "Voxel shape mismatch"
+
+        except Exception as e:
+            logger.error(f"Voxel conversion failed: {str(e)}")
+            raise Exception(f"Voxel conversion failed: {str(e)}") from e
+
+        finally:
+            temp_obj.unlink(missing_ok=True)
+            temp_stl.unlink(missing_ok=True)
+    
     def _get_relative_path(self) -> Path:
         """
         Get the relative path of the current file to process.
@@ -339,7 +421,38 @@ class PrimaryFeaturePipeline:
         relative_path = self._get_relative_path()
         vecset_path = (cons.PATHS.DATA_FEATURE / "vecsets" / relative_path).with_suffix(".npy")
         return vecset_path.exists()
+    
+    def _voxel_available(self) -> bool:
+        """
+        Check if the voxel representation is available for the current part.
 
+        This method checks if a voxel representation file exists for the current part,
+        specified by `_file_to_process`. The file is expected to be located in the `data/4_feature/voxel`
+        directory with the same name as the STEP file, but with a `.npy` extension.
+
+        Returns
+        -------
+        bool
+            True if the voxel representation file exists, False otherwise.
+        """
+        relative_path = self._get_relative_path()
+        voxel_path = (cons.PATHS.DATA_FEATURE / "voxel" / relative_path).with_suffix(".npy")
+        return voxel_path.exists()
+    
+    def _save_voxel(self):
+        """
+        Save the voxel representation of the current STEP file.
+
+        This method saves the voxel representation of the current STEP file to a file.
+        The file is stored in the `data/4_feature/voxel` directory with the same name as the STEP file,
+        but with a `.npy` extension.
+        """
+        logger.debug("Saving voxel representation")
+        relative_path = self._get_relative_path()
+        voxel_path = (cons.PATHS.DATA_FEATURE / "voxel" / relative_path).with_suffix(".npz")
+        # ensure the directory exists
+        voxel_path.parent.mkdir(parents=True, exist_ok=True)
+        np.savez_compressed(voxel_path, indices=self._occupied_indices, shape=self._voxel_binary.shape, resolution=self._voxel_resolution, format_version="1.0")
 
 
     def _save_targets(self):
@@ -379,6 +492,21 @@ class PrimaryFeaturePipeline:
         part_class_name = self._file_to_process.parent.name
         folder_path = cons.PATHS.DATA_FEATURE / "images" / "fabwave" / part_class_name / folder_name
         return folder_path.is_dir()
+    
+    @staticmethod
+    def _expand_to_square(pil_img: Image.Image, background_color) -> Image.Image:
+            """Expand image to square with padding."""
+            width, height = pil_img.size
+            if width == height:
+                return pil_img
+            elif width > height:
+                result = Image.new(pil_img.mode, (width, width), background_color)
+                result.paste(pil_img, (0, (width - height) // 2))
+                return result
+            else:
+                result = Image.new(pil_img.mode, (height, height), background_color)
+                result.paste(pil_img, ((height - width) // 2, 0))
+                return result
 
     def run(self):
         """
@@ -447,6 +575,17 @@ class PrimaryFeaturePipeline:
                         logger.warning(f"Error in converting {self._file_to_process} to VECSET: {e}")
                 else:
                     logger.debug(f"Vecset for {self._file_to_process} already available, skipping vecset-conversion")
+
+                voxel_saved = self._voxel_available()
+                if not voxel_saved:
+                    try:
+                        self._convert_to_voxel()
+                        self._save_voxel()
+                        voxel_saved = self._voxel_available()
+                    except Exception as e:
+                        logger.warning(f"Error in converting {self._file_to_process} to VOXEL: {e}")
+                else:
+                    logger.debug(f"Voxel for {self._file_to_process} already available, skipping voxel-conversion")
                 
                 # only extract targets if tree, invariants and images are
                 # available
