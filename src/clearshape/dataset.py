@@ -144,7 +144,7 @@ class FabwaveDataset(Dataset):
             'trees': cons.PATHS.DATA_FEATURE  / 'trees/fabwave' / f"{row.path}.bin",
             'invariants': cons.PATHS.DATA_FEATURE / 'invariants/fabwave' / f"{row.path}.json",
             'vecsets': cons.PATHS.DATA_FEATURE / 'vecsets/fabwave' / f"{row.path}.npy",
-            'voxel' : cons.PATHS.DATA_FEATURE / 'voxel/fabwave' / f"{row.path}.npy"
+            'voxel' : cons.PATHS.DATA_FEATURE / 'voxel/fabwave' / f"{row.path}.npz"
         }
 
         if self.data_type not in file_paths:
@@ -199,7 +199,12 @@ class FabwaveDataset(Dataset):
             data_representation = torch.stack(images, dim=0)
 
         elif self.data_type == 'voxel':
-            data_representation = torch.Tensor(np.load(file_path.as_posix(), allow_pickle=True))
+            d = np.load(file_path.as_posix())
+            indices = d['indices']
+            shape = tuple(d['shape'])
+            dense = np.zeros(shape, dtype=np.float32)
+            dense[indices[:, 0], indices[:, 1], indices[:, 2]] = 1.0
+            data_representation = torch.tensor(dense[np.newaxis])  # [1, D, H, W]
 
         else:
             raise ValueError(f"Unsupported file type: {file_path.suffix}")  # Raise error for unsupported formats
