@@ -13,6 +13,8 @@
 
 *.fls
 *.fdb_latexmk
+*.aux
+*.spl
 
 # === Boiler Plate entries ===
 
