@@ -324,9 +324,6 @@ Whereas YOLO processes a single image as input, other architectures, such as Rot
 We use the FabWave dataset \cite{starly2019fabwave} to benchmark the proposed models.
 The dataset contains a broad range of CAD models, predominantly representing mechanical components.
 In its original form, it comprises more than 4,000 parts in STEP format assigned to 44 object categories.
-Figure X shows representative CAD models from the object categories considered in this work. 
- 
-\missingfigure{Abb. Mit einem Beispielbild zu jeder Klasse}
 
 Before the dataset could be used for model training and evaluation, extensive preprocessing was required.
 The individual preprocessing steps are described below. 
@@ -345,8 +342,22 @@ These targets include the part class, volume, number of faces, number of edges, 
 Finally, the data splits were prepared.
 To reduce class imbalance, CAD models were oversampled such that each class contained at least half of the median class size.
 The dataset was then divided into training, validation, and test sets.
-Table X \iltodo{add table reference} provides metadata for each split.
-Finally, the natural logarithm was applied to the numerical target values before training the machine-learning models. 
+\Cref{tab:data-splits} provides metadata for each split.
+Finally, the natural logarithm was applied to the numerical target values before training the machine-learning models.
+
+\begin{table}[h]
+\caption{Data Splits: Metadata for the training, validation and test splits of the dataset.}
+\label{tab:data-splits}
+\begin{tabular*}{\hsize}{@{\extracolsep{\fill}}lrr@{}}
+\toprule
+    Data Split & Fraction & Total Number of Samples\\
+    \hline
+    Training & 0.6 & 1662\\
+    Validation & 0.2 & 554\\
+    Test & 0.2 & 554\\
+\botrule
+\end{tabular*}
+\end{table}
 
 \subsection{Model Comparison}\label{sec:Methodology-Model-Comparison}
 We compare the evaluated models separately for the classification and regression tasks.
@@ -396,7 +407,7 @@ In particular, they may be preferable if other factors, such as computational ef
 
 
 \begin{table}[h]
-\caption{Classification Metrics: Listing of classification metric values as visualised in Figure \cref{fig:classification-metrics}. The highest value per metric is highlighted in bold font.}
+\caption{Classification Metrics: Listing of classification metric values as visualised in \cref{fig:classification-metrics}. The highest value per metric is highlighted in bold font.}
 \label{tab:classification-metrics}
 \begin{tabular*}{\hsize}{@{\extracolsep{\fill}}lcccc@{}}
 \toprule
