@@ -128,7 +128,11 @@
       citecolor=blue,
       urlcolor=blue}
 
+% additional packages
 \usepackage{todonotes}
+\newcommand{\iltodo}[2][]{\todo[inline, #1]{#2}}
+\usepackage{cleveref}
+
 \begin{document}
 \begin{frontmatter}
 
@@ -211,7 +215,7 @@ Each representation requires its custom ML architecture to be processible in the
 This means that a variety of representations and their corresponding model layout must be compared when developing a new application to determine the most suitable one. 
 
 Geometric data can be conveyed using a variety of representations.
-These include multi-view images (kanezaki2018rotationnet), voxels (liu2019pointvoxel, wang2019normalnet), meshes (quelle?)  and graphs (miles2023recursive), among others.
+These include multi-view images \cite{kanezaki2018rotationnet}, voxels \cite{liu2019point-voxel}, \cite{wang2019normalnet}, meshes \todo[inline]{referenz einfügen}(quelle?)  and graphs \cite{miles2023recursive}, among others.
 The different representations of essentially the same information require the use of a variety of ML-based approaches for CAD data analysis. 
 
 Unfortunately, each representation has its own advantages and disadvantages.
@@ -221,7 +225,7 @@ To help guide the decision on which data representation form to use, we compare 
 By comparing these approaches on general CAD attributes - i.e., not specific to most production use cases - we show which ML model, along with its input data representation, can be expected to perform well across many applications.  
 
 All ML models will be trained and tested on the same data sets.
-As such, we used the Fabwave dataset [1] and preprocessed its data for comparison among the different approaches. 
+As such, we used the Fabwave dataset \cite{starly2019fabwave} and preprocessed its data for comparison among the different approaches. 
 
 Our contributions include: 
 
@@ -232,14 +236,17 @@ Our contributions include:
 \end{itemize}
 
 The Rest of this paper is structured as follows.
-In Section 2, we review related work. This includes the foundations of the ML models examined and the CAD model representation types used. Section 3 presents our methodology for prepareing the data set and comparing model performance. Section 4 present our results and their discuss their implication. Finally, section 5 provides a conclusion and lists possible future works. 
+In \cref{sec:Related-Work}, we review related work. This includes the foundations of the ML models examined and the CAD model representation types used.
+\Cref{sec:Methodology} presents our methodology for prepareing the data set and comparing model performance.
+\Cref{sec:results-and-discussion} present our results and their discuss their implication.
+Finally, \cref{sec:conclusion-and-future-works} provides a conclusion and lists possible future works. 
 
 \section{Related Work}\label{sec:Related-Work}
 As we aim to determine the best pair of CAD model representation and ML architecture, we lay out the different representation schemes and ML architectures considered.
 
 \subsection{Representation of 3D CAD Models for Processing via Machine Learning Models}\label{sec:CAD-Representations}
 Research on 3D data representations for machine learning has explored a wide range of approaches.
-These include point clouds, pure primitive instancing, cell decomposition (meshes), constructive solid geometry, sweep representations and boundary representations (B-Rep) (requicha1980representaitons).
+These include point clouds, pure primitive instancing, cell decomposition (meshes), constructive solid geometry, sweep representations and boundary representations (B-Rep) \cite{requicha1980representations}.
 While each of these representation schemes serves certain use cases, they are not necessarily directly processable by a given machine learning model.
 To address this issue multiple techniques have also been developed to derive a data structure from the CAD-model that conveys the topological and geometric information in a way that machine learning models can process.
 For this work four such techniques were utilized.
@@ -255,16 +262,16 @@ If the number of views is too limited, relevant geometric features may not be ca
 This challenge is particularly pronounced for internal features, which cannot be observed from external viewpoints alone.
 Although this limitation can be mitigated by incorporating cross-sectional images taken at multiple slice positions, doing so significantly increases the number of required images and, consequently, the computational cost.Therefore, an appropriate balance must be found between representational fidelity and computational efficiency. 
 
-Several prior studies have employed image-based approaches for CAD model analysis (Kanezaki et al., 2018). (weitere quellen hinzufügen) 
+Several prior studies have employed image-based approaches for CAD model analysis \cite{kanezaki2018rotationnet}. \iltodo{weitere quellen hinzufügen.}
 
 \subsubsection{Tree Data Structure}\label{sec:CAD-Representations-Tree}
 Miles et al. emphasize that B-Rep models possess an inherent hierarchical structure.
 For instance, a line is defined by a point and a direction vector.
 Based on this property, topological entities such as vertices, edges, and faces can be modeled as a graph, with geometric information incorporated through coordinate-based attributes.
-Such a representation is well suited for the application of graph neural networks to CAD models (Miles et al., 2022). 
+Such a representation is well suited for the application of graph neural networks to CAD models. \cite{miles2023recursive}
 
 \subsubsection{Dimensionless Invariants}\label{sec:CAD-Representations-Dimensionless-Invariants}
-Another approach to obtain an encoding vector was introduced by Kaiser et. al. based on the Pi-Theorem (==reference==).
+Another approach to obtain an encoding vector was introduced by Kaiser et. al. based on the Pi-Theorem \iltodo[]{quelle fixen}%\cite{kaiser2018automated}.
 They argue that any three-dimensional body can be described by a set of dimensionless invariants.
 To derive them from a CAD model the model first is meshed and statistical moments on the mesh are calculated.
 Then the invariants are derived from these moments via the Buckingham Pi-theorem.
@@ -278,11 +285,11 @@ Combined with recent advances in mesh-generation algorithms, this suggests stron
 
 \subsubsection{Vecset}\label{sec:CAD-Representations-Vecset}
 Recent advances in 3D representation learning have explored a range of approaches.
-While classical methods rely on explicit representations such as meshes [Garland and Heckbert 1997] or rasterized Structures like Voxel [2] or Octrees[…], the geometric neural field approach[3,4] encodes shapes as continuous functions represented by the network itself.
+While classical methods rely on explicit representations such as meshes \iltodo{welche Referenz genau?} [Garland and Heckbert 1997] or rasterized Structures like Voxel \cite{wang2019normalnet} or Octrees \todo{quelle einfügen}, the geometric neural field approach \cite{zhchen2019learning,park2019deepsdf} encodes shapes as continuous functions represented by the network itself.
 This leads to a high training effort for large amounts of data and to a lack of a regularized latent representation, due to the separately trained and thereby shape-specific networks.
-To bridge this gap, 3DShape2VecSet [5] introduces a hybrid approach that represents shapes as sets of latent vectors (VecSets), thereby decoupling shape-specific information into learnable vector sets while maintaining a single network across all shapes.
+To bridge this gap, 3DShape2VecSet \cite{zhang20233dshape2vecset} introduces a hybrid approach that represents shapes as sets of latent vectors (VecSets), thereby decoupling shape-specific information into learnable vector sets while maintaining a single network across all shapes.
 It employs cross-attention mechanisms to query spatial coordinates, achieving a compact yet expressive shape encoding.
-This design enables efficient integration with generative models, particularly diffusion models [Ho et al.
+This design enables efficient integration with generative models, particularly diffusion models \iltodo{welche quelle genau?}[Ho et al.
 2020], allowing for tasks such as unconditional generation, text-conditioned synthesis, and shape completion.  
 
 \subsection{Architecture of Machine Learning Models for CAD Model Processing}\label{sec:ML-Architectures}
@@ -299,7 +306,7 @@ For example, they are commonly used as prediction heads, where they take the out
 In this capacity, MLPs are also used as components of the other architectures evaluated in this paper. 
 
 \subsubsection{Child-Sum-Tree-LSTM}\label{sec:ML-Architectures-TreeLSTM}
-Miles et al. used a Child-Sum Tree-LSTM (==reference==) to generate encoding vectors for CAD models.
+Miles et al. used a Child-Sum Tree-LSTM to generate encoding vectors for CAD models \cite{miles2023recursive}.
 The model recursively traverses the tree structure of the CAD representation and computes, at each node, an encoding vector for the corresponding topological entity.
 This computation incorporates both the entity type represented by the node and the encodings of its child nodes.
 Through this recursive aggregation, the Tree-LSTM produces a single encoding vector for the entire CAD model, which can subsequently be used as input to a range of downstream machine-learning models.
@@ -307,14 +314,14 @@ Through this recursive aggregation, the Tree-LSTM produces a single encoding vec
 \subsubsection{Convolutional Neural Network}\label{sec:ML-Architectures-CNN}
 Convolutional neural networks (CNNs) are widely used machine-learning architectures for image-processing tasks.
 They are typically composed of convolutional and pooling layers, which extract local features from an image.
-These features are then commonly passed to a multi-layer perceptron (MLP), which produces the final prediction (james2021introduction). 
+These features are then commonly passed to a multi-layer perceptron (MLP), which produces the final prediction \cite{james2013introduction}. 
 
-Pretrained models such as YOLO are widely used for object detection and image classification (redmon2016you).
-Whereas YOLO processes a single image as input, other architectures, such as RotationNet, process multiple images to generate a single prediction (kanezaki2018rotationnet).
+Pretrained models such as YOLO are widely used for object detection and image classification \cite{redmon2016you}.
+Whereas YOLO processes a single image as input, other architectures, such as RotationNet, process multiple images to generate a single prediction \cite{kanezaki2018rotationnet}.
 
 \section{Methodology}\label{sec:Methodology}
 \subsection{Data Set}\label{sec:Methodology-Data-Set}
-We use the FabWave dataset (==reference==) to benchmark the proposed models.
+We use the FabWave dataset \cite{starly2019fabwave} to benchmark the proposed models.
 The dataset contains a broad range of CAD models, predominantly representing mechanical components.
 In its original form, it comprises more than 4,000 parts in STEP format assigned to 44 object categories.
 Figure X shows representative CAD models from the object categories considered in this work. 
@@ -329,7 +336,7 @@ Some CAD models contain overlapping or disjoint bodies, which cannot be converte
 These models were therefore either fused into a single closed shell or removed from the dataset.
 In addition, object classes containing fewer than ten CAD models were excluded. 
 
-Second, the different representations described in Chapter 2. were generated for each remaining CAD model.
+Second, the different representations described in \cref{sec:Related-Work}. were generated for each remaining CAD model.
 Should this have not been posible for all representations the CAD model was excluded from the data set entierly.  
 
 Third, the target values were derived for each CAD model.
@@ -338,7 +345,7 @@ These targets include the part class, volume, number of faces, number of edges, 
 Finally, the data splits were prepared.
 To reduce class imbalance, CAD models were oversampled such that each class contained at least half of the median class size.
 The dataset was then divided into training, validation, and test sets.
-Table X provides metadata for each split.
+Table X \iltodo{add table reference} provides metadata for each split.
 Finally, the natural logarithm was applied to the numerical target values before training the machine-learning models. 
 
 \subsection{Model Comparison}\label{sec:Methodology-Model-Comparison}
@@ -353,7 +360,7 @@ Nevertheless, the results also provide insights into the applicability of the mo
 
 Classification performance is evaluated using accuracy, F1-score, recall, and precision.
 The latter three metrics are macro-averaged across all classes to account for class-level performance independently of class frequency.
-In addition, confusion matrices are provided to enable a more detailed comparison of the models’ performance on individual classes. 
+In addition, confusion matrices are provided to enable a more detailed comparison of the model’s performance on individual classes. 
 
 The regression task aims to predict abstract and generally applicable properties of CAD models.
 The target quantities therefore include the volume and the numbers of vertices, edges, and faces.
@@ -369,7 +376,7 @@ In addition, overarching conclusions are drawn to identify the most favorable ap
 
 \subsection{Classification}\label{sec:results-classification}
 
-Figure X and Table X summarize the overall classification performance.
+Figure X and Table X \iltodo{} summarize the overall classification performance.
 Across all evaluation metrics, the same ranking of approaches is observed.
 From best to worst, the approaches are ranked as follows: trees, images, vector sets, and invariants.
 Based on these results, the tree-based approach can be regarded as the dominant approach for the classification task. 
@@ -377,41 +384,46 @@ Based on these results, the tree-based approach can be regarded as the dominant 
 Nevertheless, the other approaches may still achieve sufficiently high performance for practical application, depending on the specific requirements of a given use case.
 In particular, they may be preferable if other factors, such as computational efficiency, implementation complexity, or data availability, outweigh the observed loss in prediction quality.
 
+\begin{figure*}[t]\vspace*{4pt}
+%\centerline{\includegraphics{fx1}\hspace*{5mm}\includegraphics{fx1}}
+%\centerline{\includegraphics{gr1}}
 \missingfigure{classification metrics}
-Caption: 
-Classification Metrics: Comparsion of the different approaches is terms of overall Accuracy and macro-averaged F1-Score, Recall and Precision. The tree representation and assoziated tree-LSTM model is dominating the others across all metrics. 
+\caption{Classification Metrics: Comparison of the different approaches in terms of overall Accuracy and macro-averaged F1-Score, Recall and Precision. The tree representation and associated tree-LSTM model is dominating the others across all metrics.}
+\label{fig:classification-metrics}
+\end{figure*}
 
 \todo[inline]{add table with classifiaction metrics}
 
-\begin{table}
-  \begin{tabular}{lcccc}
-    \hline
+
+\begin{table}[h]
+\caption{Classification Metrics: Listing of classification metric values as visualised in Figure \cref{fig:classification-metrics}. The highest value per metric is highlighted in bold font.}
+\label{tab:classification-metrics}
+\begin{tabular*}{\hsize}{@{\extracolsep{\fill}}lcccc@{}}
+\toprule
     Model & Accuracy & F1-Score & Recall & Precision \\
     \hline
     Vecset & 0 & 0 & 0 & 0 \\
     Trees & 0 & 0 & 0 & 0 \\
     Images & 0 & 0 & 0 & 0 \\
     Invariants & 0 & 0 & 0 & 0 \\
-    \hline
-  \end{tabular}
+\botrule
+\end{tabular*}
 \end{table}
 
-Caption: 
-Classification Metrics: Listing of classification metric values as visualised in Figure X. The highest value per metric is highlighted in bold font. 
-
-Figure X-Y show the confusion matrices for all approaches.
+Figure X-Y \iltodo{reference confusion matrices}show the confusion matrices for all approaches.
 Each one manages to recognize most classes with accuracies close to one.
 Considering the overall classification metrics this was to be expected.
 Concurrently the image, invariant and tree approach each fails to recognize one class correctly entierely.
-The tree approach for instances confuses all bearings with washers. At the time of writing no hypothesis has been formed why this might be the case. 
+The tree approach for instances confuses all bearings with washers. At the time of writing no hypothesis has been formed why this might be the case.
+
 \missingfigure{confusion matrices}
 
 \subsection{Regression}\label{sec:results-regression}
-Figure X shows the distributions of the absolute errors for the regression target quantities relative to their target values.
+Figure X \iltodo{reference violin plot} shows the distributions of the absolute errors for the regression target quantities relative to their target values.
 It should be noted that the displayed violin areas are affected by the logarithmic scale and are therefore not directly comparable in terms of absolute area.
 
 As in the classification task, the tree-based approach achieves the best overall performance compared with the other approaches.
-This conclusion is also supported by the mean absolute error, mean squared error, and R2-score, which are shown in Figures X–Y. 
+This conclusion is also supported by the mean absolute error, mean squared error, and R2-score, which are shown in Figures X–Y. \iltodo[]{reference regression metrics}
 
 \missingfigure{violinplot}
 
@@ -425,7 +437,7 @@ Regression Metrics: MAE, MSE and R² for each regression target and approach. Fo
 
 \section{Conclusion and Future Works}\label{sec:conclusion-and-future-works}
 We compared three machine learning approaches for CAD model analysis.
-Each approach was evaluated on the FabWave (Starly Binil) dataset using a classification task with high class diversity, as well as several abstract regression tasks.
+Each approach was evaluated on the FabWave dataset \cite{starly2019fabwave} using a classification task with high class diversity, as well as several abstract regression tasks.
 
 The results show that the combination of tree-structured STEP file representations and a Tree-LSTM model, as proposed by Miles, achieved the best performance across all evaluated tasks.
 We therefore conclude that this method provides a promising starting point for more specialized CAD model analysis applications.
@@ -435,11 +447,6 @@ Future work should investigate the performance of the tree-based method on addit
 In particular, constructing datasets with more abstract learning tasks could help further demonstrate the model’s general applicability. 
 
 The generalization capabilities of the evaluated methods could also be explored by incorporating additional features into the comparison, such as bounding-box dimensions, surface-to-volume ratio, or shape complexity.
-
-\section{Online license transfer}
-All authors are required to complete the Procedia license transfer
-agreement before the article can be published, which they can do online. This transfer agreement enables Elsevier to protect the copyrighted material for the authors, but does not relinquish the authors' proprietary rights. The Procedia license transfer covers the rights to reproduce and distribute the article, including reprints, photographic reproductions, microfilm or any other reproductions of similar nature and translations. Authors are responsible for obtaining from the copyright holder, the permission to reproduce any figures for which copyright exists.
-%All authors are required to complete the Procedia exclusive license transfer agreement before the article can be published, which they can do online. This transfer agreement enables Elsevier to protect the copyrighted material for the authors, but does not relinquish the authors' proprietary rights. The copyright transfer covers the exclusive rights to reproduce and distribute the article, including reprints, photographic reproductions, microfilm or any other reproductions of similar nature and translations. Authors are responsible for obtaining from the copyright holder, the permission to reproduce any figures for which copyright exists.
 
 \vfill\pagebreak
 
@@ -479,26 +486,27 @@ There is also the option to include a subheading within the Appendix if you wish
 %% The provided style file elsarticle-num.bst formats references in the required Procedia style
 
 %% For references without a BibTeX database:
+\bibliographystyle{plain}
+\bibliography{references}
+%  \begin{thebibliography}{00}
 
- \begin{thebibliography}{00}
+% %% \bibitem must have the following form:
+% %%   \bibitem{key}...
+% %%
 
-%% \bibitem must have the following form:
-%%   \bibitem{key}...
-%%
+% \bibitem[Clark et al.(1962)]{clark}Clark, T., Woodley, R., De Halas, D., 1962. Gas-Graphite Systems, in ``{\it Nuclear Graphite}''. 
+% In: Nightingale, R. (Ed.). Academic Press, New York, pp. 387.
 
-\bibitem[Clark et al.(1962)]{clark}Clark, T., Woodley, R., De Halas, D., 1962. Gas-Graphite Systems, in ``{\it Nuclear Graphite}''. 
-In: Nightingale, R. (Ed.). Academic Press, New York, pp. 387.
+% \bibitem[Deal and Grove(2009) ]{Deal}Deal, B., Grove, A., 1965. General Relationship for the Thermal Oxidation of Silicon. Journal of Applied Physics 36.2, 37--70.
 
-\bibitem[Deal and Grove(2009) ]{Deal}Deal, B., Grove, A., 1965. General Relationship for the Thermal Oxidation of Silicon. Journal of Applied Physics 36.2, 37--70.
+% \bibitem[Deep(2009)]{Deep}Deep-Burn Project: Annual Report for 2009, Idaho National Laboratory, Sept. 2009.
 
-\bibitem[Deep(2009)]{Deep}Deep-Burn Project: Annual Report for 2009, Idaho National Laboratory, Sept. 2009.
+% \bibitem[Fachinger(2004)]{Fachinger2004}Fachinger, J., den Exter, M., Grambow, B., Holgerson, S., Landesmann, C., Titov, M., Podruhzina, T., 2004. ``Behavior of spent HTR fuel elements in aquatic phases of repository host rock formations,'' 2nd International Topical Meeting on High Temperature Reactor Technology. Beijing, China, paper \#B08. 
 
-\bibitem[Fachinger(2004)]{Fachinger2004}Fachinger, J., den Exter, M., Grambow, B., Holgerson, S., Landesmann, C., Titov, M., Podruhzina, T., 2004. ``Behavior of spent HTR fuel elements in aquatic phases of repository host rock formations,'' 2nd International Topical Meeting on High Temperature Reactor Technology. Beijing, China, paper \#B08. 
+% \bibitem[Fachinger(2006)]{Fachinger2006}Fachinger, J., 2006. Behavior
+% of HTR Fuel Elements in Aquatic Phases of Repository Host Rock Formations. Nuclear Engineering \& Design 236.3,      54.
 
-\bibitem[Fachinger(2006)]{Fachinger2006}Fachinger, J., 2006. Behavior
-of HTR Fuel Elements in Aquatic Phases of Repository Host Rock Formations. Nuclear Engineering \& Design 236.3,      54.
-
- \end{thebibliography}
+%  \end{thebibliography}
 
 \clearpage\onecolumn
 
