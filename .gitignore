@@ -11,6 +11,9 @@
 
 **/mlruns
 
+*.fls
+*.fdb_latexmk
+
 # === Boiler Plate entries ===
 
 # Byte-compiled / optimized / DLL files
