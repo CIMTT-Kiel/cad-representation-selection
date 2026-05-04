@@ -259,8 +259,9 @@ class ModelOutputToReportingPipeline:
                     data_types = attr_data['data_type'].unique()
                     x_pos = range(len(data_types))
                     values = [attr_data[attr_data['data_type'] == dt]['value'].values[0] for dt in data_types]
+                    colors = sns.color_palette("colorblind", len(data_types))
 
-                    bars = ax.bar(x_pos, values, color=['#4C72B0', '#DD8452'])
+                    bars = ax.bar(x_pos, values, color=colors)
                     ax.set_xlabel('Representation Type')
                     ax.set_ylabel(metric_type.upper())
                     ax.set_title(attribute)
