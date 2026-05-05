@@ -390,7 +390,7 @@ class ModelOutputToReportingPipeline:
         fig, ax = plt.subplots()
         plot = (
             so.Plot(classification_metrics.sort_values("value", ascending=False), x="metric", y="value", color="data_type")
-            .add(so.Bar(edgewidth=0), so.Dodge(), )
+            .add(so.Bar(edgewidth=0, alpha=1), so.Dodge(), )
             .label(
                 title="Classification Metrics (Macro Averaged)",
                 x="Metric",
