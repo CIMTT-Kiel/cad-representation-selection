@@ -1,7 +1,3 @@
-"""
-
-"""
-
 # standard libary
 import typing
 from typing import Union
@@ -55,7 +51,7 @@ class FabwaveDataset(Dataset):
     """
 
     def __init__(self, csv_file: Union[str, Path], data_type: str, regression:bool=False, classification:bool=False, scaler=None,):
-        assert data_type in ["images", "trees", "invariants", "vecsets"], "Is the data type spelled correctly?"
+        assert data_type in ["images", "trees", "invariants", "vecsets", "voxel"], "Is the data type spelled correctly?"
         assert regression ^ classification, "Please specify the task type: 'classification' or 'regression'."
         self.scaler = scaler  
         self.data = self._get_scaled_data(csv_file) if self.scaler else self._load_data(csv_file) # Load CSV file into a DataFrame
@@ -147,7 +143,8 @@ class FabwaveDataset(Dataset):
             'images': cons.PATHS.DATA_FEATURE / 'images/fabwave' / f"{row.path}",
             'trees': cons.PATHS.DATA_FEATURE  / 'trees/fabwave' / f"{row.path}.bin",
             'invariants': cons.PATHS.DATA_FEATURE / 'invariants/fabwave' / f"{row.path}.json",
-            'vecsets': cons.PATHS.DATA_FEATURE / 'vecsets/fabwave' / f"{row.path}.npy"
+            'vecsets': cons.PATHS.DATA_FEATURE / 'vecsets/fabwave' / f"{row.path}.npy",
+            'voxel' : cons.PATHS.DATA_FEATURE / 'voxel/fabwave' / f"{row.path}.npz"
         }
 
         if self.data_type not in file_paths:
@@ -200,6 +197,15 @@ class FabwaveDataset(Dataset):
                 images.append(sample)
 
             data_representation = torch.stack(images, dim=0)
+
+        elif self.data_type == 'voxel':
+            d = np.load(file_path.as_posix())
+            indices = d['indices']
+            shape = tuple(d['shape'])
+            dense = np.zeros(shape, dtype=np.float32)
+            dense[indices[:, 0], indices[:, 1], indices[:, 2]] = 1.0
+            data_representation = torch.tensor(dense[np.newaxis])  # [1, D, H, W]
+
         else:
             raise ValueError(f"Unsupported file type: {file_path.suffix}")  # Raise error for unsupported formats
         

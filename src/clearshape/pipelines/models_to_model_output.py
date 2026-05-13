@@ -20,6 +20,7 @@ import torch.nn as nn
 from omegaconf import OmegaConf
 from sklearn.preprocessing import MinMaxScaler
 from torch.utils.data import DataLoader
+from pytorch_lightning import LightningModule
 
 # custom packages
 import clearshape.constants as cons
@@ -28,9 +29,16 @@ from clearshape.models.feedforward_mlp import FeedforwardMLP
 from clearshape.models.modelstack import ModelStack
 from clearshape.models.treelstm import RootedInTreeEncoder
 from clearshape.constants import PATHS
-from clearshape.models.invariant_mlp import InvariantMLP 
-from clearshape.models.trnsfm_encoder import VecsetClassifier, TransformerRegressor
 from clearshape.rotationnet.rotnet_classifier import RotationNetModel
+from clearshape.invariants.ml.modules.invs_regressor import InvariantRegressor
+from clearshape.invariants.ml.modules.invs_classificator import InvariantClassifier
+from clearshape.vecsets.ml.modules.trsfm_classificator import VecsetClassifierModule
+from clearshape.vecsets.ml.modules.trsfm_regressor import VecsetTransformerRegressor
+from clearshape.voxels.ml.modules.voxel_classificator import VoxelClassifier
+from clearshape.voxels.ml.modules.voxel_regressor import VoxelRegressor
+
+
+
 
 # set up logger
 logging_level = logging.INFO
@@ -80,7 +88,7 @@ class ModelsModelOutputPipeline:
     Notes
     -----
     The pipeline assumes that files containing the models follow this naming
-    convention: `{images, trees, or invariants}-{regressor or classifier}.pth`.
+    convention: `{images, trees, invariants, vecsets, or voxels}-{regressor or classifier}.{pth,ckpt}`.
     """
 
     def __init__(self):
@@ -230,22 +238,25 @@ class ModelsModelOutputPipeline:
         Notes
         -----
         - The checkpoint is assumed to be stored in the `data/6_models/invariants_classification.ckpt` file.
-        - The hyperparameter dictionary inside the checkpoint contains parameters used to
-        instantiate the `InvariantMLP`. The learning rate (`lr`) key is removed before model initialization.
-        - The keys in the `state_dict` may have a "model." prefix, which is stripped before loading.
-        - This method assumes the model class `InvariantMLP` is already imported and available.
         """
-        #TODO implement for regression
-
         logger.info(f"Initializing Invariants-model")
+        if task_type == "classifier":
 
-        checkpoint = torch.load((PATHS.DATA_MODELS / "invariants-classifier.ckpt").as_posix())
-        hyperparams = checkpoint["hyper_parameters"]
-        del hyperparams["lr"]
+            logger.debug(f"Initializing Invariants-model - classifier")
+            model = InvariantClassifier.load_from_checkpoint((PATHS.DATA_MODELS / "invariants-classifier.ckpt").as_posix())
+            model.eval();
 
-        model = InvariantMLP(**hyperparams)
+            return model
+        
+        elif task_type == "regressor":
+            logger.debug(f"Initializing Invariants-model - classifier")
 
-        return model
+            model = InvariantRegressor.load_from_checkpoint((PATHS.DATA_MODELS / "invariants-regressor.ckpt").as_posix())
+            model.eval();
+
+            return model
+
+        return None
     
     def _initialize_vecset_model(self, task_type) -> torch.nn.Module:
         """
@@ -282,29 +293,62 @@ class ModelsModelOutputPipeline:
 
         if task_type == "classifier":
 
-            checkpoint = torch.load((PATHS.DATA_MODELS / "vecsets-classifier.ckpt").as_posix())
-            hyperparams = checkpoint["hyper_parameters"]
-            del hyperparams["lr"]
-            del hyperparams["weight_decay"]
-
-            model = VecsetClassifier(**hyperparams)
+            model = VecsetClassifierModule.load_from_checkpoint((PATHS.DATA_MODELS / "vecsets-classifier.ckpt").as_posix())
+            model.eval();
+        
+            return model
         
         elif task_type == "regressor":
-            checkpoint = torch.load((PATHS.DATA_MODELS / "vecsets-regressor.ckpt").as_posix())
-            hyperparams = checkpoint["hyper_parameters"]
-            del hyperparams["lr"]
-            del hyperparams["weight_decay"]
-            del hyperparams["max_epochs"]
-            del hyperparams["warmup_epochs"]
-            del hyperparams["target_names"]
-            
 
-            model = TransformerRegressor(**hyperparams)
 
             
 
+            model = VecsetTransformerRegressor.load_from_checkpoint((PATHS.DATA_MODELS / "vecsets-regressor.ckpt").as_posix())
+            model.eval();
 
-        return model
+            return model
+
+        return None
+
+    def _initialize_voxel_model(self, task_type) -> torch.nn.Module:
+        """
+        Initialize a Voxel CNN model for either classification or regression tasks.
+
+        This method loads a pre-trained 3D-CNN-based Voxel model from a checkpoint file
+        using PyTorch Lightning's load_from_checkpoint mechanism, which restores both
+        the model architecture (via saved hyperparameters) and the trained weights.
+
+        Parameters
+        ----------
+        task_type : str
+            The type of task for which the Voxel model is being initialized.
+            Must be either "classifier" or "regressor".
+
+        Returns
+        -------
+        torch.nn.Module
+            A VoxelClassifier or VoxelRegressor model with weights restored from the checkpoint.
+
+        Notes
+        -----
+        - The classifier checkpoint is expected at `data/6_models/voxels-classifier.ckpt`.
+        - The regressor checkpoint is expected at `data/6_models/voxels-regressor.ckpt`.
+        """
+        logger.info(f"Initializing Voxel-model")
+
+        if task_type == "classifier":
+            logger.debug(f"Initializing Voxel-model - classifier")
+            model = VoxelClassifier.load_from_checkpoint((PATHS.DATA_MODELS / "voxels-classifier.ckpt").as_posix())
+            model.eval();
+            return model
+
+        elif task_type == "regressor":
+            logger.debug(f"Initializing Voxel-model - regressor")
+            model = VoxelRegressor.load_from_checkpoint((PATHS.DATA_MODELS / "voxels-regressor.ckpt").as_posix())
+            model.eval();
+            return model
+
+        return None
 
     def _load_model(self, path) -> None:
         """
@@ -351,16 +395,24 @@ class ModelsModelOutputPipeline:
                 model = self._initialize_vecset_model("classifier")
             case ("vecsets", "regressor"):
                 model = self._initialize_vecset_model("regressor")
+            case ("voxels", "classifier"):
+                model = self._initialize_voxel_model("classifier")
+            case ("voxels", "regressor"):
+                model = self._initialize_voxel_model("regressor")
         if model is None:
             raise ValueError(
                 f"Invalid model type: {data_type}-{model_type}. Supported types are: images, trees, invariants for data and regressor, classifier for model type."
             )
 
-        if path.suffix == ".pth":
+        # LightningModules haben Weights schon geladen
+        if isinstance(model, LightningModule):
+            model.to(device)
+            model.eval()
+            return model  
+
+        elif path.suffix == ".pth":
             state_dict = torch.load(path, weights_only=False, map_location=device)
-        elif path.suffix == ".ckpt":
-            checkpoint = torch.load(path.as_posix(), map_location=device)
-            state_dict = {k.replace("model.", ""): v for k, v in checkpoint["state_dict"].items()}
+
         else:
             raise NotImplementedError(f"Loading model format {path.suffix} is not implemented")
 
@@ -379,19 +431,22 @@ class ModelsModelOutputPipeline:
         task_type : str
             The type of task to perform. Supported values are "regression" and "classification".
         data_type : str
-            The type of data to process. Supported values are "images", "invariants", and "trees".
+            The type of data to process. Supported values are "images", "invariants", "trees", "vecsets", and "voxels".
         scaler : object, optional
             A scaler object to normalize the data, if applicable. Default is None.
 
         Returns
         -------
         DataLoader or GraphDataLoader
-            A DataLoader object for "images" and "invariants" data types, or a GraphDataLoader object for "trees" data type.
+            A DataLoader object for "images", "invariants", "vecsets", and "voxels" data types,
+            or a GraphDataLoader object for "trees" data type.
         """
         logger.debug("Calling'_get_data_loader'.")
+        # FabwaveDataset uses the singular "voxel" while model files use the plural "voxels"
+        dataset_data_type = "voxel" if data_type == "voxels" else data_type
         data_set = FabwaveDataset(
             cons.PATHS.DATA_MODEL_INPUT / "test.csv",
-            data_type=data_type,
+            data_type=dataset_data_type,
             regression=task_type == "regression",
             classification=task_type == "classification",
             scaler=scaler,
@@ -403,9 +458,11 @@ class ModelsModelOutputPipeline:
                 data_loader = DataLoader(data_set, batch_size=256, shuffle=False)
             case "vecsets":
                 data_loader = DataLoader(data_set, batch_size=256, shuffle=False)
+            case "voxels":
+                data_loader = DataLoader(data_set, batch_size=8, shuffle=False)
             case "trees":
                 data_loader = dgl.dataloading.GraphDataLoader(
-                    data_set, batch_size=256, shuffle=False, 
+                    data_set, batch_size=256, shuffle=False,
                 )
         return data_loader
 
@@ -478,6 +535,7 @@ class ModelsModelOutputPipeline:
         # process classifiers
         logger.info("=== Processing classifier models ===")
         classifier_models = self._get_models_by_type("classifier")
+
 
         # for each classifier model, load the model, compute predictions and save them to a csv file
         # the csv file has the following columns:

@@ -11,6 +11,10 @@ import warnings
 import logging
 import pandas as pd
 
+# Enable Flash Attention via PyTorch SDPA backend (requires CUDA + PyTorch >= 2.0)
+if torch.cuda.is_available():
+    torch.backends.cuda.enable_flash_sdp(True)
+
 # Custom imports
 from clearshape.vecsets.ml.modules.trsfm_classificator import VecsetClassifierModule
 from pytorch_lightning.callbacks import EarlyStopping, ModelCheckpoint
@@ -32,7 +36,7 @@ def get_dataloaders(batch_size=32):
     """
     train_loader = DataLoader(
         FabwaveDataset(
-            csv_file="/clear-shape/data/5_model_input/train.csv", 
+            csv_file=PATHS.DATA_MODEL_INPUT/ "train.csv", 
             classification=True, 
             data_type="vecsets"
         ), 
@@ -42,7 +46,7 @@ def get_dataloaders(batch_size=32):
     
     validation_loader = DataLoader(
         FabwaveDataset(
-            csv_file="/clear-shape/data/5_model_input/validation.csv", 
+            csv_file=PATHS.DATA_MODEL_INPUT / "validation.csv", 
             classification=True, 
             data_type="vecsets"
         ), 
@@ -62,20 +66,20 @@ def objective(trial):
     # MLflow Run für diesen Trial starten
     with mlflow.start_run(run_name=f"trial_{trial.number}", nested=True):
         # Hyperparameter-Sampling
-        dropout = trial.suggest_float("dropout", 0.3, 0.5)
+        dropout = trial.suggest_float("dropout", 0.0, 0.3)
         lr = trial.suggest_float("lr", 1e-5, 1e-3, log=True)
-        weight_decay = trial.suggest_float("weight_decay", 1e-6, 1e-3, log=True)
-        batch_size = trial.suggest_categorical("batch_size", [64, 128, 256])
+        weight_decay = trial.suggest_float("weight_decay", 0.01, 0.1, log=True)
+        batch_size = trial.suggest_categorical("batch_size", [128, 256])
 
-        # D_model must be divisible by nhead
-        d_model = trial.suggest_categorical("d_model", [512, 768, 1024, 1536, 2048])
+        # D_model must be divisible by nhea
+        d_model = trial.suggest_int("d_model", 1024, 1408, step=32)
 
         # Transformer-specific hyperparameters
-        nhead = trial.suggest_categorical("nhead", [2, 4, 8, 16])
-        num_layers = trial.suggest_int("num_layers", 2, 8)
+        nhead = trial.suggest_categorical("nhead", [4, 8, 16])
+        num_layers = trial.suggest_int("num_layers", 7, 10)
 
         # Feedforward network size
-        dim_feedforward = trial.suggest_int("dim_feedforward", 512, 2048, step=128)
+        dim_feedforward = trial.suggest_categorical("dim_feedforward", [256, 512])
         
         # CONSTRAINT: d_model muss durch nhead teilbar sein
         if d_model % nhead != 0:
@@ -119,7 +123,7 @@ def objective(trial):
             lr=lr,
             weight_decay=weight_decay,
             input_dim=32, 
-            d_model=d_model,  # Verwende die Variable statt hartkodiert 1024
+            d_model=d_model,  
             nhead=nhead, 
             num_layers=num_layers, 
             num_classes=num_classes, 
@@ -138,19 +142,21 @@ def objective(trial):
         # Early Stopping
         early_stop_callback = EarlyStopping(
             monitor='val_loss',
-            patience=5,
+            patience=25,
             mode='min',
             verbose=False
         )
         
         trainer = Trainer(
-            max_epochs=50,  # Genug Epochs für Trials
+            max_epochs=100,  
             logger=mlf_logger,
             enable_checkpointing=False,
             enable_model_summary=False,
             enable_progress_bar=True,
             log_every_n_steps=10,
-            callbacks=[early_stop_callback]
+            callbacks=[early_stop_callback],
+            precision="bf16-mixed" if torch.cuda.is_available() else '32',  
+            devices=1
         )
         
         trainer.fit(model, train_loader, val_loader)
@@ -189,6 +195,7 @@ def main():
     mlflow.set_experiment("vecsets-classification")
 
     # Hauptrun für das gesamte Experiment starten
+
     with mlflow.start_run(run_name="hyperparameter_optimization"):
         print("Starting hyperparameter optimization for Vecsets Classification...")
 
@@ -198,7 +205,7 @@ def main():
             sampler=optuna.samplers.TPESampler(n_startup_trials=10),
             pruner=optuna.pruners.MedianPruner(n_startup_trials=5, n_warmup_steps=10)
         )
-        study.optimize(objective, n_trials=30)  # 30 Trials für gute Exploration
+        study.optimize(objective, n_trials=100)  
 
         # Beste Parameter loggen
         best_params = study.best_trial.params
@@ -213,12 +220,9 @@ def main():
         print(f"Best F1-Score: {best_value:.4f}")
         print(f"Best parameters: {best_params}")
 
-        # Save Optuna study
-        study_path = PATHS.DATA_MODELS / "vecsets_classifier_optuna_study.joblib"
-        joblib.dump(study, study_path)
-        mlflow.log_artifact(str(study_path), "optuna_study")
-
     print("\nTraining final model with best parameters...")
+
+
     
     # Finales Training mit besten Parametern
     with mlflow.start_run(run_name="final_best_model"):
@@ -258,7 +262,7 @@ def main():
         # Callbacks für finales Training
         early_stop_callback = EarlyStopping(
             monitor='val_loss',
-            patience=20,  # Mehr Geduld für finales Training
+            patience=200,  
             mode='min',
             verbose=False
         )
@@ -268,20 +272,22 @@ def main():
             save_top_k=1,
             mode='max',
             dirpath=PATHS.DATA_MODELS.as_posix(),
-            filename='vecsets-classifier',
+            filename='vecsets-classifier_t',
             save_weights_only=False,
             verbose=False
         )
         
         # Finaler Trainer
         trainer = Trainer(
-            max_epochs=1000,
+            max_epochs=2000,
             logger=mlf_logger,
             callbacks=[early_stop_callback, checkpoint_callback],
             enable_checkpointing=True,
             enable_model_summary=False,
             enable_progress_bar=True,
-            log_every_n_steps=10
+            log_every_n_steps=10,
+            precision="bf16-mixed" if torch.cuda.is_available() else '32',
+            devices=1
         )
         
         # Training
@@ -378,7 +384,9 @@ def train_with_manual_params():
             enable_checkpointing=True, 
             enable_model_summary=False, 
             enable_progress_bar=True,
-            log_every_n_steps=10
+            log_every_n_steps=10,
+            precision="bf16-mixed" if torch.cuda.is_available() else '32',  # Mixed precision
+            devices=1
         )
         
         trainer.fit(model, train_loader, val_loader)
@@ -431,7 +439,9 @@ def evaluate_model(model_path=None):
         # Evaluation
         trainer = Trainer(
             logger=mlf_logger,
-            enable_progress_bar=True
+            enable_progress_bar=True,
+            precision="bf16-mixed" if torch.cuda.is_available() else '32',  # Mixed precision
+            devices=1
         )
         
         results = trainer.test(model, test_loader)

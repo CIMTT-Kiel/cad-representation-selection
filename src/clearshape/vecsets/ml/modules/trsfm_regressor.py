@@ -122,8 +122,8 @@ class VecsetTransformerRegressor(pl.LightningModule):
         if self.log_scaler is None:
             return {}
         
-        pred_np = predictions.detach().cpu().numpy()
-        true_np = targets.detach().cpu().numpy()
+        pred_np = predictions.detach().float().cpu().numpy()
+        true_np = targets.detach().float().cpu().numpy()
         
         pred_original = self.log_scaler.inverse_transform(pred_np)
         true_original = self.log_scaler.inverse_transform(true_np)
@@ -147,13 +147,24 @@ class VecsetTransformerRegressor(pl.LightningModule):
     
     def training_step(self, batch, batch_idx):
         x, y = batch[:2]
-        
+
         predictions = self(x)
         loss, individual_losses = self.model.compute_weighted_loss(predictions, y)
-        
+
+        # Variance calibration: penalize when prediction std deviates from target std
+        # in log-space. A 9% over-amplification in log-space becomes ~2x in original
+        # space after exp(), causing negative R2 even with good MAE.
+        if predictions.size(0) > 1:
+            pred_std = predictions.std(dim=0)
+            target_std = y.std(dim=0).detach()
+            var_ratio = pred_std / (target_std + 1e-6)
+            var_calibration_loss = F.mse_loss(var_ratio, torch.ones_like(var_ratio))
+            loss = loss + var_calibration_loss
+            self.log('train_var_calibration', var_calibration_loss, on_step=False, on_epoch=True)
+
         # Metriken
         metrics = self._compute_metrics(predictions, y, 'train')
-        
+
         # Logging
         self.log('train_loss', loss, prog_bar=True, on_step=False, on_epoch=True)
         
