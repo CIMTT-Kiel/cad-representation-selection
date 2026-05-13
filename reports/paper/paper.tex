@@ -427,7 +427,36 @@ Considering the overall classification metrics this was to be expected.
 Concurrently the image, invariant and tree approach each fails to recognize one class correctly entierely.
 The tree approach for instances confuses all bearings with washers. At the time of writing no hypothesis has been formed why this might be the case.
 
-\missingfigure{confusion matrices}
+\begin{figure*}[t]\vspace*{4pt}
+\centerline{\includegraphics[width=0.9\textwidth]{../figures/confusion_matrix_trees.png}}
+\caption{Confusion Matrix for the tree-based approach.}
+\label{fig:confusion-matrix-trees}
+\end{figure*}
+
+\begin{figure*}[t]\vspace*{4pt}
+\centerline{\includegraphics[width=0.9\textwidth]{../figures/confusion_matrix_images.png}}
+\caption{Confusion Matrix for the image-based approach.}
+\label{fig:confusion-matrix-images}
+\end{figure*}
+
+\begin{figure*}[t]\vspace*{4pt}
+\centerline{\includegraphics[width=0.9\textwidth]{../figures/confusion_matrix_invariants.png}}
+\caption{Confusion Matrix for the invariant-based approach.}
+\label{fig:confusion-matrix-invariants}
+\end{figure*}
+
+\begin{figure*}[t]\vspace*{4pt}
+\centerline{\includegraphics[width=0.9\textwidth]{../figures/confusion_matrix_vecsets.png}}
+\caption{Confusion Matrix for the vector-based approach.}
+\label{fig:confusion-matrix-vecset}
+\end{figure*}
+
+\begin{figure*}[t]\vspace*{4pt}
+\centerline{\includegraphics[width=0.9\textwidth]{../figures/confusion_matrix_voxels.png}}
+\caption{Confusion Matrix for the voxel-based approach.}
+\label{fig:confusion-matrix-voxels}
+\end{figure*}
+\clearpage
 
 \subsection{Regression}\label{sec:results-regression}
 Figure X \iltodo{reference violin plot} shows the distributions of the absolute errors for the regression target quantities relative to their target values.
