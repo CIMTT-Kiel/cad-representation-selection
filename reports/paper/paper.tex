@@ -473,10 +473,24 @@ Median and mean values are provided for each distribution.}
 \label{fig:error-distributions}
 \end{figure*}
 
-\missingfigure{MAE, MSE, R2}
+% Plots for regression metrics: MAE, MSE and R2
+\begin{figure*}[t]\vspace*{4pt}
+\centerline{\includegraphics[width=0.9\textwidth]{../figures/regression_metrics_mae_plot.png}}
+\caption{Mean Absolute Errors: The plot shows the mean absolute errors for each regression target and approach.}
+\label{fig:mean-absolute-errors}
+\end{figure*}
 
-Caption: 
-Regression Metrics: MAE, MSE and R² for each regression target and approach. For each combination of error type and regression target the best performing approach is highlighted in orange color. The tree approach achieves the best results for each target / error type combination. 
+\begin{figure*}[t]\vspace*{4pt}
+\centerline{\includegraphics[width=0.9\textwidth]{../figures/regression_metrics_mse_plot.png}}
+\caption{Mean Squared Errors: The plot shows the mean squared errors for each regression target and approach.}
+\label{fig:mean-squared-errors}
+\end{figure*}
+
+\begin{figure*}[t]\vspace*{4pt}
+\centerline{\includegraphics[width=0.9\textwidth]{../figures/regression_metrics_r2_plot.png}}
+\caption{R² Scores: The plot shows the R² scores for each regression target and approach.}
+\label{fig:r2-scores}
+\end{figure*}
 
 \section{Conclusion and Future Works}\label{sec:conclusion-and-future-works}
 We compared three machine learning approaches for CAD model analysis.
