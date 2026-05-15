@@ -395,8 +395,8 @@ Based on these results, the tree-based approach can be regarded as the dominant 
 Nevertheless, the other approaches may still achieve sufficiently high performance for practical application, depending on the specific requirements of a given use case.
 In particular, they may be preferable if other factors, such as computational efficiency, implementation complexity, or data availability, outweigh the observed loss in prediction quality.
 
+% Classification metrics: Plot and table
 \begin{figure*}[t]\vspace*{4pt}
-%\centerline{\includegraphics{fx1}\hspace*{5mm}\includegraphics{fx1}}
 \centerline{\includegraphics[width=0.9\textwidth]{../figures/classification_metrics_plot.png}}
 \caption{Classification Metrics: Comparison of the different approaches in terms of overall Accuracy and macro-averaged F1-Score, Recall and Precision. The tree representation and associated tree-LSTM model is dominating the others across all metrics.}
 \label{fig:classification-metrics}
@@ -426,6 +426,7 @@ Considering the overall classification metrics this was to be expected.
 Concurrently the image, invariant and tree approach each fails to recognize one class correctly entierely.
 The tree approach for instances confuses all bearings with washers. At the time of writing no hypothesis has been formed why this might be the case.
 
+% Confusion matrices
 \begin{figure*}[t]\vspace*{4pt}
 \centerline{\includegraphics[width=0.9\textwidth]{../figures/confusion_matrix_trees.png}}
 \caption{Confusion Matrix for the tree-based approach.}
