@@ -387,7 +387,7 @@ In addition, overarching conclusions are drawn to identify the most favorable ap
 
 \subsection{Classification}\label{sec:results-classification}
 
-Figure X and Table X \iltodo{} summarize the overall classification performance.
+\Cref{fig:classification-metrics} and \cref{tab:classification-metrics} summarize the overall classification performance.
 Across all evaluation metrics, the same ranking of approaches is observed.
 From best to worst, the approaches are ranked as follows: trees, images, vector sets, and invariants.
 Based on these results, the tree-based approach can be regarded as the dominant approach for the classification task. 
@@ -395,10 +395,9 @@ Based on these results, the tree-based approach can be regarded as the dominant 
 Nevertheless, the other approaches may still achieve sufficiently high performance for practical application, depending on the specific requirements of a given use case.
 In particular, they may be preferable if other factors, such as computational efficiency, implementation complexity, or data availability, outweigh the observed loss in prediction quality.
 
+% Classification metrics: Plot and table
 \begin{figure*}[t]\vspace*{4pt}
-%\centerline{\includegraphics{fx1}\hspace*{5mm}\includegraphics{fx1}}
-%\centerline{\includegraphics{gr1}}
-\missingfigure{classification metrics}
+\centerline{\includegraphics[width=0.9\textwidth]{../figures/classification_metrics_plot.png}}
 \caption{Classification Metrics: Comparison of the different approaches in terms of overall Accuracy and macro-averaged F1-Score, Recall and Precision. The tree representation and associated tree-LSTM model is dominating the others across all metrics.}
 \label{fig:classification-metrics}
 \end{figure*}
@@ -421,30 +420,78 @@ In particular, they may be preferable if other factors, such as computational ef
 \end{tabular*}
 \end{table}
 
-Figure X-Y \iltodo{reference confusion matrices}show the confusion matrices for all approaches.
+\Cref{fig:confusion-matrix-trees,fig:confusion-matrix-images,fig:confusion-matrix-invariants,fig:confusion-matrix-vecset,fig:confusion-matrix-voxels} show the confusion matrices for all approaches.
 Each one manages to recognize most classes with accuracies close to one.
 Considering the overall classification metrics this was to be expected.
 Concurrently the image, invariant and tree approach each fails to recognize one class correctly entierely.
 The tree approach for instances confuses all bearings with washers. At the time of writing no hypothesis has been formed why this might be the case.
 
-\missingfigure{confusion matrices}
+% Confusion matrices
+\begin{figure*}[t]\vspace*{4pt}
+\centerline{\includegraphics[width=0.9\textwidth]{../figures/confusion_matrix_trees.png}}
+\caption{Confusion Matrix for the tree-based approach.}
+\label{fig:confusion-matrix-trees}
+\end{figure*}
+
+\begin{figure*}[t]\vspace*{4pt}
+\centerline{\includegraphics[width=0.9\textwidth]{../figures/confusion_matrix_images.png}}
+\caption{Confusion Matrix for the image-based approach.}
+\label{fig:confusion-matrix-images}
+\end{figure*}
+
+\begin{figure*}[t]\vspace*{4pt}
+\centerline{\includegraphics[width=0.9\textwidth]{../figures/confusion_matrix_invariants.png}}
+\caption{Confusion Matrix for the invariant-based approach.}
+\label{fig:confusion-matrix-invariants}
+\end{figure*}
+
+\begin{figure*}[t]\vspace*{4pt}
+\centerline{\includegraphics[width=0.9\textwidth]{../figures/confusion_matrix_vecsets.png}}
+\caption{Confusion Matrix for the vector-based approach.}
+\label{fig:confusion-matrix-vecset}
+\end{figure*}
+
+\begin{figure*}[t]\vspace*{4pt}
+\centerline{\includegraphics[width=0.9\textwidth]{../figures/confusion_matrix_voxels.png}}
+\caption{Confusion Matrix for the voxel-based approach.}
+\label{fig:confusion-matrix-voxels}
+\end{figure*}
+\clearpage
 
 \subsection{Regression}\label{sec:results-regression}
-Figure X \iltodo{reference violin plot} shows the distributions of the absolute errors for the regression target quantities relative to their target values.
+\Cref{fig:error-distributions}  shows the distributions of the absolute errors for the regression target quantities relative to their target values.
 It should be noted that the displayed violin areas are affected by the logarithmic scale and are therefore not directly comparable in terms of absolute area.
 
 As in the classification task, the tree-based approach achieves the best overall performance compared with the other approaches.
-This conclusion is also supported by the mean absolute error, mean squared error, and R2-score, which are shown in Figures X–Y. \iltodo[]{reference regression metrics}
+This conclusion is also supported by the mean absolute error, mean squared error, and R2-score, which are shown in \cref{fig:mean-absolute-errors,fig:mean-squared-errors,fig:r2-scores}.
 
-\missingfigure{violinplot}
+% Plots for error distributions
+\begin{figure*}[t]\vspace*{4pt}
+\centerline{\includegraphics[width=0.9\textwidth]{../figures/error_distributions.png}}
+\caption{Violinplot of Error Distributions:
+Each subplot shows the distributions of the relative absolute errors for one of the regressions features and for each approach considered.
+Median and mean values are provided for each distribution.}
+\label{fig:error-distributions}
+\end{figure*}
 
-Caption:  
-Violinplot of Error Distributions: Each subplot shows the distributions of the relative absolute errors for one of the regressions features and for each approach considered. Median and mean values are provided for each distribution. Overall, the tree approach achieves the best performance. 
+% Plots for regression metrics: MAE, MSE and R2
+\begin{figure*}[t]\vspace*{4pt}
+\centerline{\includegraphics[width=0.9\textwidth]{../figures/regression_metrics_mae_plot.png}}
+\caption{Mean Absolute Errors: The plot shows the mean absolute errors for each regression target and approach.}
+\label{fig:mean-absolute-errors}
+\end{figure*}
 
-\missingfigure{MAE, MSE, R2}
+\begin{figure*}[t]\vspace*{4pt}
+\centerline{\includegraphics[width=0.9\textwidth]{../figures/regression_metrics_mse_plot.png}}
+\caption{Mean Squared Errors: The plot shows the mean squared errors for each regression target and approach.}
+\label{fig:mean-squared-errors}
+\end{figure*}
 
-Caption: 
-Regression Metrics: MAE, MSE and R² for each regression target and approach. For each combination of error type and regression target the best performing approach is highlighted in orange color. The tree approach achieves the best results for each target / error type combination. 
+\begin{figure*}[t]\vspace*{4pt}
+\centerline{\includegraphics[width=0.9\textwidth]{../figures/regression_metrics_r2_plot.png}}
+\caption{R² Scores: The plot shows the R² scores for each regression target and approach.}
+\label{fig:r2-scores}
+\end{figure*}
 
 \section{Conclusion and Future Works}\label{sec:conclusion-and-future-works}
 We compared three machine learning approaches for CAD model analysis.
