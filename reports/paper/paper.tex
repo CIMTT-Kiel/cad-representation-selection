@@ -387,7 +387,7 @@ In addition, overarching conclusions are drawn to identify the most favorable ap
 
 \subsection{Classification}\label{sec:results-classification}
 
-Figure X and Table X \iltodo{} summarize the overall classification performance.
+\Cref{fig:classification-metrics} and \cref{tab:classification-metrics} summarize the overall classification performance.
 Across all evaluation metrics, the same ranking of approaches is observed.
 From best to worst, the approaches are ranked as follows: trees, images, vector sets, and invariants.
 Based on these results, the tree-based approach can be regarded as the dominant approach for the classification task. 
@@ -420,7 +420,7 @@ In particular, they may be preferable if other factors, such as computational ef
 \end{tabular*}
 \end{table}
 
-Figure X-Y \iltodo{reference confusion matrices}show the confusion matrices for all approaches.
+\Cref{fig:confusion-matrix-trees,fig:confusion-matrix-images,fig:confusion-matrix-invariants,fig:confusion-matrix-vecset,fig:confusion-matrix-voxels} show the confusion matrices for all approaches.
 Each one manages to recognize most classes with accuracies close to one.
 Considering the overall classification metrics this was to be expected.
 Concurrently the image, invariant and tree approach each fails to recognize one class correctly entierely.
@@ -458,11 +458,11 @@ The tree approach for instances confuses all bearings with washers. At the time 
 \clearpage
 
 \subsection{Regression}\label{sec:results-regression}
-Figure X \iltodo{reference violin plot} shows the distributions of the absolute errors for the regression target quantities relative to their target values.
+\Cref{fig:error-distributions}  shows the distributions of the absolute errors for the regression target quantities relative to their target values.
 It should be noted that the displayed violin areas are affected by the logarithmic scale and are therefore not directly comparable in terms of absolute area.
 
 As in the classification task, the tree-based approach achieves the best overall performance compared with the other approaches.
-This conclusion is also supported by the mean absolute error, mean squared error, and R2-score, which are shown in Figures X–Y. \iltodo[]{reference regression metrics}
+This conclusion is also supported by the mean absolute error, mean squared error, and R2-score, which are shown in \cref{fig:mean-absolute-errors,fig:mean-squared-errors,fig:r2-scores}.
 
 % Plots for error distributions
 \begin{figure*}[t]\vspace*{4pt}
