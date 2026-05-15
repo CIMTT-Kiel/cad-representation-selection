@@ -398,10 +398,6 @@ Based on these results, the tree-based approach can be regarded as the dominant 
 Nevertheless, the other approaches may still achieve sufficiently high performance for practical application, depending on the specific requirements of a given use case.
 In particular, they may be preferable if other factors, such as computational efficiency, implementation complexity, or data availability, outweigh the observed loss in prediction quality.
 
-
-\todo[inline]{add table with classifiaction metrics}
-
-
 \begin{table}[h]
 \caption{Classification Metrics: Listing of classification metric values as visualised in \cref{fig:classification-metrics}. The highest value per metric is highlighted in bold font.}
 \label{tab:classification-metrics}
@@ -409,10 +405,11 @@ In particular, they may be preferable if other factors, such as computational ef
 \toprule
     Model & Accuracy & F1-Score & Recall & Precision \\
     \hline
-    Vecset & 0 & 0 & 0 & 0 \\
-    Trees & 0 & 0 & 0 & 0 \\
-    Images & 0 & 0 & 0 & 0 \\
-    Invariants & 0 & 0 & 0 & 0 \\
+    Vecsets     & 0.9548            & 0.9531            & \textbf{0.9605}   & 0.9501 \\
+    Trees       & \textbf{0.9747}   & \textbf{0.9567}   & 0.9583            & \textbf{0.9571} \\
+    Images      & 0.9571            & 0.9478            & 0.9540            & 0.9481 \\
+    Invariants  & 0.7545            & 0.8069            & 0.8255            & 0.8270 \\
+    Voxel       & 0.8935            & 0.8813            & 0.8869            & 0.8928 \\
 \botrule
 \end{tabular*}
 \end{table}

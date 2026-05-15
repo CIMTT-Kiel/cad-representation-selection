@@ -18,6 +18,7 @@
 *.blg
 *.bbl
 *.synctex.gz
+*.pdf
 
 # === Boiler Plate entries ===
 
