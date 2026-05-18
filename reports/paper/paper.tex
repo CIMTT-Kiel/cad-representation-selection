@@ -210,13 +210,12 @@ CAD; 3D Model Representation; Machine Learning; Classification; Regression; Comp
 
 %\enlargethispage{-7mm}
 \section{Introduction}\label{sec:Introduction}
-\iltodo{Add link to the code repository?}
 A wide variety of machine learning (ML) architectures have been developed to handle the many possible representations of geometric data.
 Each representation requires its custom ML architecture to be processible in the first place.
 This means that a variety of representations and their corresponding model layout must be compared when developing a new application to determine the most suitable one. 
 
 Geometric data can be conveyed using a variety of representations.
-These include multi-view images \cite{kanezaki2018rotationnet}, voxels \cite{liu2019point-voxel}, \cite{wang2019normalnet}, meshes \todo[inline]{referenz einfügen}(quelle?)  and graphs \cite{miles2023recursive}, among others.
+These include multi-view images \cite{kanezaki2018rotationnet}, voxels \cite{liu2019point-voxel,wang2019normalnet}, point clouds \cite{qi2016pointnet}, meshes \cite{pernot2015thin} and graphs \cite{miles2023recursive}, among others.
 The different representations of essentially the same information require the use of a variety of ML-based approaches for CAD data analysis. 
 
 Unfortunately, each representation has its own advantages and disadvantages.
@@ -229,7 +228,6 @@ All ML models will be trained and tested on the same data sets.
 As such, we used the Fabwave dataset \cite{starly2019fabwave} and preprocessed its data for comparison among the different approaches. 
 
 Our contributions include: 
-
 \begin{itemize}
   \item Comparison of four different CAD model representation forms including; dimensionless invariants, trees based on STEP files, multi-view images and vector sets.
   \item Performance comparison of data representation and ML model combinations in terms of classification of real engineering parts. 
@@ -263,7 +261,7 @@ If the number of views is too limited, relevant geometric features may not be ca
 This challenge is particularly pronounced for internal features, which cannot be observed from external viewpoints alone.
 Although this limitation can be mitigated by incorporating cross-sectional images taken at multiple slice positions, doing so significantly increases the number of required images and, consequently, the computational cost.Therefore, an appropriate balance must be found between representational fidelity and computational efficiency. 
 
-Several prior studies have employed image-based approaches for CAD model analysis \cite{kanezaki2018rotationnet}. \iltodo{weitere quellen hinzufügen.}
+Several prior studies have employed image-based approaches for CAD model analysis \cite{kanezaki2018rotationnet,li2023multi}. 
 
 \subsubsection{Tree Data Structure}\label{sec:CAD-Representations-Tree}
 Miles et al. emphasize that B-Rep models possess an inherent hierarchical structure.
@@ -272,7 +270,7 @@ Based on this property, topological entities such as vertices, edges, and faces 
 Such a representation is well suited for the application of graph neural networks to CAD models. \cite{miles2023recursive}
 
 \subsubsection{Dimensionless Invariants}\label{sec:CAD-Representations-Dimensionless-Invariants}
-Another approach to obtain an encoding vector was introduced by Kaiser et. al. based on the Pi-Theorem \iltodo[]{quelle fixen}%\cite{kaiser2018automated}.
+Another approach to obtain an encoding vector was introduced by Kaiser et. al. based on the Pi-Theorem \cite{kaiser2018automated}.
 They argue that any three-dimensional body can be described by a set of dimensionless invariants.
 To derive them from a CAD model the model first is meshed and statistical moments on the mesh are calculated.
 Then the invariants are derived from these moments via the Buckingham Pi-theorem.
@@ -286,7 +284,7 @@ Combined with recent advances in mesh-generation algorithms, this suggests stron
 
 \subsubsection{Vecset}\label{sec:CAD-Representations-Vecset}
 Recent advances in 3D representation learning have explored a range of approaches.
-While classical methods rely on explicit representations such as meshes \iltodo{welche Referenz genau?} [Garland and Heckbert 1997] or rasterized Structures like Voxel \cite{wang2019normalnet} or Octrees \todo{quelle einfügen}, the geometric neural field approach \cite{zhchen2019learning,park2019deepsdf} encodes shapes as continuous functions represented by the network itself.
+While classical methods rely on explicit representations such as meshes \iltodo{welche Referenz genau?} [Garland and Heckbert 1997] or rasterized structures like voxel \cite{wang2019normalnet} or octrees \cite{tang1992octree}, the geometric neural field approach \cite{chen2019learning,park2019deepsdf} encodes shapes as continuous functions represented by the network itself.
 This leads to a high training effort for large amounts of data and to a lack of a regularized latent representation, due to the separately trained and thereby shape-specific networks.
 To bridge this gap, 3DShape2VecSet \cite{zhang20233dshape2vecset} introduces a hybrid approach that represents shapes as sets of latent vectors (VecSets), thereby decoupling shape-specific information into learnable vector sets while maintaining a single network across all shapes.
 It employs cross-attention mechanisms to query spatial coordinates, achieving a compact yet expressive shape encoding.
