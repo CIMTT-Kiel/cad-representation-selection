@@ -210,13 +210,12 @@ CAD; 3D Model Representation; Machine Learning; Classification; Regression; Comp
 
 %\enlargethispage{-7mm}
 \section{Introduction}\label{sec:Introduction}
-\iltodo{Add link to the code repository?}
 A wide variety of machine learning (ML) architectures have been developed to handle the many possible representations of geometric data.
 Each representation requires its custom ML architecture to be processible in the first place.
 This means that a variety of representations and their corresponding model layout must be compared when developing a new application to determine the most suitable one. 
 
 Geometric data can be conveyed using a variety of representations.
-These include multi-view images \cite{kanezaki2018rotationnet}, voxels \cite{liu2019point-voxel}, \cite{wang2019normalnet}, meshes \todo[inline]{referenz einfügen}(quelle?)  and graphs \cite{miles2023recursive}, among others.
+These include multi-view images \cite{kanezaki2018rotationnet}, voxels \cite{liu2019point-voxel,wang2019normalnet}, point clouds \cite{qi2016pointnet}, meshes \cite{pernot2015thin} and graphs \cite{miles2023recursive}, among others.
 The different representations of essentially the same information require the use of a variety of ML-based approaches for CAD data analysis. 
 
 Unfortunately, each representation has its own advantages and disadvantages.
