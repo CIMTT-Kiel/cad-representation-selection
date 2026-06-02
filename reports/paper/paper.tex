@@ -244,6 +244,9 @@ Finally, \cref{sec:conclusion-and-future-works} provides a conclusion and lists 
 \section{Related Work}\label{sec:Related-Work}
 As we aim to determine the best pair of CAD model representation and ML architecture, we lay out the different representation schemes and ML architectures considered.
 
+Note that these do not encompass all available approaches, but rather a selection of promising methods.
+Other approaches the reader may be interested in include \textit{UV-Net} \cite{jayaraman2021uv}, \textit{PointNet} \cite{qi2016pointnet} and \textit{MeshCNN} \cite{hanocka2019meshcnn}, among others.
+
 \subsection{Representation of 3D CAD Models for Processing via Machine Learning Models}\label{sec:CAD-Representations}
 Research on 3D data representations for machine learning has explored a wide range of approaches.
 These include point clouds, pure primitive instancing, cell decomposition (meshes), constructive solid geometry, sweep representations and boundary representations (B-Rep) \cite{requicha1980representations}.
@@ -275,13 +278,15 @@ Another approach to obtain an encoding vector was introduced by Kaiser et. al. b
 They argue that any three-dimensional body can be described by a set of dimensionless invariants.
 To derive them from a CAD model the model first is meshed and statistical moments on the mesh are calculated.
 Then the invariants are derived from these moments via the Buckingham Pi-theorem.
+
 These features are inherently invariant under translations but not to rotation.
 To establish a meaningful connection between feature vectors across different geometries, it is necessary to ensure uniform orientation and mesh normalization.
 With these regularized feature vectors, morphological similarity can be reduced to a distance metric but entails a loss of topological and absolute scale information.
+
 Additionally, the quality of the results is strongly influenced by the mesh quality.
 The automated meshing of large datasets with variable geometric characteristics represents a notable limitation of this approach.
+
 Nevertheless, the compact vectors offer a key advantage, enabling highly efficient storage and retrieval at scale.
-Combined with recent advances in mesh-generation algorithms, this suggests strong potential to further improve robustness.  
 
 \subsubsection{Vecset}\label{sec:CAD-Representations-Vecset}
 Recent advances in 3D representation learning have explored a range of approaches.
