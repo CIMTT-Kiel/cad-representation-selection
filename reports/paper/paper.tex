@@ -216,17 +216,17 @@ Each representation requires its custom ML architecture to be processible in the
 This means that a variety of representations and their corresponding model layout must be compared when developing a new application to determine the most suitable one. 
 
 Geometric data can be conveyed using a variety of representations.
-These include multi-view images \cite{kanezaki2018rotationnet}, voxels \cite{liu2019point-voxel,wang2019normalnet}, point clouds \cite{qi2016pointnet}, meshes \cite{pernot2015thin} and graphs \cite{miles2023recursive}, among others.
+These include multi-view images~\cite{kanezaki2018rotationnet}, voxels~\cite{liu2019point-voxel,wang2019normalnet}, point clouds~\cite{qi2016pointnet}, meshes~\cite{pernot2015thin} and graphs~\cite{miles2023recursive}, among others.
 The different representations of essentially the same information require the use of a variety of ML-based approaches for CAD data analysis. 
 
 Unfortunately, each representation has its own advantages and disadvantages.
 Voxels for instance limit the maximum resolution of CAD models due to a cubic increase in voxel number and limited computing resources.
 This makes it challenging to choose the best representation form and associated ML model for a given task.
 To help guide the decision on which data representation form to use, we compare four promising machine learning approaches, each using a distinct 3D data representation.
-By comparing these approaches on general CAD attributes - i.e., not specific to most production use cases - we show which ML model, along with its input data representation, can be expected to perform well across many applications.  
+By comparing these approaches on general CAD attributes---i.e., not specific to most production use cases---we show which ML model, along with its input data representation, can be expected to perform well across many applications.
 
 All ML models will be trained and tested on the same data sets.
-As such, we used the Fabwave dataset \cite{starly2019fabwave} and preprocessed its data for comparison among the different approaches. 
+As such, we used the Fabwave dataset~\cite{starly2019fabwave} and preprocessed its data for comparison among the different approaches. 
 
 Our contributions include: 
 \begin{itemize}
@@ -245,11 +245,11 @@ Finally, \cref{sec:conclusion-and-future-works} provides a conclusion and lists 
 As we aim to determine the best pair of CAD model representation and ML architecture, we lay out the different representation schemes and ML architectures considered.
 
 Note that these do not encompass all available approaches, but rather a selection of promising methods.
-Other approaches the reader may be interested in include \textit{UV-Net} \cite{jayaraman2021uv}, \textit{PointNet} \cite{qi2016pointnet} and \textit{MeshCNN} \cite{hanocka2019meshcnn}, among others.
+Other approaches the reader may be interested in include \textit{UV-Net}~\cite{jayaraman2021uv}, \textit{PointNet}~\cite{qi2016pointnet} and \textit{MeshCNN}~\cite{hanocka2019meshcnn}, among others.
 
 \subsection{Representation of 3D CAD Models for Processing via Machine Learning Models}\label{sec:CAD-Representations}
 Research on 3D data representations for machine learning has explored a wide range of approaches.
-These include point clouds, pure primitive instancing, cell decomposition (meshes), constructive solid geometry, sweep representations and boundary representations (B-Rep) \cite{requicha1980representations}.
+These include point clouds, pure primitive instancing, cell decomposition (meshes), constructive solid geometry, sweep representations and boundary representations (B-Rep)~\cite{requicha1980representations}.
 While each of these representation schemes serves certain use cases, they are not necessarily directly processable by a given machine learning model.
 To address this issue multiple techniques have also been developed to derive a data structure from the CAD-model that conveys the topological and geometric information in a way that machine learning models can process.
 For this work five such techniques were utilized.
@@ -272,16 +272,16 @@ If the number of views is too limited, relevant geometric features may not be ca
 This challenge is particularly pronounced for internal features, which cannot be observed from external viewpoints alone.
 Although this limitation can be mitigated by incorporating cross-sectional images taken at multiple slice positions, doing so significantly increases the number of required images and, consequently, the computational cost.Therefore, an appropriate balance must be found between representational fidelity and computational efficiency. 
 
-Several prior studies have employed image-based approaches for CAD model analysis \cite{kanezaki2018rotationnet,li2023multi}. 
+Several prior studies have employed image-based approaches for CAD model analysis~\cite{kanezaki2018rotationnet,li2023multi}. 
 
 \subsubsection{Tree Data Structure}\label{sec:CAD-Representations-Tree}
 Miles et al.\ emphasize that B-Rep models possess an inherent hierarchical structure.
 For instance, a line is defined by a point and a direction vector.
 Based on this property, topological entities such as vertices, edges, and faces can be modeled as a graph, with geometric information incorporated through coordinate-based attributes.
-Such a representation is well suited for the application of graph neural networks to CAD models. \cite{miles2023recursive}
+Such a representation is well suited for the application of graph neural networks to CAD models.~\cite{miles2023recursive}
 
 \subsubsection{Dimensionless Invariants}\label{sec:CAD-Representations-Dimensionless-Invariants}
-Another approach to obtain an encoding vector was introduced by Kaiser et. al. based on the Pi-Theorem \cite{kaiser2018automated}.
+Another approach to obtain an encoding vector was introduced by Kaiser et al.\ based on the Pi-Theorem~\cite{kaiser2018automated}.
 They argue that any three-dimensional body can be described by a set of dimensionless invariants.
 To derive them from a CAD model the model first is meshed and statistical moments on the mesh are calculated.
 Then the invariants are derived from these moments via the Buckingham Pi-theorem.
@@ -297,11 +297,11 @@ Nevertheless, the compact vectors offer a key advantage, enabling highly efficie
 
 \subsubsection{Vecset}\label{sec:CAD-Representations-Vecset}
 Recent advances in 3D representation learning have explored a range of approaches.
-While classical methods rely on explicit representations such as meshes \cite{bronstein2009discrete} or rasterized structures like voxel \cite{wang2019normalnet} or octrees \cite{tang1992octree}, the geometric neural field approach \cite{chen2019learning,park2019deepsdf} encodes shapes as continuous functions represented by the network itself.
+While classical methods rely on explicit representations such as meshes~\cite{bronstein2009discrete} or rasterized structures like voxel~\cite{wang2019normalnet} or octrees~\cite{tang1992octree}, the geometric neural field approach~\cite{chen2019learning,park2019deepsdf} encodes shapes as continuous functions represented by the network itself.
 This leads to a high training effort for large amounts of data and to a lack of a regularized latent representation, due to the separately trained and thereby shape-specific networks.
-To bridge this gap, 3DShape2VecSet \cite{zhang20233dshape2vecset} introduces a hybrid approach that represents shapes as sets of latent vectors (VecSets), thereby decoupling shape-specific information into learnable vector sets while maintaining a single network across all shapes.
+To bridge this gap, 3DShape2VecSet~\cite{zhang20233dshape2vecset} introduces a hybrid approach that represents shapes as sets of latent vectors (VecSets), thereby decoupling shape-specific information into learnable vector sets while maintaining a single network across all shapes.
 It employs cross-attention mechanisms to query spatial coordinates, achieving a compact yet expressive shape encoding.
-This design enables efficient integration with generative models, particularly diffusion models \cite{zhang20233dshape2vecset}, allowing for tasks such as unconditional generation, text-conditioned synthesis, and shape completion.  
+This design enables efficient integration with generative models, particularly diffusion models~\cite{zhang20233dshape2vecset}, allowing for tasks such as unconditional generation, text-conditioned synthesis, and shape completion.  
 
 \subsection{Architecture of Machine Learning Models for CAD Model Processing}\label{sec:ML-Architectures}
 Different CAD model representations require different machine learning architectures.
@@ -317,7 +317,7 @@ For example, they are commonly used as prediction heads, where they take the out
 In this capacity, MLPs are also used as components of the other architectures evaluated in this paper. 
 
 \subsubsection{Child-Sum-Tree-LSTM}\label{sec:ML-Architectures-TreeLSTM}
-Miles et al. used a Child-Sum Tree-LSTM to generate encoding vectors for CAD models \cite{miles2023recursive}.
+Miles et al.\ used a Child-Sum Tree-LSTM to generate encoding vectors for CAD models~\cite{miles2023recursive}.
 The model recursively traverses the tree structure of the CAD representation and computes, at each node, an encoding vector for the corresponding topological entity.
 This computation incorporates both the entity type represented by the node and the encodings of its child nodes.
 Through this recursive aggregation, the Tree-LSTM produces a single encoding vector for the entire CAD model, which can subsequently be used as input to a range of downstream machine-learning models.
@@ -334,7 +334,7 @@ In contrast to YOLO, which operates on a single input image, multi-view architec
 
 \section{Methodology}\label{sec:Methodology}
 \subsection{Data Set}\label{sec:Methodology-Data-Set}
-We use the FabWave dataset \cite{starly2019fabwave} to benchmark the proposed models.
+We use the FabWave dataset~\cite{starly2019fabwave} to benchmark the proposed models.
 The dataset contains a broad range of CAD models, predominantly representing mechanical components.
 In its original form, it comprises more than 4,000 parts in STEP format assigned to 44 object categories.
 
@@ -445,14 +445,14 @@ This conclusion is also supported by the mean absolute error, mean squared error
 
 \section{Conclusion and Future Works}\label{sec:conclusion-and-future-works}
 We compared three machine learning approaches for CAD model analysis.
-Each approach was evaluated on the FabWave dataset \cite{starly2019fabwave} using a classification task with high class diversity, as well as several abstract regression tasks.
+Each approach was evaluated on the FabWave dataset~\cite{starly2019fabwave} using a classification task with high class diversity, as well as several abstract regression tasks.
 
 The results show that the combination of tree-structured STEP file representations and a Tree-LSTM model, as proposed by Miles, achieved the best performance across all evaluated tasks.
 We therefore conclude that this method provides a promising starting point for more specialized CAD model analysis applications.
 Nevertheless, the other approaches produced comparable results in some cases and may also be suitable, particularly when considerations other than predictive performance favor them over the tree-based approach.
 
 Future work should investigate the performance of the tree-based method on additional datasets.
-In particular, constructing datasets with more abstract learning tasks could help further demonstrate the model’s general applicability. 
+In particular, constructing datasets with more abstract learning tasks could help further demonstrate the model's general applicability. 
 
 The generalization capabilities of the evaluated methods could also be explored by incorporating additional features into the comparison, such as bounding-box dimensions, surface-to-volume ratio, or shape complexity.
 
