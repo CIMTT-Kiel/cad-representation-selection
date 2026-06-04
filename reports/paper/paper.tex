@@ -252,9 +252,16 @@ Research on 3D data representations for machine learning has explored a wide ran
 These include point clouds, pure primitive instancing, cell decomposition (meshes), constructive solid geometry, sweep representations and boundary representations (B-Rep) \cite{requicha1980representations}.
 While each of these representation schemes serves certain use cases, they are not necessarily directly processable by a given machine learning model.
 To address this issue multiple techniques have also been developed to derive a data structure from the CAD-model that conveys the topological and geometric information in a way that machine learning models can process.
-For this work four such techniques were utilized.
+For this work five such techniques were utilized.
 Each one will be laid out in detail next.
 To the best of our knowledge these representation techniques of 3D data have not been compared to each other in terms of a geometry analysis use case. 
+
+\subsubsection{Voxels}\label{sec:CAD-Representations-Voxels}
+Representing 3D data as voxels is the least complex form of cell decomposition.
+Here, the 3D space is discretized into a regular grid of cubic cells, where each cell (voxel) is assigned a binary value indicating whether it is occupied by the object or not.
+This representation can be directly processed by convolutional neural networks (CNNs).
+
+One disadvantage of voxel representations is that they can require a large amount of memory, especially for high-resolution models, due to the cubic growth in the number of voxels with increasing resolution. This can lead to computational inefficiency and may limit the level of detail that can be captured in the model.~\cite{requicha1980representations}
 
 \subsubsection{Images}\label{sec:CAD-Representations-Images}
 CAD models can be converted into image sets for processing by machine learning models.
@@ -268,7 +275,7 @@ Although this limitation can be mitigated by incorporating cross-sectional image
 Several prior studies have employed image-based approaches for CAD model analysis \cite{kanezaki2018rotationnet,li2023multi}. 
 
 \subsubsection{Tree Data Structure}\label{sec:CAD-Representations-Tree}
-Miles et al. emphasize that B-Rep models possess an inherent hierarchical structure.
+Miles et al.\ emphasize that B-Rep models possess an inherent hierarchical structure.
 For instance, a line is defined by a point and a direction vector.
 Based on this property, topological entities such as vertices, edges, and faces can be modeled as a graph, with geometric information incorporated through coordinate-based attributes.
 Such a representation is well suited for the application of graph neural networks to CAD models. \cite{miles2023recursive}
@@ -316,12 +323,14 @@ This computation incorporates both the entity type represented by the node and t
 Through this recursive aggregation, the Tree-LSTM produces a single encoding vector for the entire CAD model, which can subsequently be used as input to a range of downstream machine-learning models.
 
 \subsubsection{Convolutional Neural Network}\label{sec:ML-Architectures-CNN}
-Convolutional neural networks (CNNs) are widely used machine-learning architectures for image-processing tasks.
-They are typically composed of convolutional and pooling layers, which extract local features from an image.
-These features are then commonly passed to a multi-layer perceptron (MLP), which produces the final prediction \cite{james2013introduction}. 
+Convolutional neural networks (CNNs) are a class of \mbox{machine-learning} architectures widely employed in \mbox{image-processing} tasks.
+They typically comprise convolutional and pooling layers that learn local image features.
+These features are subsequently passed to a multi-layer perceptron (MLP), which generates the final prediction~\cite{james2013introduction}.
 
-Pretrained models such as YOLO are widely used for object detection and image classification \cite{redmon2016you}.
-Whereas YOLO processes a single image as input, other architectures, such as RotationNet, process multiple images to generate a single prediction \cite{kanezaki2018rotationnet}.
+As voxel representations (see \cref{sec:CAD-Representations-Voxels}) are defined on regular grid structures, \mbox{3D-CNNs} can be applied to such representations directly.
+
+Pretrained architectures such as YOLO are commonly used for object detection and image classification~\cite{redmon2016you}.
+In contrast to YOLO, which operates on a single input image, multi-view architectures such as RotationNet process multiple images to produce a single prediction~\cite{kanezaki2018rotationnet}.
 
 \section{Methodology}\label{sec:Methodology}
 \subsection{Data Set}\label{sec:Methodology-Data-Set}
