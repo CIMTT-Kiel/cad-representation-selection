@@ -183,7 +183,7 @@
 %% Text of abstract
 Selecting an appropriate representation for CAD data processing remains a fundamental challenge, as it requires balancing geometric accuracy with computational efficiency for downstream tasks.
 While representations such as voxels, point clouds, and meshes have been extensively studied in the context of 3D machine learning, representations such as dimensionless invariants, STEP file-based trees, and vector sets represent comparatively recent approaches, each rooted in a distinct and widely adopted paradigm — descriptors, graphs, and neural fields, respectively.
-This paper presents a structured comparison of these approaches, including multi-view images as a strong baseline, evaluating them on classification and regression tasks using the FabWave dataset.
+This paper presents a structured comparison of these approaches, including multi-view images as a strong baseline, evaluating them on classification and regression tasks using the \textit{FabWave} dataset.
 The authors aim to characterize the strengths and limitations of each approach, providing actionable guidance on selecting a representation suited to specific tasks.
 \end{abstract}
 
@@ -226,7 +226,7 @@ To help guide the decision on which data representation form to use, we compare 
 By comparing these approaches on general CAD attributes---i.e., not specific to most production use cases---we show which ML model, along with its input data representation, can be expected to perform well across many applications.
 
 All ML models will be trained and tested on the same data sets.
-As such, we used the Fabwave dataset~\cite{starly2019fabwave} and preprocessed its data for comparison among the different approaches. 
+As such, we used the \textit{FabWave} dataset~\cite{starly2019fabwave} and preprocessed its data for comparison among the different approaches. 
 
 Our contributions include: 
 \begin{itemize}
@@ -330,7 +330,7 @@ These features are subsequently passed to a multi-layer perceptron (MLP), which 
 As voxel representations (see \cref{sec:CAD-Representations-Voxels}) are defined on regular grid structures, \mbox{3D-CNNs} can be applied to such representations directly.
 
 Pretrained architectures such as YOLO are commonly used for object detection and image classification~\cite{redmon2016you}.
-In contrast to YOLO, which operates on a single input image, multi-view architectures such as RotationNet process multiple images to produce a single prediction~\cite{kanezaki2018rotationnet}.
+In contrast to YOLO, which operates on a single input image, multi-view architectures such as \textit{RotationNet}~\cite{kanezaki2018rotationnet} process multiple images to produce a single prediction.
 
 \section{Methodology}\label{sec:Methodology}
 \subsection{Data Set}\label{sec:Methodology-Data-Set}
