@@ -298,6 +298,7 @@ Nevertheless, the compact vectors offer a key advantage, enabling highly efficie
 Recent advances in 3D representation learning have explored a range of approaches.
 While classical methods rely on explicit representations such as meshes~\cite{bronstein2009discrete} or rasterized structures like voxel~\cite{wang2019normalnet} or octrees~\cite{tang1992octree}, the geometric neural field approach~\cite{chen2019learning,park2019deepsdf} encodes shapes as continuous functions represented by the network itself.
 This leads to a high training effort for large amounts of data and to a lack of a regularized latent representation, due to the separately trained and thereby shape-specific networks.
+
 To bridge this gap, 3DShape2VecSet~\cite{zhang20233dshape2vecset} introduces a hybrid approach that represents shapes as sets of latent vectors (VecSets), thereby decoupling shape-specific information into learnable vector sets while maintaining a single network across all shapes.
 It employs cross-attention mechanisms to query spatial coordinates, achieving a compact yet expressive shape encoding.
 This design enables efficient integration with generative models, particularly diffusion models~\cite{zhang20233dshape2vecset}, allowing for tasks such as unconditional generation, text-conditioned synthesis and shape completion.  
