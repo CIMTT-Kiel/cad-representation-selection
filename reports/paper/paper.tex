@@ -289,8 +289,9 @@ These features are inherently invariant to translations, but not to rotations.
 To establish a meaningful connection between feature vectors across different geometries, it is necessary to ensure uniform orientation and mesh normalization.
 With these regularized feature vectors, morphological similarity can be reduced to a distance metric but entails a loss of topological and absolute scale information.
 
-Additionally, the quality of the results is strongly influenced by the mesh quality.
-The automated meshing of large datasets with variable geometric characteristics represents a notable limitation of this approach.
+Additionally, the quality of the results is strongly influenced by the quality of the mesh.
+Automated meshing of large datasets with variable geometric characteristics represents a notable limitation of this approach.
+The meshing process may fail altogether for certain geometries or it may require part-specific considerations regarding geometry and function in order to obtain a high-quality mesh.
 
 Nevertheless, the compact vectors offer a key advantage, enabling highly efficient storage and retrieval at scale.
 
