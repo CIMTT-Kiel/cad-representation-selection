@@ -247,13 +247,12 @@ Note that these do not encompass all available approaches, but rather a selectio
 Other approaches the reader may be interested in include \textit{\mbox{UV-Net}}~\cite{jayaraman2021uv}, \textit{\mbox{PointNet}}~\cite{qi2016pointnet} and \textit{\mbox{MeshCNN}}~\cite{hanocka2019meshcnn}, among others.
 
 \subsection{Representation of 3D CAD Models for Processing via Machine Learning Models}\label{sec:CAD-Representations}
-Research on 3D data representations for machine learning has explored a wide range of approaches.
-These include point clouds, pure primitive instancing, cell decomposition (meshes), constructive solid geometry, sweep representations and boundary representations (B-Rep)~\cite{requicha1980representations}.
-While each of these representation schemes serves certain use cases, they are not necessarily directly processable by a given machine learning model.
-To address this issue multiple techniques have also been developed to derive a data structure from the CAD model that conveys the topological and geometric information in a way that machine learning models can process.
-For this work five such techniques were utilized.
-Each one will be laid out in detail next.
-To the best of our knowledge these representation techniques of 3D data have not been compared to each other in terms of a geometry analysis use case. 
+Research on 3D data representations for machine learning has explored a wide range of approaches, including point clouds, pure primitive instancing, cell decomposition, constructive solid geometry, sweep representations and boundary representations (B-Reps)~\cite{requicha1980representations}.
+Although each representation scheme is suitable for certain use cases, not all of them can be processed directly by a given machine learning model.
+
+To address this limitation, several techniques have been developed to derive machine-learning-compatible data structures from CAD models while preserving relevant topological and geometric information.
+In this work, we utilize five such techniques, each of which is described in detail below.
+To the best of our knowledge, these 3D data representation techniques have not previously been compared with respect to a geometry analysis use case.
 
 \subsubsection{Voxels}\label{sec:CAD-Representations-Voxels}
 Representing 3D data as voxels is the least complex form of cell decomposition.
