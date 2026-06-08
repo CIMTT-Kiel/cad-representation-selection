@@ -343,22 +343,23 @@ Before the dataset could be used for model training and evaluation, extensive pr
 The individual preprocessing steps are described below. 
 
 First, the dataset was filtered.
-Some CAD models contain overlapping or disjoint bodies, which cannot be converted into all representations considered in this work.
+Some CAD models contained overlapping or disjoint bodies, which could not be converted into all representations considered in this work.
 These models were therefore either fused into a single closed shell or removed from the dataset.
 In addition, object classes containing fewer than ten CAD models were excluded. 
 
 Second, the different representations described in \cref{sec:Related-Work} were generated for each remaining CAD model.
-Should this have not been possible for all representations the CAD model was excluded from the data set entirely.
-This ensured that all remaining CAD models in the dataset could be processed by all evaluated approaches, enabling a fair comparison of their performance.
+If a representation could not be generated for a given CAD model, the model was excluded from the dataset entirely.
+This ensured that all remaining CAD models could be processed by all evaluated approaches, enabling a fair comparison of their performance.
 
 Third, the target values were derived for each CAD model.
-These targets include the part class, the volume and the numbers of faces, edges and vertices. 
+These targets included the part class, the volume and the numbers of faces, edges and vertices. 
+For scaling, the natural logarithm was applied to the numerical target values before training the machine learning models.
+
+Fourth, to reduce class imbalance, CAD models were oversampled such that each class contained at least half of the median class size.
 
 Finally, the data splits were prepared.
-To reduce class imbalance, CAD models were oversampled such that each class contained at least half of the median class size.
-The dataset was then divided into training, validation, and test sets.
+The dataset was divided into training, validation, and test sets.
 \Cref{tab:data-splits} provides metadata for each split.
-Finally, the natural logarithm was applied to the numerical target values before training the machine learning models.
 
 \begin{table}[h]
 \caption{Data Splits: Metadata for the training, validation and test splits of the preprocessed dataset.}
