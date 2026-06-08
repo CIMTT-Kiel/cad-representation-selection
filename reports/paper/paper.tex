@@ -223,7 +223,7 @@ The different representations of essentially the same information require the us
 Unfortunately, each representation has its own advantages and disadvantages.
 Voxels for instance limit the maximum resolution of CAD models due to a cubic increase in voxel number and limited computing resources.
 This makes it challenging to choose the best representation form and associated ML model for a given task.
-To help guide the decision on which data representation form to use, we compare four promising machine learning approaches, each using a distinct 3D data representation.
+To help guide the decision on which data representation form to use, we compare five promising machine learning approaches, each using a distinct 3D data representation.
 By comparing these approaches on general CAD attributes---i.e., not specific to most production use cases---we show which ML model, along with its input data representation, can be expected to perform well across many applications.
 
 All ML models will be trained and tested on the same data sets.
@@ -231,7 +231,7 @@ As such, we used the \textit{FabWave} dataset~\cite{starly2019fabwave} and prepr
 
 Our contributions include: 
 \begin{itemize}
-  \item Comparison of four different CAD model representation forms, including dimensionless invariants, trees based on STEP files, multi-view images and vector sets.
+  \item Comparison of five different CAD model representation forms, including dimensionless invariants, trees based on STEP files, multi-view images and vector sets.
   \item Performance comparison of data representation and ML model combinations in terms of classification of real engineering parts. 
   \item Performance comparison of data representation and ml model combinations in terms of regression tasks aiming at predicting basic properties of genuine engineering parts. 
 \end{itemize}
@@ -446,7 +446,7 @@ This conclusion is also supported by the mean absolute error, mean squared error
 
 
 \section{Conclusion and Future Works}\label{sec:conclusion-and-future-works}
-We compared three machine learning approaches for CAD model analysis.
+We compared five machine learning approaches for CAD model analysis.
 Each approach was evaluated on the FabWave dataset~\cite{starly2019fabwave} using a classification task with high class diversity, as well as several abstract regression tasks.
 
 The results show that the combination of tree-structured STEP file representations and a Tree-LSTM model, as proposed by Miles, achieved the best performance across all evaluated tasks.
