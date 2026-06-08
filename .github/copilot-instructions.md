@@ -75,4 +75,10 @@ train:
   optimizer: adam
 ```
 
+### Git Workflow
+- For commit messages, use the format: `<type>: <header>\n\n<body>`, where `<type>` is one of `feat`, `fix`, `style`, `refactor`, `test`, `doc`, `perf`, `chore` or `revert`. For example:
+```feat: Add new data processing pipeline for feature generation
+
+This pipeline converts primary data into feature data, which is then used for model training.```
+
 For further details, refer to the README.md file or the documentation in `reports/`.
