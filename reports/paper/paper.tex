@@ -224,10 +224,8 @@ Unfortunately, each representation has its own advantages and disadvantages.
 Voxels for instance limit the maximum resolution of CAD models due to a cubic increase in voxel number and limited computing resources.
 This makes it challenging to choose the best representation form and associated ML model for a given task.
 To help guide the decision on which data representation form to use, we compare five promising machine learning approaches, each using a distinct 3D data representation.
-By comparing these approaches on general CAD attributes---i.e., not specific to most production use cases---we show which ML model, along with its input data representation, can be expected to perform well across many applications.
 
-All ML models will be trained and tested on the same data sets.
-As such, we used the \textit{FabWave} dataset~\cite{starly2019fabwave} and preprocessed its data for comparison among the different approaches. 
+By comparing these approaches using general CAD attributes—rather than attributes tailored to specific production use cases—we identify which machine learning models, together with their respective input data representations, are likely to perform well across a broad range of applications. To ensure a fair comparison, all models are trained and tested on the same dataset. Specifically, we use the \textit{FabWave} dataset~\cite{starly2019fabwave} and preprocess it to enable comparison across the different approaches.
 
 Our contributions include: 
 \begin{itemize}
