@@ -307,8 +307,8 @@ This design enables efficient integration with generative models, particularly d
 Different CAD model representations require different machine learning architectures.
 This section introduces the architectures considered in this work. 
 
-\subsubsection{Multi-layer Perceptron}\label{sec:ML-Architectures-MLP}
-Multi-layer perceptrons (MLPs), also referred to as feedforward neural networks, are among the most fundamental architectures in deep learning.
+\subsubsection{Multilayer Perceptron}\label{sec:ML-Architectures-MLP}
+Multilayer perceptrons (MLPs), also referred to as feedforward neural networks, are among the most fundamental architectures in deep learning.
 For single-vector inputs, MLPs can be used for both classification and regression.
 In this work, they are therefore employed to make predictions from invariant representations and vector sets. 
 
@@ -325,7 +325,7 @@ Through this recursive aggregation, the Tree-LSTM produces a single encoding vec
 \subsubsection{Convolutional Neural Network}\label{sec:ML-Architectures-CNN}
 Convolutional neural networks (CNNs) are a class of machine learning architectures widely employed in image processing tasks.
 They typically comprise convolutional and pooling layers that learn local image features.
-These features are subsequently passed to a multi-layer perceptron (MLP), which generates the final prediction~\cite{james2013introduction}.
+These features are subsequently passed to a multilayer perceptron (MLP), which generates the final prediction~\cite{james2013introduction}.
 
 As voxel representations (see \cref{sec:CAD-Representations-Voxels}) are defined on regular grid structures, \mbox{3D-CNNs} can be applied to such representations directly.
 
