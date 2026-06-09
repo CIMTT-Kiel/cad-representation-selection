@@ -480,50 +480,49 @@ The authors thank Max Brede for assistance with model implementation.
 The appendix contains all diagrams referenced in \cref{sec:results-and-discussion}.
 
 % Classification metrics plot
-\begin{figure*}[h]\vspace*{4pt}
+\begin{figure*}[h]
 \centerline{\includegraphics[width=0.9\textwidth]{../figures/classification_metrics_plot.png}}
-\caption{Classification Metrics: Comparison of the different approaches in terms of overall accuracy and macro-averaged $F_1$ score, recall and precision. The tree representation and associated Child-Sum Tree-LSTM model is dominating the others across all metrics, except for recall, where the vector set approach performs best.}
+\caption{\textbf{Classification Metrics}\\Comparison of the different approaches in terms of overall accuracy and macro-averaged $F_1$ score, recall and precision. The tree representation and associated Child-Sum Tree-LSTM model is dominating the others across all metrics, except for recall, where the vector set approach performs best.}
 \label{fig:classification-metrics}
 \end{figure*}
 
 % Confusion matrices
 \begin{figure*}[h]\vspace*{4pt}
 \centerline{\includegraphics[width=0.9\textwidth]{../figures/confusion_matrix_trees.png}}
-\caption{Confusion Matrix for the tree-based approach.}
+\caption{\textbf{Confusion Matrix for the tree-based Approach}\\For each part class, the confusion matrix shows the distribution of predicted classes. The tree-based approach predicts most classes with high accuracy, but it confuses all bearings with washers and recognizes only 75\% eyesbolts with shoulders correctly.}
 \label{fig:confusion-matrix-trees}
 \end{figure*}
 
-\begin{figure*}[h]\vspace*{4pt}
+\begin{figure*}[h]
 \centerline{\includegraphics[width=0.9\textwidth]{../figures/confusion_matrix_images.png}}
-\caption{Confusion Matrix for the image-based approach.}
+\caption{\textbf{Confusion Matrix for the image-based Approach}\\For each part class, the confusion matrix shows the distribution of predicted classes. The image-based approach performs reasonably well, but it fails to recognize rotary shafts entirely}
 \label{fig:confusion-matrix-images}
 \end{figure*}
 
-\begin{figure*}[h]\vspace*{4pt}
+\begin{figure*}[h]
 \centerline{\includegraphics[width=0.9\textwidth]{../figures/confusion_matrix_invariants.png}}
-\caption{Confusion Matrix for the invariant-based approach.}
+\caption{\textbf{Confusion Matrix for the invariant-based Approach}\\For each part class, the confusion matrix shows the distribution of predicted classes. Compared to the other approaches, the invariant-based approach performs worse overall, with a significant number of misclassifications across many classes.}
 \label{fig:confusion-matrix-invariants}
 \end{figure*}
 
-\begin{figure*}[h]\vspace*{4pt}
+\begin{figure*}[h]
 \centerline{\includegraphics[width=0.9\textwidth]{../figures/confusion_matrix_vecsets.png}}
-\caption{Confusion Matrix for the vector-based approach.}
+\caption{\textbf{Confusion Matrix for the vector-based Approach}\\For each part class, the confusion matrix shows the distribution of predicted classes. The vector-based approach performs reasonably well for most classes.}
 \label{fig:confusion-matrix-vecset}
 \end{figure*}
 
-\begin{figure*}[t]\vspace*{4pt}
+\begin{figure*}[t]
 \centerline{\includegraphics[width=0.9\textwidth]{../figures/confusion_matrix_voxels.png}}
-\caption{Confusion Matrix for the voxel-based approach.}
+\caption{\textbf{Confusion Matrix for the voxel-based Approach}\\For each part class, the confusion matrix shows the distribution of predicted classes. The voxel-based approach shows reasonable performance across most classes, but yields a significant number of misclassifications for some classes, especially for keyway shafts, rotary shafts and headless screws.}
 \label{fig:confusion-matrix-voxels}
 \end{figure*}
 
 % Error distributions plots
 \begin{figure*}[t]\vspace*{4pt}
 \centerline{\includegraphics[width=0.9\textwidth]{../figures/error_distributions.png}}
-\caption{Violinplot of Error Distributions:
-Each subplot shows the distributions of the relative absolute errors for one of the regressions features and for each approach considered.
+\caption{\textbf{Violinplot of Error Distributions}\\Each subplot shows the distributions of the relative absolute errors for one of the regressions features and for each approach considered.
 Median and mean values are provided for each distribution.
-For each violinplot, the corresponding boxplot is shown as well. The whiskers of the boxplot extend to 1.5 times the interquartile range.}
+For each violinplot, the corresponding boxplot is shown as well. The whiskers of the boxplot extend to 1.5 times the interquartile range. The tree-based approach achieves the best overall performance.}
 \label{fig:error-distributions}
 \end{figure*}
 
@@ -532,19 +531,19 @@ For each violinplot, the corresponding boxplot is shown as well. The whiskers of
 % Plots for regression metrics: MAE, MSE and R2
 \begin{figure*}[t]\vspace*{4pt}
 \centerline{\includegraphics[width=0.9\textwidth]{../figures/regression_metrics_mae_plot.png}}
-\caption{Mean Absolute Errors: The plot shows the mean absolute errors for each regression target and approach.}
+\caption{\textbf{Mean Absolute Errors}\\The plots show the mean absolute errors for each regression target and approach. Except for the volume target, the tree-based approach achieves the best performance across all targets.} 
 \label{fig:mean-absolute-errors}
 \end{figure*}
 
 \begin{figure*}[t]\vspace*{4pt}
 \centerline{\includegraphics[width=0.9\textwidth]{../figures/regression_metrics_mse_plot.png}}
-\caption{Mean Squared Errors: The plot shows the mean squared errors for each regression target and approach.}
+\caption{\textbf{Mean Squared Errors}\\The plots show the mean squared errors for each regression target and approach. Except for the volume target, the tree-based approach achieves the best performance across all targets.}
 \label{fig:mean-squared-errors}
 \end{figure*}
 
 \begin{figure*}[t]\vspace*{4pt}
 \centerline{\includegraphics[width=0.9\textwidth]{../figures/regression_metrics_r2_plot.png}}
-\caption{R² Scores: The plot shows the R² scores for each regression target and approach.}
+\caption{$\mathbf{R^2}$ \textbf{Scores}\\The plots show the $R^2$ scores for each regression target and approach. Except for the volume target, the tree-based approach achieves the best performance across all targets.}
 \label{fig:r2-scores}
 \end{figure*}
 
