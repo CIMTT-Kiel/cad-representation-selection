@@ -442,8 +442,8 @@ The tree approach for instances confuses all bearings with washers. At the time 
 \subsection{Regression}\label{sec:results-regression}
 \Cref{fig:error-distributions}  shows the distributions of the absolute errors for the regression target quantities relative to their target values.
 It should be noted that the displayed violin areas are affected by the logarithmic scale and are therefore not directly comparable in terms of absolute area.
-
 As in the classification task, the \mbox{tree-based} approach achieves the best overall performance compared with the other approaches.
+
 This conclusion is also supported by the mean absolute error, mean squared error, and $R^2$ score, which are shown in \cref{fig:mean-absolute-errors,fig:mean-squared-errors,fig:r2-scores}, with the exception the volume target. Note that here the \mbox{tree-based} approach only ranks second behind the \mbox{invariant-based} approach.
 This was to be expected, as one invariant is the scaled volume of the CAD model.
 Therefore, the error can be attributed to the noise introduced by the ML model itself, rather than the loss of information due to the representation form.
