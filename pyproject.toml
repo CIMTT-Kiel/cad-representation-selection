@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "clearshape"
+version = "0.0.0"
+requires-python = ">=3.10"
+dependencies = [
+    "matplotlib",
+    "mlflow",
+    "omegaconf",
+    "optuna",
+    "pandas",
+    "scikit-learn",
+    "seaborn",
+    "steputils",
+    "torcheval",
+    "legacy-quadpy",
+    "meshio",
+    "trimesh",
+    "open3d",
+    "cascadio",
+    "pytorch-lightning",
+]

@@ -1,0 +1,25 @@
+{
+  "name": "DevContainer",
+  "dockerComposeFile": "../docker-compose.yaml",
+  "workspaceFolder": "/clear-shape",
+  "shutdownAction": "stopCompose",
+  "service": "devcontainer",
+
+  "runArgs": [
+    "--gpus=all", // for GPU support - this line has to be removed on mac 
+    "--rm"
+  ],
+  "exec-opts": ["native.cgroupdriver=cgroupfs"],
+
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python",
+        "ms-toolsai.jupyter",
+        "gruntfuggly.todo-tree",
+        "ms-python.black-formatter",
+        "mechatroner.rainbow-csv"
+      ]
+    }
+  }
+}

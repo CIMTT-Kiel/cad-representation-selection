@@ -1,0 +1,120 @@
+import torch
+import pytorch_lightning as pl
+import torch.nn.functional as F
+import torch.nn as nn
+from torchmetrics.classification import Accuracy
+from torchmetrics import F1Score
+#custom imports
+from clearshape.models.trnsfm_encoder import VecsetClassifier
+
+
+class VecsetClassifierModule(pl.LightningModule):
+    def __init__(self, 
+                 lr = 1e-3,
+                 input_dim=32, 
+                 d_model=1024, 
+                 nhead=8, 
+                 num_layers=4, 
+                 num_classes=40, 
+                 dim_feedforward=2048, 
+                 fc_layers=None,
+                 dropout=0.3, 
+                 weight_decay=1e-3
+                 ):
+        super().__init__()
+        self.save_hyperparameters()
+
+        self.weight_decay = weight_decay
+        self.model = VecsetClassifier(
+                                    input_dim=input_dim, 
+                                    d_model=d_model, 
+                                    nhead=nhead,
+                                    num_layers=num_layers, 
+                                    fc_layers=fc_layers,
+                                    num_classes=num_classes,
+                                    dim_feedforward=dim_feedforward, 
+                                    dropout=dropout, 
+                                    )
+        
+        #metrics
+        self.train_acc = Accuracy(task="multiclass", num_classes=num_classes)
+        self.val_acc = Accuracy(task="multiclass", num_classes=num_classes)
+        self.f1_score = F1Score(task="multiclass", num_classes=num_classes)
+
+        # criterion
+        self.criterion = nn.CrossEntropyLoss()
+        
+
+    def forward(self, vector_set):
+        return self.model(vector_set)
+
+    def training_step(self, batch, batch_idx):
+        vector_set, target_cls, _ = batch
+
+        logits = self(vector_set)
+        loss = self.criterion(logits, target_cls)
+        preds = torch.argmax(logits, dim=-1)
+        f1 = self.f1_score(logits.argmax(dim=1), target_cls)
+
+        self.train_acc(preds, target_cls)
+        self.log("train_loss", loss)
+        self.log("train_acc", self.train_acc, prog_bar=True)
+        self.log('train_f1_score', f1, prog_bar=True)
+        return loss
+
+    def validation_step(self, batch, batch_idx):
+        vector_set, target_cls, _= batch
+
+        logits = self(vector_set)
+        val_loss = self.criterion(logits, target_cls)
+        preds = torch.argmax(logits, dim=-1)
+        self.val_acc(preds, target_cls)
+        f1_score = self.f1_score(logits.argmax(dim=1), target_cls)
+
+        self.log("val_loss", val_loss, prog_bar=True)
+        self.log("val_acc", self.val_acc, prog_bar=True, on_step=False, on_epoch=True)
+        self.log('val_f1_score', f1_score, prog_bar=True)
+        self.log("lr", self.trainer.optimizers[0].param_groups[0]['lr'])
+
+    # Test Step anpassen
+    def test_step(self, batch, batch_idx):
+        vector_set, target_cls, _= batch
+
+        logits = self(vector_set)
+        test_loss = self.criterion(logits, target_cls)
+        preds = torch.argmax(logits, dim=-1)
+
+        # Metriken berechnen
+        self.log("test_loss", test_loss)
+        self.log("test_acc", self.val_acc(preds, target_cls))
+        return test_loss
+
+    # Predict Step anpassen
+    def predict_step(self, batch):
+        vector_set, _ = batch  # Kein Label nötig
+        logits = self(vector_set)
+        return torch.argmax(logits, dim=-1)
+
+
+    def configure_optimizers(self):
+        optimizer = torch.optim.AdamW(self.parameters(), lr=self.hparams.lr, weight_decay=self.weight_decay)
+
+
+        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, 500, eta_min=1e-6, last_epoch=-1)
+
+        return {
+            "optimizer": optimizer,
+            "lr_scheduler": {
+                "scheduler": scheduler,
+                "interval": "epoch",    
+                "monitor": "val_loss",  
+            }
+        }
+    
+#test
+if __name__ == "__main__":
+    # Example usage
+    model = VecsetClassifierModule()
+    x = torch.randn(32, 1024, 32)  # Batch size of 32, sequence length of 1024, input dimension of 32
+    output = model(x)
+    print(output.shape)  # Should be [32, num_classes]

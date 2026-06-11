@@ -1,0 +1,81 @@
+
+services:
+  step_api:
+    build: ./api
+    # container_name: step_api
+    ports:
+      - "8001:8000"
+    networks:
+      - container_net
+
+  devcontainer:
+    build:
+      context: ./
+      dockerfile: .devcontainer/Dockerfile
+    #container_name: devcontainer
+    volumes:
+      - .:/clear-shape  # mount repository into dev container (nneeded to synch with local folder)
+
+
+      # Daniel
+      # model checkpoint for vecset_encoder - needed for preprocessing
+      #- D:\3 Resources\Nextcloud FH Kiel\Ressourcen-KI-Gruppe\Modelle\VecsetEncoder\points_vec1024x32_dim1024_depth24_sdf_nb:/clear-shape/src/clearshape/vecsets/preprocessing/vecset_model/ckpts/
+
+      # data-folders for fabwave dataset
+      - /data/shared/datasets/fabwave/1_raw/:/clear-shape/data/1_raw/
+      - /data/shared/datasets/fabwave/3_primary/:/clear-shape/data/3_primary/
+      - /data/shared/datasets/fabwave/4_feature/:/clear-shape/data/4_feature/
+      - /data/shared/datasets/fabwave/5_model_input/:/clear-shape/data/5_model_input/
+      - /data/shared/datasets/fabwave/6_models/:/clear-shape/data/6_models/
+      - /data/shared/datasets/fabwave/7_model_output/:/clear-shape/data/7_model_output/
+      - /data/shared/datasets/fabwave/8_reporting/:/clear-shape/data/8_reporting/
+      #- D:\3 Resources\Nextcloud FH Kiel\Ressourcen-KI-Gruppe\Datensätze\fabwave\1_raw:      #- D:\3 Resources\Nextcloud FH Kiel\Ressourcen-KI-Gruppe\Datensätze\fabwave\3_primary:/clear-shape/data/3_primary/
+      #- D:\3 Resources\Nextcloud FH Kiel\Ressourcen-KI-Gruppe\Datensätze\fabwave\4_feature:/clear-shape/data/4_feature/
+      #- D:\3 Resources\Nextcloud FH Kiel\Ressourcen-KI-Gruppe\Datensätze\fabwave\5_model_input:/clear-shape/data/5_model_input/
+      #- D:\3 Resources\Nextcloud FH Kiel\Ressourcen-KI-Gruppe\Datensätze\fabwave\6_models:/clear-shape/data/6_models/
+      #- D:\3 Resources\Nextcloud FH Kiel\Ressourcen-KI-Gruppe\Datensätze\fabwave\7_model_output:/clear-shape/data/7_model_output/
+      #- D:\3 Resources\Nextcloud FH Kiel\Ressourcen-KI-Gruppe\Datensätze\fabwave\8_reporting:/clear-shape/data/8_reporting/
+
+      # Michel
+      # model checkpoint for vecset_encoder - needed for preprocessing
+      # - /home/michelkruse/Nextcloud/Ressourcen-KI-Gruppe/Modelle/vecset_encoder/points_vec1024x32_dim1024_depth24_sdf_nb/checkpoint-110.pth:/clear-shape/src/clearshape/vecsets/preprocessing/vecset_model/ckpts/checkpoint-110.pth 
+      # data-folders for fabwave dataset
+      # - /home/michelkruse/Nextcloud/Ressourcen-KI-Gruppe/Datensätze/fabwave/1_raw:/clear-shape/data/1_raw/
+      # - /home/michelkruse/Nextcloud/Ressourcen-KI-Gruppe/Datensätze/fabwave/3_primary:/clear-shape/data/3_primary/
+      # - /home/michelkruse/Nextcloud/Ressourcen-KI-Gruppe/Datensätze/fabwave/4_feature:/clear-shape/data/4_feature/
+      # - /home/michelkruse/Nextcloud/Ressourcen-KI-Gruppe/Datensätze/fabwave/5_model_input:/clear-shape/data/5_model_input/
+      # - /home/michelkruse/Nextcloud/Ressourcen-KI-Gruppe/Datensätze/fabwave/6_models:/clear-shape/data/6_models/
+      # - /home/michelkruse/Nextcloud/Ressourcen-KI-Gruppe/Datensätze/fabwave/7_model_output:/clear-shape/data/7_model_output/
+      # - /home/michelkruse/Nextcloud/Ressourcen-KI-Gruppe/Datensätze/fabwave/8_reporting:/clear-shape/data/8_reporting/
+
+      #clearshape-user
+      # model checkpoint for vecset_encoder - needed for preprocessing
+      # - /home/clearshape/model-repo/points_vec1024x32_dim1024_depth24_sdf_nb/checkpoint-110.pth:/clear-shape/src/clearshape/vecsets/preprocessing/vecset_model/ckpts/checkpoint-110.pth 
+      # # data-folders for fabwave dataset
+      # - /home/clearshape/data-reposfabwave/1_raw:/clear-shape/data/1_raw/
+      # - /home/clearshape/data-reposfabwave/3_primary:/clear-shape/data/3_primary/
+      # - /home/clearshape/data-reposfabwave/4_feature:/clear-shape/data/4_feature/
+      # - /home/clearshape/data-reposfabwave/5_model_input:/clear-shape/data/5_model_input/
+      # - /home/clearshape/data-reposfabwave/6_models:/clear-shape/data/6_models/
+      # - /home/clearshape/data-reposfabwave/7_model_output:/clear-shape/data/7_model_output/
+      # - /home/clearshape/data-reposfabwave/8_reporting:/clear-shape/data/8_reporting/
+
+
+
+    networks:
+      - container_net
+    depends_on:
+      - step_api
+    tty: true
+    
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+
+networks:
+  container_net:
+    driver: bridge
