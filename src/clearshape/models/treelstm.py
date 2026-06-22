@@ -1,9 +1,7 @@
-# TODO implement tests
 """
 Pytorch model classes implementing a TreeLSTM models for tree-structured data.
 """
 
-__author__ = "Max Borm, Max Brede, Daniel Mansfeldt"
 
 import dgl
 import torch
