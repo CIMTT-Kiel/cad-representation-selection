@@ -1,5 +1,3 @@
-# TODO add tree_to_dgl function
-# TODO allow parsing of ComplexEntityInstances if possible
 #%%
 """
 This module provides functionalities for parsing and representing STEP (Standard for the Exchange of Product model data) files as tree structures. It utilizes the `steputils` library for processing STEP files and `numpy` for handling numerical operations related to the tree structure.
@@ -24,8 +22,6 @@ See Also
 steputils : A utility library for working with STEP files.
 numpy : A fundamental package for scientific computing with Python.
 """
-
-__author__ = "Daniel Mansfeldt"
 
 # standard libaries
 from collections.abc import Iterable
