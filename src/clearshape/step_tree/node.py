@@ -4,8 +4,6 @@ This module provides a definition for the `Node` class, used to represent elemen
 The `Node` class supports creating nodes directly from STEP entity instances or atomic classes, ensuring nodes are correctly labeled and referenced for further processing and analysis in tree structures.
 """
 
-__author__ = "Daniel Mansfeldt"
-
 # standard libary
 
 # Third party
