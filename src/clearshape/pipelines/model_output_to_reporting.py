@@ -33,6 +33,15 @@ sns.set_theme(context="paper",
               style="darkgrid",
               )
 
+
+CLASS_COLORS = sns.color_palette({
+    "Trees": "#1b9e77",
+    "Images": "#d95f02",
+    "Invariants": "#7570b3",
+    "Voxels": "#e7298a",
+    "Vecsets": "#66a61e",
+}, as_cmap=True
+)
 class ModelOutputToReportingPipeline:
     """
     Pipeline to process the model output and test data to compute reporting metrics.
@@ -259,7 +268,7 @@ class ModelOutputToReportingPipeline:
                     data_types = attr_data['data_type'].unique()
                     x_pos = range(len(data_types))
                     values = [attr_data[attr_data['data_type'] == dt]['value'].values[0] for dt in data_types]
-                    colors = sns.color_palette("colorblind", len(data_types))
+                    colors = [CLASS_COLORS[dt] for dt in data_types]
 
                     bars = ax.bar(x_pos, values, color=colors)
                     ax.set_xlabel('Representation Type')
@@ -397,6 +406,7 @@ class ModelOutputToReportingPipeline:
                 y="Metric Value",
                 color="Representation Type",
             )
+            .scale(color=CLASS_COLORS)
             .on(ax)
             .plot()
         )
