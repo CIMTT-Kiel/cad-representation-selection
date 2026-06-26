@@ -282,8 +282,8 @@ class ModelOutputToReportingPipeline:
 
             plt.tight_layout()
             plt.savefig(
-                cons.PATHS.DATA_REPORTING / f"regression_metrics_{metric_type}_plot.png",
-                format="png",
+                cons.PATHS.DATA_REPORTING / f"regression_metrics_{metric_type}_plot.svg",
+                format="svg",
                 bbox_inches="tight",
                 dpi=150
             )
@@ -361,7 +361,7 @@ class ModelOutputToReportingPipeline:
         Creates and saves a bar plot for the classification metrics.
 
         This method generates a bar plot showing the accuracy, F1-score, recall, and precision
-        for each data type. The plot is saved as a PNG file in the reporting directory.
+        for each data type. The plot is saved as a SVG file in the reporting directory.
 
         Parameters
         ----------
@@ -403,8 +403,8 @@ class ModelOutputToReportingPipeline:
 
         plt.tight_layout()
         plt.savefig(
-            cons.PATHS.DATA_REPORTING / "classification_metrics_plot.png",
-            format="png",
+            cons.PATHS.DATA_REPORTING / "classification_metrics_plot.svg",
+            format="svg",
             bbox_inches="tight",
         )
 
@@ -475,8 +475,8 @@ class ModelOutputToReportingPipeline:
 
         plt.tight_layout()
         plt.savefig(
-            cons.PATHS.DATA_REPORTING / "error_distributions.png",
-            format="png",
+            cons.PATHS.DATA_REPORTING / "error_distributions.svg",
+            format="svg",
             bbox_inches="tight",
             dpi=150
         )
@@ -536,8 +536,8 @@ class ModelOutputToReportingPipeline:
 
         plt.tight_layout()
         plt.savefig(
-            cons.PATHS.DATA_REPORTING / "prediction_vs_actual_scatter.png",
-            format="png",
+            cons.PATHS.DATA_REPORTING / "prediction_vs_actual_scatter.svg",
+            format="svg",
             bbox_inches="tight",
             dpi=150
         )
@@ -642,8 +642,8 @@ class ModelOutputToReportingPipeline:
         ax3.legend(lines1, labels1, title='Data Type', fontsize=9, loc='upper left')
 
         plt.savefig(
-            cons.PATHS.DATA_REPORTING / "model_comparison_summary.png",
-            format="png",
+            cons.PATHS.DATA_REPORTING / "model_comparison_summary.svg",
+            format="svg",
             bbox_inches="tight",
             dpi=150
         )
@@ -669,8 +669,8 @@ class ModelOutputToReportingPipeline:
         ax.set_xticklabels(ax.get_xticklabels(), rotation=90, ha="right")
 
         ax.figure.savefig(
-            cons.PATHS.DATA_REPORTING / f"confusion_matrix_{data_type}.png",
-            format="png",
+            cons.PATHS.DATA_REPORTING / f"confusion_matrix_{data_type}.svg",
+            format="svg",
             bbox_inches="tight",
         )
         plt.close(ax.figure)
