@@ -437,6 +437,8 @@ In particular, they may be preferable if other factors, such as computational ef
 \end{tabular*}
 \end{table}
 
+To set the classification results into context, we also evaluated a dummy classifier that randomly predicts classes based on their frequency in the corresponding data split, see \cref{fig:dummy-classifier}.
+
 \Cref{fig:confusion-matrix-trees,fig:confusion-matrix-images,fig:confusion-matrix-invariants,fig:confusion-matrix-vecset,fig:confusion-matrix-voxels} show the confusion matrices for all approaches.
 Each one manages to recognize most classes with accuracies close to one.
 Considering the overall classification metrics, this was to be expected.
@@ -487,6 +489,12 @@ The appendix contains all diagrams referenced in \cref{sec:results-and-discussio
 \centerline{\includegraphics[width=0.9\textwidth]{classification_metrics_plot.pdf}}
 \caption{\textbf{Classification Metrics}\\Comparison of the different approaches in terms of overall accuracy and macro-averaged $F_1$ score, recall and precision. The tree representation and associated Child-Sum Tree-LSTM model is dominating the others across all metrics, except for recall, where the vector set approach performs best.}
 \label{fig:classification-metrics}
+\end{figure*}
+
+\begin{figure*}[h]
+\centerline{\includegraphics[width=0.9\textwidth]{clf_stability.png}}
+\caption{\textbf{Dummy Classifier}\\The plot shows the performance of a dummy classifier that randomly predicts classes based on their frequency in the corresponding data split. The distributions of the results are shown for 1000 different random seeds. For each metric, similar results are obtained for the training, validation and test splits.}
+\label{fig:dummy-classifier}
 \end{figure*}
 
 % Confusion matrices
