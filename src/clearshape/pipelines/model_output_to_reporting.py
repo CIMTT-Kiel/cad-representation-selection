@@ -442,7 +442,7 @@ class ModelOutputToReportingPipeline:
 
         # Create figure with subplots for each attribute
         fig, axes = plt.subplots(2, 2, figsize=(12, 10))
-        fig.suptitle("Distributions of Relative Errors of Regression Tasks", fontsize=16, fontweight='bold')
+        fig.suptitle("Distributions of Absolute Relative Errors of Regression Tasks", fontsize=16, fontweight='bold')
 
         attributes = [
             ('volume_relative_error', 'Volume', axes[0, 0]),
@@ -466,6 +466,8 @@ class ModelOutputToReportingPipeline:
                     ax=ax,
                     cut=0,
                     inner="box",
+                    hue="data_type",
+                    palette=CLASS_COLORS
                 )
                 ax.semilogy()
                 ax.set_title(f'{label}', fontsize=12)
