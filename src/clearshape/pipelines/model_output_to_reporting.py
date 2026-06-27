@@ -33,6 +33,15 @@ sns.set_theme(context="paper",
               style="darkgrid",
               )
 
+
+CLASS_COLORS = sns.color_palette({
+    "Trees": "#e41a1c",
+    "Images": "#377eb8",
+    "Invariants": "#4daf4a",
+    "Voxels": "#984ea3",
+    "Vecsets": "#ff7f00",
+}, as_cmap=True
+)
 class ModelOutputToReportingPipeline:
     """
     Pipeline to process the model output and test data to compute reporting metrics.
@@ -259,7 +268,7 @@ class ModelOutputToReportingPipeline:
                     data_types = attr_data['data_type'].unique()
                     x_pos = range(len(data_types))
                     values = [attr_data[attr_data['data_type'] == dt]['value'].values[0] for dt in data_types]
-                    colors = sns.color_palette("colorblind", len(data_types))
+                    colors = [CLASS_COLORS[dt] for dt in data_types]
 
                     bars = ax.bar(x_pos, values, color=colors)
                     ax.set_xlabel('Representation Type')
@@ -282,8 +291,8 @@ class ModelOutputToReportingPipeline:
 
             plt.tight_layout()
             plt.savefig(
-                cons.PATHS.DATA_REPORTING / f"regression_metrics_{metric_type}_plot.png",
-                format="png",
+                cons.PATHS.DATA_REPORTING / f"regression_metrics_{metric_type}_plot.pdf",
+                format="pdf",
                 bbox_inches="tight",
                 dpi=150
             )
@@ -361,7 +370,7 @@ class ModelOutputToReportingPipeline:
         Creates and saves a bar plot for the classification metrics.
 
         This method generates a bar plot showing the accuracy, F1-score, recall, and precision
-        for each data type. The plot is saved as a PNG file in the reporting directory.
+        for each data type. The plot is saved as a PDF file in the reporting directory.
 
         Parameters
         ----------
@@ -397,14 +406,15 @@ class ModelOutputToReportingPipeline:
                 y="Metric Value",
                 color="Representation Type",
             )
+            .scale(color=CLASS_COLORS)
             .on(ax)
             .plot()
         )
 
         plt.tight_layout()
         plt.savefig(
-            cons.PATHS.DATA_REPORTING / "classification_metrics_plot.png",
-            format="png",
+            cons.PATHS.DATA_REPORTING / "classification_metrics_plot.pdf",
+            format="pdf",
             bbox_inches="tight",
         )
 
@@ -432,7 +442,7 @@ class ModelOutputToReportingPipeline:
 
         # Create figure with subplots for each attribute
         fig, axes = plt.subplots(2, 2, figsize=(12, 10))
-        fig.suptitle("Distributions of Absolute Errors of Regression Tasks", fontsize=16, fontweight='bold')
+        fig.suptitle("Distributions of Absolute Relative Errors of Regression Tasks", fontsize=16, fontweight='bold')
 
         attributes = [
             ('volume_relative_error', 'Volume', axes[0, 0]),
@@ -456,6 +466,8 @@ class ModelOutputToReportingPipeline:
                     ax=ax,
                     cut=0,
                     inner="box",
+                    hue="data_type",
+                    palette=CLASS_COLORS
                 )
                 ax.semilogy()
                 ax.set_title(f'{label}', fontsize=12)
@@ -475,8 +487,8 @@ class ModelOutputToReportingPipeline:
 
         plt.tight_layout()
         plt.savefig(
-            cons.PATHS.DATA_REPORTING / "error_distributions.png",
-            format="png",
+            cons.PATHS.DATA_REPORTING / "error_distributions.pdf",
+            format="pdf",
             bbox_inches="tight",
             dpi=150
         )
@@ -536,8 +548,8 @@ class ModelOutputToReportingPipeline:
 
         plt.tight_layout()
         plt.savefig(
-            cons.PATHS.DATA_REPORTING / "prediction_vs_actual_scatter.png",
-            format="png",
+            cons.PATHS.DATA_REPORTING / "prediction_vs_actual_scatter.pdf",
+            format="pdf",
             bbox_inches="tight",
             dpi=150
         )
@@ -642,8 +654,8 @@ class ModelOutputToReportingPipeline:
         ax3.legend(lines1, labels1, title='Data Type', fontsize=9, loc='upper left')
 
         plt.savefig(
-            cons.PATHS.DATA_REPORTING / "model_comparison_summary.png",
-            format="png",
+            cons.PATHS.DATA_REPORTING / "model_comparison_summary.pdf",
+            format="pdf",
             bbox_inches="tight",
             dpi=150
         )
@@ -669,8 +681,8 @@ class ModelOutputToReportingPipeline:
         ax.set_xticklabels(ax.get_xticklabels(), rotation=90, ha="right")
 
         ax.figure.savefig(
-            cons.PATHS.DATA_REPORTING / f"confusion_matrix_{data_type}.png",
-            format="png",
+            cons.PATHS.DATA_REPORTING / f"confusion_matrix_{data_type}.pdf",
+            format="pdf",
             bbox_inches="tight",
         )
         plt.close(ax.figure)
