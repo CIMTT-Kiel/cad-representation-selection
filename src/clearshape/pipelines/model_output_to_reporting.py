@@ -35,11 +35,11 @@ sns.set_theme(context="paper",
 
 
 CLASS_COLORS = sns.color_palette({
-    "Trees": "#1b9e77",
-    "Images": "#d95f02",
-    "Invariants": "#7570b3",
-    "Voxels": "#e7298a",
-    "Vecsets": "#66a61e",
+    "Trees": "#e41a1c",
+    "Images": "#377eb8",
+    "Invariants": "#4daf4a",
+    "Voxels": "#984ea3",
+    "Vecsets": "#ff7f00",
 }, as_cmap=True
 )
 class ModelOutputToReportingPipeline:
