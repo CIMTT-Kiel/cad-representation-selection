@@ -171,13 +171,12 @@
 \author[a,b]{Daniel Mansfeldt\corref{cor1}} 
 \author[a,b]{Michel Kruse}
 \author[a,b]{Lasse Päplow}
-\author[a,c]{Max Brede}
+\author[a]{Max Brede}
 \author[b]{Daniel Böhnke}
 %\ead{author@institute.xxx}
 
 \address[a]{F\&E GmbH, Schwentinestr. 24, 24149 Kiel, Germany}
 \address[b]{Institut für Produktionstechnik und CIMTT der HAW Kiel, Schwentinestr. 13, 24149 Kiel, Germany}
-\address[c]{Christian-Albrechts-Universität zu Kiel, Christian-Albrechts-Platz 4, 24118 Kiel, Germany}
 
 \cortext[cor1]{* Corresponding author. {\it E-mail address:} daniel.mansfeldt@haw-kiel.de}
 
@@ -216,22 +215,24 @@ CAD; 3D Model Representation; Machine Learning; Classification; Regression; Comp
 \section{Introduction}\label{sec:Introduction}
 A wide variety of machine learning (ML) architectures have been developed to handle the many possible representations of geometric data.
 Each representation requires its custom ML architecture to be processible in the first place.
-This means that a variety of representations and their corresponding model layout must be compared when developing a new application to determine the most suitable one. 
+This means that a variety of representations and their corresponding model layouts must be compared when developing a new application to determine the most suitable one. 
 
 Geometric data can be conveyed using a variety of representations.
 These include multi-view images~\cite{kanezaki2018rotationnet}, voxels~\cite{liu2019point-voxel,wang2019normalnet}, point clouds~\cite{qi2016pointnet}, meshes~\cite{pernot2015thin} and graphs~\cite{miles2023recursive}, among others.
 The different representations of essentially the same information require the use of a variety of ML-based approaches for CAD data analysis. 
 
 Unfortunately, each representation has its own advantages and disadvantages.
-Voxels for instance limit the maximum resolution of CAD models due to a cubic increase in voxel number and limited computing resources.
+Voxels, for instance, limit the maximum resolution of CAD models because the number of voxels grows cubically, while computing resources remain limited.
 This makes it challenging to choose the best representation form and associated ML model for a given task.
 To help guide the decision on which data representation form to use, we compare five promising machine learning approaches, each using a distinct 3D data representation.
 
-By comparing these approaches using general CAD attributes—rather than attributes tailored to specific production use cases—we identify which machine learning models, together with their respective input data representations, are likely to perform well across a broad range of applications. To ensure a fair comparison, all models are trained and tested on the same dataset. Specifically, we use the \textit{FabWave} dataset~\cite{starly2019fabwave} and preprocess it to enable comparison across the different approaches.
+By comparing these approaches using general CAD attributes—rather than attributes tailored to specific production use cases—we identify which machine learning models, together with their respective input data representations, are likely to perform well across a broad range of applications.
+To ensure a fair comparison, all models are trained and tested on the same dataset.
+Specifically, we use the \textit{FabWave} dataset~\cite{starly2019fabwave} and preprocess it to enable comparison across the different approaches.
 
 Our contributions include: 
 \begin{itemize}
-    \item Comparison of five different CAD model representation forms, including dimensionless invariants, trees based on STEP files, multi-view images and vector sets.
+    \item Comparison of five different CAD model representation forms, including dimensionless invariants, trees extracted from B-Rep models (here applied to STEP files), multi-view images and vector sets.
     \item Performance comparison of data representation and ML model combinations for the classification of real engineering parts.
     \item Performance comparison of data representation and ML model combinations for regression tasks aimed at predicting basic properties of real engineering parts.
 \end{itemize}
@@ -322,9 +323,9 @@ For example, they are commonly used as prediction heads, where they take the out
 In this capacity, MLPs are also used as components of the other architectures evaluated in this paper. 
 
 \subsubsection{Child-Sum Tree-LSTM}\label{sec:ML-Architectures-TreeLSTM}
-Miles et al.\ used a Child-Sum Tree-LSTM to generate encoding vectors for CAD models~\cite{miles2023recursive}.
+Miles et al.\ used a Child-Sum Tree-LSTM~\cite{tai2015improved}to generate encoding vectors for CAD models~\cite{miles2023recursive}.
 The model recursively traverses the tree structure of the CAD representation and computes, at each node, an encoding vector for the corresponding topological entity.
-This computation incorporates both the entity type represented by the node and the encodings of its child nodes.
+This computation combines the entity type represented by the node with the sum of its children's encoding vectors via LSTM gating.
 Through this recursive aggregation, the Child-Sum Tree-LSTM produces a single encoding vector for the entire CAD model, which can subsequently be used as input to a range of downstream machine learning models.
 
 \subsubsection{Convolutional Neural Network}\label{sec:ML-Architectures-CNN}
@@ -363,6 +364,7 @@ Fourth, to reduce class imbalance, CAD models were oversampled such that each cl
 
 Finally, the data splits were prepared.
 The dataset was divided into training, validation, and test sets.
+Stratified sampling was used to ensure that the class distribution was consistent across all splits.
 \Cref{tab:data-splits} provides metadata for each split.
 
 \begin{table}[h]
@@ -435,11 +437,15 @@ In particular, they may be preferable if other factors, such as computational ef
 \end{tabular*}
 \end{table}
 
+To set the classification results into context, we also evaluated a dummy classifier that randomly predicts classes based on their frequency in the corresponding data split, see \cref{fig:dummy-classifier}.
+
 \Cref{fig:confusion-matrix-trees,fig:confusion-matrix-images,fig:confusion-matrix-invariants,fig:confusion-matrix-vecset,fig:confusion-matrix-voxels} show the confusion matrices for all approaches.
 Each one manages to recognize most classes with accuracies close to one.
-Considering the overall classification metrics this was to be expected.
+Considering the overall classification metrics, this was to be expected.
 Concurrently the image, invariant and tree approach each fails to recognize one class correctly entirely.
-The tree approach for instances confuses all bearings with washers. At the time of writing no hypothesis has been formed why this might be the case.
+The tree-based approach misclassifies all bearings as washers.
+We hypothesize that the encoding vector generated by the Child-Sum Tree-LSTM focuses primarily on macroscopic geometric features while potentially overlooking scale-dependent characteristics.
+This may explain the confusion between bearings and washers: both are predominantly circular components with a central hole, but they differ in scale.
 
 \subsection{Regression}\label{sec:results-regression}
 \Cref{fig:error-distributions}  shows the distributions of the absolute errors for the regression target quantities relative to their target values.
@@ -480,45 +486,51 @@ The appendix contains all diagrams referenced in \cref{sec:results-and-discussio
 
 % Classification metrics plot
 \begin{figure*}[h] 
-\centerline{\includegraphics[width=0.9\textwidth]{classification_metrics_plot.png}}
+\centerline{\includegraphics[width=0.9\textwidth]{classification_metrics_plot.pdf}}
 \caption{\textbf{Classification Metrics}\\Comparison of the different approaches in terms of overall accuracy and macro-averaged $F_1$ score, recall and precision. The tree representation and associated Child-Sum Tree-LSTM model is dominating the others across all metrics, except for recall, where the vector set approach performs best.}
 \label{fig:classification-metrics}
 \end{figure*}
 
+\begin{figure*}[h]
+\centerline{\includegraphics[width=0.9\textwidth]{clf_stability.png}}
+\caption{\textbf{Dummy Classifier}\\The plot shows the performance of a dummy classifier that randomly predicts classes based on their frequency in the corresponding data split. The distributions of the results are shown for 1000 different random seeds. For each metric, similar results are obtained for the training, validation and test splits.}
+\label{fig:dummy-classifier}
+\end{figure*}
+
 % Confusion matrices
 \begin{figure*}[h]\vspace*{4pt}
-\centerline{\includegraphics[width=0.9\textwidth]{confusion_matrix_trees.png}}
+\centerline{\includegraphics[width=0.9\textwidth]{confusion_matrix_trees.pdf}}
 \caption{\textbf{Confusion Matrix for the tree-based Approach}\\For each part class, the confusion matrix shows the distribution of predicted classes. The tree-based approach predicts most classes with high accuracy, but it confuses all bearings with washers and recognizes only 75\% eyesbolts with shoulders correctly.}
 \label{fig:confusion-matrix-trees}
 \end{figure*}
 
 \begin{figure*}[h]
-\centerline{\includegraphics[width=0.9\textwidth]{confusion_matrix_images.png}}
+\centerline{\includegraphics[width=0.9\textwidth]{confusion_matrix_images.pdf}}
 \caption{\textbf{Confusion Matrix for the image-based Approach}\\For each part class, the confusion matrix shows the distribution of predicted classes. The image-based approach performs reasonably well, but it fails to recognize rotary shafts entirely}
 \label{fig:confusion-matrix-images}
 \end{figure*}
 
 \begin{figure*}[h]
-\centerline{\includegraphics[width=0.9\textwidth]{confusion_matrix_invariants.png}}
+\centerline{\includegraphics[width=0.9\textwidth]{confusion_matrix_invariants.pdf}}
 \caption{\textbf{Confusion Matrix for the invariant-based Approach}\\For each part class, the confusion matrix shows the distribution of predicted classes. Compared to the other approaches, the invariant-based approach performs worse overall, with a significant number of misclassifications across many classes.}
 \label{fig:confusion-matrix-invariants}
 \end{figure*}
 
 \begin{figure*}[h]
-\centerline{\includegraphics[width=0.9\textwidth]{confusion_matrix_vecsets.png}}
+\centerline{\includegraphics[width=0.9\textwidth]{confusion_matrix_vecsets.pdf}}
 \caption{\textbf{Confusion Matrix for the vector-based Approach}\\For each part class, the confusion matrix shows the distribution of predicted classes. The vector-based approach performs reasonably well for most classes.}
 \label{fig:confusion-matrix-vecset}
 \end{figure*}
 
 \begin{figure*}[t]
-\centerline{\includegraphics[width=0.9\textwidth]{confusion_matrix_voxels.png}}
+\centerline{\includegraphics[width=0.9\textwidth]{confusion_matrix_voxels.pdf}}
 \caption{\textbf{Confusion Matrix for the voxel-based Approach}\\For each part class, the confusion matrix shows the distribution of predicted classes. The voxel-based approach shows reasonable performance across most classes, but yields a significant number of misclassifications for some classes, especially for keyway shafts, rotary shafts and headless screws.}
 \label{fig:confusion-matrix-voxels}
 \end{figure*}
 
 % Error distributions plots
 \begin{figure*}[t]\vspace*{4pt}
-\centerline{\includegraphics[width=0.9\textwidth]{error_distributions.png}}
+\centerline{\includegraphics[width=0.9\textwidth]{error_distributions.pdf}}
 \caption{\textbf{Violinplot of Error Distributions}\\Each subplot shows the distributions of the relative absolute errors for one of the regressions features and for each approach considered.
 Median and mean values are provided for each distribution.
 For each violinplot, the corresponding boxplot is shown as well. The whiskers of the boxplot extend to 1.5 times the interquartile range. The tree-based approach achieves the best overall performance.}
@@ -529,19 +541,19 @@ For each violinplot, the corresponding boxplot is shown as well. The whiskers of
 
 % Plots for regression metrics: MAE, MSE and R2
 \begin{figure*}[t]\vspace*{4pt}
-\centerline{\includegraphics[width=0.9\textwidth]{regression_metrics_mae_plot.png}}
+\centerline{\includegraphics[width=0.9\textwidth]{regression_metrics_mae_plot.pdf}}
 \caption{\textbf{Mean Absolute Errors}\\The plots show the mean absolute errors for each regression target and approach. Except for the volume target, the tree-based approach achieves the best performance across all targets.} 
 \label{fig:mean-absolute-errors}
 \end{figure*}
 
 \begin{figure*}[t]\vspace*{4pt}
-\centerline{\includegraphics[width=0.9\textwidth]{regression_metrics_mse_plot.png}}
+\centerline{\includegraphics[width=0.9\textwidth]{regression_metrics_mse_plot.pdf}}
 \caption{\textbf{Mean Squared Errors}\\The plots show the mean squared errors for each regression target and approach. Except for the volume target, the tree-based approach achieves the best performance across all targets.}
 \label{fig:mean-squared-errors}
 \end{figure*}
 
 \begin{figure*}[t]\vspace*{4pt}
-\centerline{\includegraphics[width=0.9\textwidth]{regression_metrics_r2_plot.png}}
+\centerline{\includegraphics[width=0.9\textwidth]{regression_metrics_r2_plot.pdf}}
 \caption{$\mathbf{R^2}$ \textbf{Scores}\\The plots show the $R^2$ scores for each regression target and approach. Except for the volume target, the tree-based approach achieves the best performance across all targets.}
 \label{fig:r2-scores}
 \end{figure*}
