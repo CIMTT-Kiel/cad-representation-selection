@@ -232,7 +232,7 @@ Specifically, we use the \textit{FabWave} dataset~\cite{starly2019fabwave} and p
 
 Our contributions include: 
 \begin{itemize}
-    \item Comparison of five different CAD model representation forms, including dimensionless invariants, trees extracted from B-Rep models (here applied to STEP files), multi-view images and vector sets.
+    \item Comparison of five different CAD model representation forms, including dimensionless invariants, trees extracted from \mbox{B-Rep} models (here applied to STEP files), multi-view images and vector sets.
     \item Performance comparison of data representation and ML model combinations for the classification of real engineering parts.
     \item Performance comparison of data representation and ML model combinations for regression tasks aimed at predicting basic properties of real engineering parts.
 \end{itemize}
@@ -279,7 +279,7 @@ Therefore, an appropriate balance must be found between representational fidelit
 Several prior studies have employed image-based approaches for CAD model analysis~\cite{kanezaki2018rotationnet,li2023multi}. 
 
 \subsubsection{Tree Data Structure}\label{sec:CAD-Representations-Tree}
-Miles et al.\ emphasize that B-Rep models possess an inherent hierarchical structure.
+Miles et al.\ emphasize that \mbox{B-Rep} models possess an inherent hierarchical structure.
 For instance, a line is defined by a point and a direction vector.
 Based on this property, topological entities such as vertices, edges, and faces can be modeled as a graph, with geometric information incorporated through coordinate-based attributes.
 Such a representation is well suited for the application of graph neural networks to CAD models.~\cite{miles2023recursive}
@@ -287,16 +287,11 @@ Such a representation is well suited for the application of graph neural network
 \subsubsection{Dimensionless Invariants}\label{sec:CAD-Representations-Dimensionless-Invariants}
 Another approach to obtain an encoding vector was introduced by Kaiser et al.\ based on the Pi-Theorem~\cite{kaiser2018automated}.
 They argue that any three-dimensional body can be described by a set of dimensionless invariants.
-To derive them from a CAD model the model first is meshed and statistical moments on the mesh are calculated.
-Then the invariants are derived from these moments via the Buckingham Pi-theorem.
+To derive them from a CAD model, the geometry is first discretized based on the \mbox{B-Rep} into a volume mesh.
+Statistical moments $\mu_{pqr} = \int_V x^p y^q z^r \, \mathrm{d}V$ are then computed by
+numerical integration over the elements, and the Buckingham Pi-theorem is applied leading to a compact vector of dimensionless and thus scale-invariant features.
 
-These features are inherently invariant to translations, but not to rotations.
-To establish a meaningful connection between feature vectors across different geometries, it is necessary to ensure uniform orientation and mesh normalization.
-With these regularized feature vectors, morphological similarity can be reduced to a distance metric but entails a loss of topological and absolute scale information.
-
-Additionally, the quality of the results is strongly influenced by the quality of the mesh.
-Automated meshing of large datasets with variable geometric characteristics represents a notable limitation of this approach.
-The meshing process may fail altogether for certain geometries or it may require part-specific considerations regarding geometry and function in order to obtain a high-quality mesh.
+To establish a meaningful connection between feature vectors across different geometries, it is necessary to ensure uniform location and orientation. With these regularized feature vectors, morphological similarity can be reduced to a distance metric. Topological information of the \mbox{B-Rep} such as connectivity between faces, edges or vertices is lost during discretization. Additionally, the automated meshing of datasets with variable geometric characteristics represents a notable limitation of this approach. The meshing process may fail for certain geometries or may require part-specific considerations.
 
 Nevertheless, the compact vectors offer a key advantage, enabling highly efficient storage and retrieval at scale.
 
@@ -323,7 +318,7 @@ For example, they are commonly used as prediction heads, where they take the out
 In this capacity, MLPs are also used as components of the other architectures evaluated in this paper. 
 
 \subsubsection{Child-Sum Tree-LSTM}\label{sec:ML-Architectures-TreeLSTM}
-Miles et al.\ used a Child-Sum Tree-LSTM~\cite{tai2015improved}to generate encoding vectors for CAD models~\cite{miles2023recursive}.
+Miles et al.\ used a Child-Sum Tree-LSTM~\cite{tai2015improved} to generate encoding vectors for CAD models~\cite{miles2023recursive}.
 The model recursively traverses the tree structure of the CAD representation and computes, at each node, an encoding vector for the corresponding topological entity.
 This computation combines the entity type represented by the node with the sum of its children's encoding vectors via LSTM gating.
 Through this recursive aggregation, the Child-Sum Tree-LSTM produces a single encoding vector for the entire CAD model, which can subsequently be used as input to a range of downstream machine learning models.
@@ -352,7 +347,7 @@ Some CAD models contained overlapping or disjoint bodies, which could not be con
 These models were therefore either fused into a single closed shell or removed from the dataset.
 In addition, object classes containing fewer than ten CAD models were excluded. 
 
-Second, the different representations described in \cref{sec:Related-Work} were generated for each remaining CAD model.
+Second, the different representations as described in the following \cref{sec:Methodology-Representations} were generated for each remaining CAD model.
 If a representation could not be generated for a given CAD model, the model was excluded from the dataset entirely.
 This ensured that all remaining CAD models could be processed by all evaluated approaches, enabling a fair comparison of their performance.
 
@@ -381,6 +376,27 @@ Stratified sampling was used to ensure that the class distribution was consisten
 \end{tabular*}
 \end{table}
 
+\subsection{Generation of the Representations}\label{sec:Methodology-Representations}
+All representations were derived from the same filtered set of STEP files as described in~\cref{sec:Methodology-Data-Set}.
+
+For the voxel representation, each model was tessellated and voxelized into a binary grid of $128^3$~cells.
+The voxel size was chosen such that the longest extent of the part spans the grid, and the occupied region was centred within it.
+
+For the image representation, 20 orthographic views of $224\times224$ pixels were rendered per part, with the camera positions distributed evenly over a sphere, matching the viewpoint configuration of RotationNet~\cite{kanezaki2018rotationnet}.
+
+For the tree representation, the STEP file was parsed directly into a graph of topological entities following Miles et\ al.~\cite{miles2023recursive}, with entity types encoded as one-hot node labels.
+
+For the vecset representation, $8192$ points were sampled uniformly from the model surface, centred and scaled to the unit sphere, and encoded into a set of $1024$ latent vectors of dimension 32 using the pretrained encoder of Zhang et al.~\cite{zhang20233dshape2vecset}.
+
+For the invariant representation, the \mbox{B-Rep} was discretized into a tetrahedral mesh, which was centred and rotated by a principal component analysis such that the direction of largest variance is aligned with the $x$-axis and the second-largest with the $y$-axis.
+On this mesh, 19 moments were computed by numerical quadrature. The specific choice of exponent triples is documented in the accompanying repository. Applying the Pi-theorem, each moment was normalized by the second-order moments:
+
+\begin{equation}
+\pi_{pqr} = \frac{\mu_{pqr}}{\mu_{200}^{\frac{4p-q-r+2}{10}}\,\mu_{020}^{\frac{4q-p-r+2}{10}}\,\mu_{002}^{\frac{4r-q-p+2}{10}}}
+\end{equation}
+
+This leads to three trivial quantities $\pi_{200}=\pi_{020}=\pi_{002}=1$. These are discarded, leaving a feature vector of size $16$.
+
 \subsection{Model Comparison}\label{sec:Methodology-Model-Comparison}
 We compare the evaluated models separately for the classification and regression tasks.
 
@@ -400,7 +416,24 @@ The regression task aims to predict abstract and generally available properties 
 Accordingly, the target quantities include the volume and the numbers of vertices, edges, and faces.
 These properties can be computed for \mbox{B-Rep} CAD models independently of their domain or specific use case, making them suitable for evaluating the broader applicability of the ML models.
 
-Note that RotationNet is not considered for the regression task, as it was originally designed for classification.
+These tasks should be understood as a measure of information preservation rather than of geometric reasoning in isolation. A target that is explicitly contained in a representation is therefore expected to be predicted well by construction, so the comparison is most informative for those representations in which the target is not directly available. Table~\ref{tab:encoding} summarizes how each target is encoded in each representation. Note that the volume is discarded by all representations that normalize the model to a fixed extent during conversion. The predictions of this target therefore rely on size being inferable from shape within the dataset.
+
+\begin{table}[h]
+\caption{Encoding of the Regression Targets. The table indicates whether a target is explicitly contained in the input (E), implicitly derivable (I), or discarded during conversion (L).}
+\label{tab:encoding}
+\begin{tabular*}{\columnwidth}{@{\extracolsep{\fill}}lccccc@{}}
+\hline
+Target & Voxel & Images & Trees & Invariants & Vecsets \\
+\hline
+Volume & L & L & I & L & L \\
+Faces & I & I & E & I & I \\
+Edges & I & I & E & I & I \\
+Vertices & I & I & E & I & I \\
+\hline
+\end{tabular*}
+\end{table}
+
+RotationNet is not considered for the regression task, as it was originally designed for classification.
 Although adapting RotationNet for regression appears feasible, such a modification is outside the scope of this work. 
 
 As voxel representations are the least complex representation form considered in this work, they are used as a baseline.
@@ -409,7 +442,7 @@ As voxel representations are the least complex representation form considered in
 This section presents the results of the comparison between the different CAD analysis approaches.
 Classification and regression results are reported and interpreted separately.
 
-Please refer to the \labelcref{sec:appendix} for all diagrams referenced in this section.
+Please refer to \labelcref{sec:appendix} for all diagrams referenced in this section.
 
 \subsection{Classification}\label{sec:results-classification}
 
@@ -448,13 +481,21 @@ We hypothesize that the encoding vector generated by the Child-Sum Tree-LSTM foc
 This may explain the confusion between bearings and washers: both are predominantly circular components with a central hole, but they differ in scale.
 
 \subsection{Regression}\label{sec:results-regression}
-\Cref{fig:error-distributions}  shows the distributions of the absolute errors for the regression target quantities relative to their target values.
+\Cref{fig:error-distributions} shows the distributions of the relative errors for the regression target quantities.
 It should be noted that the displayed violin areas are affected by the logarithmic scale and are therefore not directly comparable in terms of absolute area.
 As in the classification task, the \mbox{tree-based} approach achieves the best overall performance compared with the other approaches.
 
-This conclusion is also supported by the mean absolute error, mean squared error, and $R^2$ score, which are shown in \cref{fig:mean-absolute-errors,fig:mean-squared-errors,fig:r2-scores}, with the exception the volume target. Note that here the \mbox{tree-based} approach only ranks second behind the \mbox{invariant-based} approach.
-This was to be expected, as one invariant is the scaled volume of the CAD model.
-Therefore, the error can be attributed to the noise introduced by the ML model itself, rather than the loss of information due to the representation form.
+This conclusion is also supported by the mean absolute error, mean squared error, and $R^2$ score, which are shown in \cref{fig:mean-absolute-errors,fig:mean-squared-errors,fig:r2-scores}, with the exception of the volume target.
+Note that here the \mbox{tree-based} approach only ranks second behind the \mbox{invariant-based} approach.
+Its advantage on the three topological targets is expected by construction, as predicting them reduces to counting the nodes of the input graph (see \cref{tab:encoding}).
+
+For the volume target, the invariant representation is strictly scale-invariant and carries no absolute size information, so the high $R^2$ cannot be attributed to the input encoding (see \cref{tab:encoding}).
+As a reference, a trivial baseline that predicts the median volume of the true class from the training split already reaches $R^2 = 0.739$, outperforming all approaches except the \mbox{invariant-based} one.
+Part size is thus largely inferable from part class within FabWave.
+This also shows that $R^2$ discriminates poorly for this target, as it is dominated by a few large parts.
+In terms of relative error (see \cref{fig:error-distributions}), which is not affected by this imbalance, the \mbox{tree-based} approach leads on the volume target as well, with a median of $0.23$ against $0.64$ for the \mbox{invariant-based} approach and $0.79$ for the trivial baseline.
+On the topological targets, the \mbox{invariant-based} approach attains slightly lower medians, but with substantially heavier tails. Its mean relative errors exceed those of the \mbox{tree-based} approach by roughly a factor of seven. The \mbox{tree-based} approach therefore remains the most reliable across all regression targets.
+
 
 \section{Conclusion and Future Works}\label{sec:conclusion-and-future-works}
 We compared five machine learning approaches for CAD model analysis.
@@ -533,7 +574,7 @@ The appendix contains all diagrams referenced in \cref{sec:results-and-discussio
 \centerline{\includegraphics[width=0.9\textwidth]{error_distributions.pdf}}
 \caption{\textbf{Violinplot of Error Distributions}\\Each subplot shows the distributions of the relative absolute errors for one of the regressions features and for each approach considered.
 Median and mean values are provided for each distribution.
-For each violinplot, the corresponding boxplot is shown as well. The whiskers of the boxplot extend to 1.5 times the interquartile range. The tree-based approach achieves the best overall performance.}
+For each violinplot, the corresponding boxplot is shown as well. The whiskers of the boxplot extend to 1.5 times the interquartile range. The tree-based approach achieves achieves the lowest mean relative error on all targets.}
 \label{fig:error-distributions}
 \end{figure*}
 
