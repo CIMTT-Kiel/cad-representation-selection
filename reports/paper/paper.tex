@@ -416,7 +416,7 @@ The regression task aims to predict abstract and generally available properties 
 Accordingly, the target quantities include the volume and the numbers of vertices, edges, and faces.
 These properties can be computed for \mbox{B-Rep} CAD models independently of their domain or specific use case, making them suitable for evaluating the broader applicability of the ML models.
 
-These tasks should be understood as a measure of information preservation rather than of geometric reasoning in isolation. A target that is explicitly contained in a representation is therefore expected to be predicted well by construction, so the comparison is most informative for those representations in which the target is not directly available. Table~\ref{tab:encoding} summarizes how each target is encoded in each representation. Note that the volume is discarded by all representations that normalize the model to a fixed extent during conversion. The predictions of this target therefore rely on size being inferable from shape within the dataset.
+These tasks should be understood as a measure of information preservation rather than of geometric reasoning in isolation. A target that is explicitly contained in a representation is therefore expected to be predicted well by design, so the comparison is most informative for those representations in which the target is not directly available. Table~\ref{tab:encoding} summarizes how each target is encoded in each representation. Note that the volume is discarded by all representations that normalize the model to a fixed extent during conversion. The predictions of this target therefore rely on size being inferable from shape within the dataset.
 
 \begin{table}[h]
 \caption{Encoding of the Regression Targets. The table indicates whether a target is explicitly contained in the input (E), implicitly derivable (I), or discarded during conversion (L).}
@@ -487,7 +487,7 @@ As in the classification task, the \mbox{tree-based} approach achieves the best 
 
 This conclusion is also supported by the mean absolute error, mean squared error, and $R^2$ score, which are shown in \cref{fig:mean-absolute-errors,fig:mean-squared-errors,fig:r2-scores}, with the exception of the volume target.
 Note that here the \mbox{tree-based} approach only ranks second behind the \mbox{invariant-based} approach.
-Its advantage on the three topological targets is expected by construction, as predicting them reduces to counting the nodes of the input graph (see \cref{tab:encoding}).
+Its advantage on the three topological targets is expected by design, as predicting them reduces to counting the nodes of the input graph (see \cref{tab:encoding}).
 
 For the volume target, the invariant representation is strictly scale-invariant and carries no absolute size information, so the high $R^2$ cannot be attributed to the input encoding (see \cref{tab:encoding}).
 As a reference, a trivial baseline that predicts the median volume of the true class from the training split already reaches $R^2 = 0.739$, outperforming all approaches except the \mbox{invariant-based} one.
