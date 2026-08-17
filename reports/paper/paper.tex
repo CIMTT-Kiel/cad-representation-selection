@@ -237,6 +237,12 @@ Our contributions include:
     \item Performance comparison of data representation and ML model combinations for regression tasks aimed at predicting basic properties of real engineering parts.
 \end{itemize}
 
+Our work is subject to the following limitations:
+\begin{itemize}
+    \item The application of a certain representation requires a specific ML model architecture. Therefore, we cannot compare the representation forms independently of the ML models.
+    \item Only a subset of the available CAD model representation forms and ML architectures is considered. 
+\end{itemize}
+
 The rest of this paper is structured as follows.
 In \cref{sec:Related-Work}, we review related work. This includes the foundations of the ML models examined and the CAD model representation types used.
 \Cref{sec:Methodology} presents our methodology for preparing the data set and comparing model performance.
@@ -397,8 +403,8 @@ On this mesh, 19 moments were computed by numerical quadrature. The specific cho
 
 This leads to three trivial quantities $\pi_{200}=\pi_{020}=\pi_{002}=1$. These are discarded, leaving a feature vector of size $16$.
 
-\subsection{Model Comparison}\label{sec:Methodology-Model-Comparison}
-We compare the evaluated models separately for the classification and regression tasks.
+\subsection{Approach Comparison}\label{sec:Methodology-Model-Comparison}
+We compare the evaluated representations in combination with the corresponding ML models separately for the classification and regression tasks.
 
 In the classification task, the machine learning models distinguish between 31 object classes.
 Ideally, abstract model categories would be used to assess the generalization capabilities of the models more broadly.
