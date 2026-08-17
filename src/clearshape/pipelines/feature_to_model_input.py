@@ -31,8 +31,7 @@ class FeatureModelInputPipeline:
     """
     Pipeline builds balanced training, validation and test splits based on the data availabel in `4_feature`.
 
-    The pipeline first balances the data set by oversampling small class, before spliting the data set using stratification based on the data points class label.
-
+    The pipeline first splits the data set using stratification based on the data points class label, and afterwards balances the training split by oversampling small classes. Oversampling is applied to the training split only, so that no part appears in more than one split.
     The data splits are saved in `data/5_model_input` as CSV files. Each has the following columns:
 
     `class`: Name of the class the corresponding part is from.
@@ -87,55 +86,50 @@ class FeatureModelInputPipeline:
         self._master_table = pd.read_csv(target_file)
         
 
-    def _oversample(self, classes: list[str]) -> None:
+    def _oversample(self, df: pd.DataFrame, classes: list[str]) -> pd.DataFrame:
         """
         Oversample parts for classes of which there are less than
-        `self._class_size_min` parts.
+        `self._class_size_min_required` parts.
 
-        Updates `self._master_table` by randomly drawing parts from the class
-        and adding them to the dataset.
+        Returns a new DataFrame containing the original rows plus the
+        resampled ones. Must only be applied to the training split.
 
         Parameters
         ----------
+        df : pd.DataFrame
+            Split to be balanced.
         classes : list[str]
-            List of class name that are underrepresented in the data set.
+            List of class names that are underrepresented in the split.
         """
         logger.debug("Oversampling small classes.")
-        class_sizes = self._master_table.value_counts("class_name")
+        class_sizes = df.value_counts("class_name")
+        resampled_parts = []
         for class_name in classes:
             logger.debug(f"Resampling {class_name}")
-            original_parts = self._master_table.query(f"`class_name` == '{class_name}'")
+            original_parts = df.query(f"`class_name` == '{class_name}'")
+            n_missing = self._class_size_min_required - class_sizes[class_name]
+            if n_missing > 0:
+                resampled_parts.append(
+                    original_parts.sample(n=n_missing, replace=True, random_state=42)
+                )
+        return pd.concat([df] + resampled_parts, ignore_index=True)
 
-            # resample class randomly until rquired class size is achived
-            logger.debug(f"Resample {class_name}.")
-            resampled_parts = []
-            for _ in range(self._class_size_min_required - class_sizes[class_name]):
-                resampled_part = original_parts.sample(n=1)
-                resampled_parts.append(resampled_part)
-
-            # add parts of resampled class to master table
-            logger.debug("Update master table with resampled parts.")
-            self._master_table = pd.concat(
-                [self._master_table] + resampled_parts, ignore_index=True
-            )
-
-    def _get_small_classes(self) -> list[str]:
+    def _get_small_classes(self, df: pd.DataFrame) -> list[str]:
         """
-        Return list of class names that are underrepresented in the data set.
+        Return list of class names that are underrepresented in the given split.
         """
-        class_sizes = self._master_table.value_counts("class_name")
+        class_sizes = df.value_counts("class_name")
         small_classes = class_sizes.index[class_sizes < self._class_size_min_required]
         return small_classes.to_list()
 
-    def _calc_min_required_class_size(self) -> int:
+    def _calc_min_required_class_size(self, df: pd.DataFrame) -> int:
         """
-        Returns the minimum required class size for each class in the data set.
+        Returns the minimum required class size for the given split.
 
         The required class size is defined as `0.5 * median_class_size`.
         """
-        class_sizes = self._master_table.value_counts("class_id")
-        class_size_min_required = int(class_sizes.median() * 0.5)
-        return class_size_min_required
+        class_sizes = df.value_counts("class_id")
+        return int(class_sizes.median() * 0.5)
 
     def _get_data_splits(self) -> tuple[pd.DataFrame]:
         """
@@ -162,9 +156,11 @@ class FeatureModelInputPipeline:
         )
         return train, val, test
 
-    def _verify_master_table_is_balanced(self):
-        """ """
-        class_sizes = self._master_table.value_counts("class_id")
+    def _verify_split_is_balanced(self, df: pd.DataFrame) -> bool:
+        """
+        Checks whether every class in the given split meets the minimum size.
+        """
+        class_sizes = df.value_counts("class_id")
         if class_sizes.min() < self._class_size_min_required:
             logger.warning("The data set has not been balanced correctly!")
             return False
@@ -184,22 +180,32 @@ class FeatureModelInputPipeline:
         logger.info("Initializing master table")
         self._get_master_table()
 
-        # determin classes to oversample
-        logger.info("Determining small classes")
-        self._class_size_min_required = self._calc_min_required_class_size()
-        small_classes = self._get_small_classes()
+        # drop classes with too few parts for a stratified split
+        class_sizes = self._master_table.value_counts("class_name")
+        too_small = class_sizes.index[class_sizes < 10].to_list()
+        if too_small:
+            logger.info(f"Dropping classes with fewer than 10 parts: {too_small}")
+            self._master_table = self._master_table[
+                ~self._master_table.class_name.isin(too_small)
+            ]
 
-        # oversample underrepresented classes
-        logger.info("Oversampling small classes")
-        self._oversample(small_classes)
-
-        # verify master table is balanced now
-        logger.info("Verifying data set is balanced.")
-        self._verify_master_table_is_balanced()
-
-        # generate data splits
+        # generate data splits on unique parts
         logger.info("Generating stratified data splits.")
         train, val, test = self._get_data_splits()
+
+        # verify splits are disjoint
+        assert not (set(train.path) & set(test.path)), "overlap"
+        assert not (set(train.path) & set(val.path)), "overlap"
+        assert not (set(val.path) & set(test.path)), "overla"
+
+        # oversample underrepresented classes in the training split only
+        logger.info("Oversampling small classes in training split")
+        self._class_size_min_required = self._calc_min_required_class_size(train)
+        small_classes = self._get_small_classes(train)
+        train = self._oversample(train, small_classes)
+
+        logger.info("Verifying training split is balanced.")
+        self._verify_split_is_balanced(train)
 
         # save log scaler
         logger.info("Fitting and saving log scaler.")

@@ -467,6 +467,13 @@ class PrimaryFeaturePipeline:
             targets_already_processed = None
         new_targets = pd.DataFrame(self._targets)
         targets_all = pd.concat([targets_already_processed, new_targets], ignore_index=True)
+
+        # remove duplicates based on the 'path' column, keeping the first occurrence - can appear from multiple runs of the pipeline
+        n_before = len(targets_all)
+        targets_all = targets_all.drop_duplicates(subset="path", keep="first")
+        if len(targets_all) < n_before:
+            logger.warning(f"Removed {n_before - len(targets_all)} duplicate target rows.")
+
         targets_all.to_csv(
             cons.PATHS.DATA_FEATURE / "fabwave_targets.csv", index=False
         )
@@ -615,9 +622,11 @@ def write_path_to_error_file(relative_path):
     logger.warning(f"Write failed file {relative_path} to error file: {error_file}")
 
     # add path to file
-    mode= "a" if error_file.exists() else "w"                  
+    mode = "a" if error_file.exists() else "w"
     with open(error_file, mode=mode, newline="", encoding="utf-8") as file:
         writer = csv.writer(file)
+        if mode == "w":
+            writer.writerow(["path"])
         writer.writerow([relative_path])
 
 
