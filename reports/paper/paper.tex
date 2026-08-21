@@ -363,8 +363,6 @@ Third, the target values were derived for each CAD model.
 These targets included the part class, the volume and the numbers of faces, edges and vertices. 
 For scaling, the natural logarithm was applied to the numerical target values before training the machine learning models.
 
-Fourth, to reduce class imbalance, CAD models were oversampled such that each class contained at least half of the median class size.
-
 Fourth, the data splits were prepared. The dataset was divided into training, validation and test sets using stratified sampling to keep the class distribution consistent across all splits.
 
 Finally, to reduce class imbalance, the training split was oversampled such that each class contained at least half of the median class size. Validation and test splits were left unchanged. \Cref{tab:data-splits} provides details for the absolute split sizes.
@@ -374,7 +372,7 @@ Finally, to reduce class imbalance, the training split was oversampled such that
 \label{tab:data-splits}
 \begin{tabular*}{\hsize}{@{\extracolsep{\fill}}lrr@{}}
 \toprule
-    Data Split & Fraction & Total Number of Samples\\
+    Data Split & Target fraction & Total Number of Samples\\
     \hline
     Training & 0.6 & 1662\\
     Validation & 0.2 & 525\\
