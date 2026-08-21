@@ -512,6 +512,8 @@ The results show that the combination of tree-structured graph representations a
 We therefore conclude that this method provides a promising starting point for more specialized CAD model analysis applications.
 Nevertheless, the other approaches produced comparable results in some cases and may also be suitable, particularly when considerations other than predictive performance favor them over the \mbox{tree-based} approach.
 
+Among the approaches that do not access the B-Rep, the vector set representation performs best: it matches the tree-based approach closely in classification and clearly exceeds the class-conditional baseline on all regression targets, indicating that its encoding retains geometric information beyond what the part class already implies. It is therefore the preferable choice whenever no B-Rep is available.
+
 Future work should investigate the performance of the \mbox{tree-based} method on additional datasets.
 In particular, constructing datasets with more abstract learning tasks could help further demonstrate the model's general applicability. 
 
