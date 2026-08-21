@@ -365,10 +365,9 @@ For scaling, the natural logarithm was applied to the numerical target values be
 
 Fourth, to reduce class imbalance, CAD models were oversampled such that each class contained at least half of the median class size.
 
-Finally, the data splits were prepared.
-The dataset was divided into training, validation, and test sets.
-Stratified sampling was used to ensure that the class distribution was consistent across all splits.
-\Cref{tab:data-splits} provides metadata for each split.
+Fourth, the data splits were prepared. The dataset was divided into training, validation and test sets using stratified sampling to keep the class distribution consistent across all splits.
+
+Finally, to reduce class imbalance, the training split was oversampled such that each class contained at least half of the median class size. Validation and test splits were left unchanged. \Cref{tab:data-splits} provides details for the absolute split sizes.
 
 \begin{table}[h]
 \caption{Data Splits: Metadata for the training, validation and test splits of the preprocessed dataset.}
