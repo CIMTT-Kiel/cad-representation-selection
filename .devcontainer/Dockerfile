@@ -20,7 +20,12 @@ RUN apt-get update && apt-get install -y \
 
 COPY . .
 
-RUN pip install -e .
+RUN rm -f /etc/pip.conf /usr/pip.conf /etc/xdg/pip/pip.conf \
+          /root/.config/pip/pip.conf /root/.pip/pip.conf \
+ && printf '[global]\nindex-url = https://pypi.org/simple\n' > /etc/pip.conf \
+ && pip config list
+
+RUN pip install --retries 10 --timeout 60 -e .
 
 # == Add git completion ==
 # Download the git completion script and place it in the home directory
