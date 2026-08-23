@@ -132,6 +132,8 @@
 \usepackage{todonotes}
 \newcommand{\iltodo}[2][]{\todo[inline, #1]{#2}}
 \usepackage{cleveref}
+\usepackage{booktabs}
+\usepackage{multirow}
 
 \begin{document}
 \begin{frontmatter}
@@ -361,23 +363,20 @@ Third, the target values were derived for each CAD model.
 These targets included the part class, the volume and the numbers of faces, edges and vertices. 
 For scaling, the natural logarithm was applied to the numerical target values before training the machine learning models.
 
-Fourth, to reduce class imbalance, CAD models were oversampled such that each class contained at least half of the median class size.
+Fourth, the data splits were prepared. The dataset was divided into training, validation and test sets using stratified sampling to keep the class distribution consistent across all splits.
 
-Finally, the data splits were prepared.
-The dataset was divided into training, validation, and test sets.
-Stratified sampling was used to ensure that the class distribution was consistent across all splits.
-\Cref{tab:data-splits} provides metadata for each split.
+Finally, to reduce class imbalance, the training split was oversampled such that each class contained at least half of the median class size. Validation and test splits were left unchanged. \Cref{tab:data-splits} provides details for the absolute split sizes.
 
 \begin{table}[h]
 \caption{Data Splits: Metadata for the training, validation and test splits of the preprocessed dataset.}
 \label{tab:data-splits}
 \begin{tabular*}{\hsize}{@{\extracolsep{\fill}}lrr@{}}
 \toprule
-    Data Split & Fraction & Total Number of Samples\\
+    Data Split & Target fraction & Total Number of Samples\\
     \hline
     Training & 0.6 & 1662\\
-    Validation & 0.2 & 554\\
-    Test & 0.2 & 554\\
+    Validation & 0.2 & 518\\
+    Test & 0.2 & 520\\
 \botrule
 \end{tabular*}
 \end{table}
@@ -406,7 +405,7 @@ This leads to three trivial quantities $\pi_{200}=\pi_{020}=\pi_{002}=1$. These 
 \subsection{Approach Comparison}\label{sec:Methodology-Model-Comparison}
 We compare the evaluated representations in combination with the corresponding ML models separately for the classification and regression tasks.
 
-In the classification task, the machine learning models distinguish between 31 object classes.
+In the classification task, the machine learning models distinguish between $25$ object classes.
 Ideally, abstract model categories would be used to assess the generalization capabilities of the models more broadly.
 However, defining complex abstract CAD models while assigning them to meaningful and consistent classes remains challenging.
 We therefore use the object classes provided by the FabWave dataset.
@@ -456,9 +455,8 @@ Please refer to \labelcref{sec:appendix} for all diagrams referenced in this sec
 \subsection{Classification}\label{sec:results-classification}
 
 \Cref{fig:classification-metrics} and \cref{tab:classification-metrics} summarize the overall classification performance of the different approaches.
-The \mbox{tree-based} approach achieves the best performance for all evaluated metrics, with the exception of recall.
-For the recall metric, the vector set approach performs best, with the \mbox{tree-based} approach ranking second.
-Based on these results, the \mbox{tree-based} approach can be regarded as the dominant approach for the classification task. 
+
+The \mbox{tree-based} approach achieves the best performance for all evaluated metrics and therefore can be regarded as the dominant approach for the classification task. 
 
 Nevertheless, the other approaches may still achieve sufficiently high performance for practical application, depending on the specific requirements of a given use case.
 In particular, they may be preferable if other factors, such as computational efficiency, implementation complexity, or data availability, outweigh the observed loss in prediction quality.
@@ -469,13 +467,13 @@ In particular, they may be preferable if other factors, such as computational ef
 \begin{tabular*}{\hsize}{@{\extracolsep{\fill}}lcccc@{}}
 \toprule
     Model & Accuracy & $F_1$ Score & Recall & Precision \\
-    \hline
-    Vecsets     & 0.9548            & 0.9531            & \textbf{0.9605}   & 0.9501 \\
-    Trees       & \textbf{0.9747}   & \textbf{0.9567}   & 0.9583            & \textbf{0.9571} \\
-    Images      & 0.9571            & 0.9478            & 0.9540            & 0.9481 \\
-    Invariants  & 0.7545            & 0.8069            & 0.8255            & 0.8270 \\
-    Voxel       & 0.8935            & 0.8813            & 0.8869            & 0.8928 \\
-\botrule
+    \midrule
+    Vecsets     & 0.9519            & 0.9364            & 0.9509            & 0.9315 \\
+    Trees       & \textbf{0.9750}   & \textbf{0.9565}   & \textbf{0.9583}   & \textbf{0.9549} \\
+    Images      & 0.9462            & 0.9361            & 0.9447            & 0.9361 \\
+    Invariants  & 0.7519            & 0.7857            & 0.7968            & 0.8174 \\
+    Voxel       & 0.8865            & 0.8430            & 0.8555            & 0.8600 \\
+\bottomrule
 \end{tabular*}
 \end{table}
 
@@ -484,26 +482,26 @@ To set the classification results into context, we also evaluated a dummy classi
 \Cref{fig:confusion-matrix-trees,fig:confusion-matrix-images,fig:confusion-matrix-invariants,fig:confusion-matrix-vecset,fig:confusion-matrix-voxels} show the confusion matrices for all approaches.
 Each one manages to recognize most classes with accuracies close to one.
 Considering the overall classification metrics, this was to be expected.
-Concurrently the image, invariant and tree approach each fails to recognize one class correctly entirely.
+Concurrently the image and tree approaches each fail to recognize one class entirely, the invariant-based approach two: it assigns all rollers and all bearings to washers. Together with the confusion between o-rings and washers, this indicates that the classes it confuses are all flat rotationally symmetric parts differing mainly in absolute size.
+
 The tree-based approach misclassifies all bearings as washers.
 We hypothesize that the encoding vector generated by the Child-Sum Tree-LSTM focuses primarily on macroscopic geometric features while potentially overlooking scale-dependent characteristics.
 This may explain the confusion between bearings and washers: both are predominantly circular components with a central hole, but they differ in scale.
 
 \subsection{Regression}\label{sec:results-regression}
+\Cref{tab:regression} summarizes the regression results with reference baselines. As the targets are strongly right-skewed, the metrics need not agree on a ranking. The global baselines are constant predictors fitted on the global target distribution. The class-conditional predicts the median of the true class indicating what is attainable from class membership. Absolute scores are therefore of limited value on their own. Only the margin over the baselines can be attributed to the geometric information in the representation.
+
 \Cref{fig:error-distributions} shows the distributions of the relative errors for the regression target quantities.
 It should be noted that the displayed violin areas are affected by the logarithmic scale and are therefore not directly comparable in terms of absolute area.
 As in the classification task, the \mbox{tree-based} approach achieves the best overall performance compared with the other approaches.
 
-This conclusion is also supported by the mean absolute error, mean squared error, and $R^2$ score, which are shown in \cref{fig:mean-absolute-errors,fig:mean-squared-errors,fig:r2-scores}, with the exception of the volume target.
-Note that here the \mbox{tree-based} approach only ranks second behind the \mbox{invariant-based} approach.
-Its advantage on the three topological targets is expected by design, as predicting them reduces to counting the nodes of the input graph (see \cref{tab:encoding}).
+This conclusion is also supported by MAE, MSE and $R^2$ in \cref{tab:regression}, with the exception of the volume target, where the tree-based approach ranks second behind the invariant-based one. Its advantage on the three topological targets is expected by design, as predicting them reduces to counting the nodes of the input graph (see \cref{tab:encoding}).
 
-For the volume target, the invariant representation is strictly scale-invariant and carries no absolute size information, so the high $R^2$ cannot be attributed to the input encoding (see \cref{tab:encoding}).
-As a reference, a trivial baseline that predicts the median volume of the true class from the training split already reaches $R^2 = 0.739$, outperforming all approaches except the \mbox{invariant-based} one.
-Part size is thus largely inferable from part class within FabWave.
-This also shows that $R^2$ discriminates poorly for this target, as it is dominated by a few large parts.
-In terms of relative error (see \cref{fig:error-distributions}), which is not affected by this imbalance, the \mbox{tree-based} approach leads on the volume target as well, with a median of $0.23$ against $0.64$ for the \mbox{invariant-based} approach and $0.79$ for the trivial baseline.
-On the topological targets, the \mbox{invariant-based} approach attains slightly lower medians, but with substantially heavier tails. Its mean relative errors exceed those of the \mbox{tree-based} approach by roughly a factor of seven. The \mbox{tree-based} approach therefore remains the most reliable across all regression targets.
+For the volume target, the invariant representation is strictly scale-invariant and carries no absolute size information, so the high $R^2$ cannot be attributed to the input encoding. The oracle baseline already reaches $R^2 = 0.739$, so part size is largely inferable from part class within FabWave. This also shows that $R^2$ discriminates poorly for this target, as it is dominated by a few large parts. In terms of relative error, which is not affected by this imbalance, the tree-based approach leads on the volume target as well, with a median of $0.23$ against $0.66$ for the invariant-based approach and $0.82$ for the oracle baseline.
+
+On the topological targets, the oracle already predicts $68\%$ of the test parts exactly, as many FabWave classes are topologically homogeneous and vary only in dimension. Differences between the approaches on these targets therefore reflect class recognition to a large extent, and only the margin over the oracle indicates what is inferred from the geometry itself.
+
+The \mbox{invariant-based} approach attains slightly lower medians, but with substantially heavier tails. Its mean relative errors exceed those of the \mbox{tree-based} approach by roughly a factor of six. The \mbox{tree-based} approach therefore remains the most reliable across all regression targets.
 
 
 \section{Conclusion and Future Works}\label{sec:conclusion-and-future-works}
@@ -513,6 +511,8 @@ Each approach was evaluated on the FabWave dataset~\cite{starly2019fabwave} usin
 The results show that the combination of tree-structured graph representations and a Child-Sum Tree-LSTM model, as proposed by Miles et\ al.~\cite{miles2023recursive}, achieves the best performance across all evaluated tasks.
 We therefore conclude that this method provides a promising starting point for more specialized CAD model analysis applications.
 Nevertheless, the other approaches produced comparable results in some cases and may also be suitable, particularly when considerations other than predictive performance favor them over the \mbox{tree-based} approach.
+
+Among the approaches that do not access the B-Rep, the vector set representation performs best: it matches the tree-based approach closely in classification and clearly exceeds the class-conditional baseline on all regression targets, indicating that its encoding retains geometric information beyond what the part class already implies. It is therefore the preferable choice whenever no B-Rep is available.
 
 Future work should investigate the performance of the \mbox{tree-based} method on additional datasets.
 In particular, constructing datasets with more abstract learning tasks could help further demonstrate the model's general applicability. 
@@ -532,12 +532,12 @@ The generalization capabilities of the evaluated methods could also be explored 
 \appendix
 \section{Results Diagrams}
 \label{sec:appendix}
-The appendix contains all diagrams referenced in \cref{sec:results-and-discussion}.
+The appendix contains all diagrams and tables referenced in \cref{sec:results-and-discussion}.
 
 % Classification metrics plot
 \begin{figure*}[h] 
 \centerline{\includegraphics[width=0.9\textwidth]{classification_metrics_plot.pdf}}
-\caption{\textbf{Classification Metrics}\\Comparison of the different approaches in terms of overall accuracy and macro-averaged $F_1$ score, recall and precision. The tree representation and associated Child-Sum Tree-LSTM model is dominating the others across all metrics, except for recall, where the vector set approach performs best.}
+\caption{\textbf{Classification Metrics}\\Comparison of the different approaches in terms of overall accuracy and macro-averaged $F_1$ score, recall and precision. The tree representation and associated Child-Sum Tree-LSTM model is dominating the others across all metrics.}
 \label{fig:classification-metrics}
 \end{figure*}
 
@@ -550,7 +550,7 @@ The appendix contains all diagrams referenced in \cref{sec:results-and-discussio
 % Confusion matrices
 \begin{figure*}[h]\vspace*{4pt}
 \centerline{\includegraphics[width=0.9\textwidth]{confusion_matrix_trees.pdf}}
-\caption{\textbf{Confusion Matrix for the tree-based Approach}\\For each part class, the confusion matrix shows the distribution of predicted classes. The tree-based approach predicts most classes with high accuracy, but it confuses all bearings with washers and recognizes only 75\% eyesbolts with shoulders correctly.}
+\caption{\textbf{Confusion Matrix for the tree-based Approach}\\For each part class, the confusion matrix shows the distribution of predicted classes. The tree-based approach predicts most classes with high accuracy, but it confuses all bearings with washers.}
 \label{fig:confusion-matrix-trees}
 \end{figure*}
 
@@ -583,11 +583,69 @@ The appendix contains all diagrams referenced in \cref{sec:results-and-discussio
 \centerline{\includegraphics[width=0.9\textwidth]{error_distributions.pdf}}
 \caption{\textbf{Violinplot of Error Distributions}\\Each subplot shows the distributions of the relative absolute errors for one of the regressions features and for each approach considered.
 Median and mean values are provided for each distribution.
-For each violinplot, the corresponding boxplot is shown as well. The whiskers of the boxplot extend to 1.5 times the interquartile range. The tree-based approach achieves achieves the lowest mean relative error on all targets.}
+For each violinplot, the corresponding boxplot is shown as well. The whiskers of the boxplot extend to 1.5 times the interquartile range. The tree-based approach achieves the lowest mean relative error on all targets.}
 \label{fig:error-distributions}
 \end{figure*}
 
 \clearpage
+
+%  Tabelle zu Abschnitt 4.2 
+\begin{table*}[t]
+\centering
+\caption{Regression results and reference baselines. For each target the table
+reports the mean absolute error (MAE), the mean squared error (MSE), the
+coefficient of determination ($R^2$) besides the median and mean of the absolute
+relative error ($e_{\mathrm{rel}}$). All baselines are fitted on the oversampled
+training split.}
+\label{tab:regression}
+\begin{tabular}{llrrrrr}
+\toprule
+Target & Approach & MAE & MSE & $R^2$ & med.\ $e_{\mathrm{rel}}$ & mean $e_{\mathrm{rel}}$ \\
+\midrule
+\multirow{7}{*}{Volume}
+ & Voxels                & $4.02\cdot10^{5}$          & $1.17\cdot10^{13}$          & 0.015            & 0.81            & 5.38 \\
+ & Vecsets               & $3.36\cdot10^{5}$          & $9.84\cdot10^{12}$          & 0.173            & 0.68            & 10.67 \\
+ & Trees                 & $2.06\cdot10^{5}$          & $3.32\cdot10^{12}$          & 0.721            & $\mathbf{0.23}$ & $\mathbf{0.32}$ \\
+ & Invariants            & $\mathbf{1.43\cdot10^{5}}$ & $\mathbf{7.47\cdot10^{11}}$ & $\mathbf{0.937}$ & 0.66            & 611.00 \\
+\cmidrule(l){2-7}
+ & Global mean           & $7.48\cdot10^{5}$ & $1.18\cdot10^{13}$ & $-0.000$ & 66.76 & $5.08\cdot10^{3}$ \\
+ & Global median         & $4.22\cdot10^{5}$ & $1.20\cdot10^{13}$ & $-0.015$ & 0.98  & 85.00 \\
+ & Class-conditional median & $2.63\cdot10^{5}$ & $3.08\cdot10^{12}$ & 0.739 & 0.82 & 30.33 \\
+\midrule
+\multirow{7}{*}{Faces}
+ & Voxels                & 6.45            & 316.2            & 0.462            & 0.16            & 0.33 \\
+ & Vecsets               & 2.84            & 128.3            & 0.782            & 0.04            & 0.12 \\
+ & Trees                 & $\mathbf{1.45}$ & $\mathbf{15.3}$  & $\mathbf{0.974}$ & 0.05            & $\mathbf{0.05}$ \\
+ & Invariants            & 3.31            & 166.2            & 0.717            & $\mathbf{0.03}$ & 0.32 \\
+\cmidrule(l){2-7}
+ & Global mean           & 16.80 & 612.0 & $-0.050$ & 1.51 & 5.38 \\
+ & Global median         & 11.37 & 615.7 & $-0.056$ & 0.50 & 2.17 \\
+ & Class-conditional median & 3.43 & 234.6 & 0.598 & 0.00 & 0.41 \\
+\midrule
+\multirow{7}{*}{Edges}
+ & Voxels                & 22.13           & $3.37\cdot10^{3}$ & 0.339            & 0.37            & 0.57 \\
+ & Vecsets               & 8.20            & $1.11\cdot10^{3}$ & 0.782            & 0.05            & 0.14 \\
+ & Trees                 & $\mathbf{4.70}$ & $\mathbf{162.8}$  & $\mathbf{0.968}$ & 0.07            & $\mathbf{0.07}$ \\
+ & Invariants            & 9.52            & $1.26\cdot10^{3}$ & 0.753            & $\mathbf{0.04}$ & 0.40 \\
+\cmidrule(l){2-7}
+ & Global mean           & 50.01 & 5330 & $-0.053$ & 2.04 & 7.73 \\
+ & Global median         & 32.17 & 5364 & $-0.059$ & 0.75 & 2.71 \\
+ & Class-conditional median & 9.41 & 2076 & 0.590 & 0.00 & 0.31 \\
+\midrule
+\multirow{7}{*}{Vertices}
+ & Voxels                & 14.60           & $1.54\cdot10^{3}$ & 0.318            & 0.22            & 0.47 \\
+ & Vecsets               & 5.50            & 507.1             & 0.776            & 0.06            & 0.15 \\
+ & Trees                 & $\mathbf{3.09}$ & $\mathbf{71.6}$   & $\mathbf{0.968}$ & 0.06            & $\mathbf{0.06}$ \\
+ & Invariants            & 6.33            & 552.4             & 0.756            & $\mathbf{0.04}$ & 0.42 \\
+\cmidrule(l){2-7}
+ & Global mean           & 33.40 & 2365  & $-0.053$ & 2.06 & 9.78 \\
+ & Global median         & 21.74 & 2385  & $-0.062$ & 0.75 & 3.48 \\
+ & Class-conditional median & 6.35 & 923.6 & 0.589 & 0.00 & 0.42 \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+ 
 
 % Plots for regression metrics: MAE, MSE and R2
 \begin{figure*}[t]\vspace*{4pt}
@@ -604,7 +662,7 @@ For each violinplot, the corresponding boxplot is shown as well. The whiskers of
 
 \begin{figure*}[t]\vspace*{4pt}
 \centerline{\includegraphics[width=0.9\textwidth]{regression_metrics_r2_plot.pdf}}
-\caption{$\mathbf{R^2}$ \textbf{Scores}\\The plots show the $R^2$ scores for each regression target and approach. Except for the volume target, the tree-based approach achieves the best performance across all targets.}
+\caption{$\mathbf{R^2}$ \textbf{Scores}\\The plots show the $R^2$ scores for each regression target and approach. Except for the volume target, the tree-based approach achieves the best performance across all targets. On the topological targets, the voxel-based approach stays below the class-conditional median baseline of \cref{tab:regression}, whereas all other approaches exceed it.}
 \label{fig:r2-scores}
 \end{figure*}
 
