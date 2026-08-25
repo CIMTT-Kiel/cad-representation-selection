@@ -459,7 +459,7 @@ Please refer to \labelcref{sec:appendix} for all diagrams referenced in this sec
 
 \Cref{fig:classification-metrics} and \cref{tab:classification-metrics} summarize the overall classification performance of the different approaches.
 
-The \mbox{tree-based} approach achieves the best performance for all evaluated metrics and therefore can be regarded as the dominant approach for the classification task. 
+The \mbox{tree-based} approach achieves the best performance for all evaluated metrics.
 
 Nevertheless, the other approaches may still achieve sufficiently high performance for practical application, depending on the specific requirements of a given use case.
 In particular, they may be preferable if other factors, such as computational efficiency, implementation complexity, or data availability, outweigh the observed loss in prediction quality.
@@ -480,7 +480,7 @@ In particular, they may be preferable if other factors, such as computational ef
 \end{tabular*}
 \end{table}
 
-To set the classification results into context, we also evaluated a dummy classifier that randomly predicts classes based on their frequency in the corresponding data split, see \cref{fig:dummy-classifier}.
+To set the classification results into context, we also evaluated a dummy classifier that randomly predicts classes based on their frequency in the corresponding data split, see~\cref{fig:dummy-classifier}.
 
 \Cref{fig:confusion-matrix-trees,fig:confusion-matrix-images,fig:confusion-matrix-invariants,fig:confusion-matrix-vecset,fig:confusion-matrix-voxels} show the confusion matrices for all approaches.
 Each one manages to recognize most classes with accuracies close to one.
@@ -511,9 +511,8 @@ The \mbox{invariant-based} approach attains slightly lower medians, but with sub
 We compared five machine learning approaches for CAD model analysis.
 Each approach was evaluated on the FabWave dataset~\cite{starly2019fabwave} using a classification task with high class diversity, as well as several abstract regression tasks.
 
-The results show that the combination of tree representations and a Child-Sum Tree-LSTM model, as proposed by Miles et\ al.~\cite{miles2023recursive}, achieves the best performance across all evaluated tasks.
-We therefore conclude that this method provides a promising starting point for more specialized CAD model analysis applications.
-Nevertheless, the other approaches produced comparable results in some cases and may also be suitable, particularly when considerations other than predictive performance favor them over the \mbox{tree-based} approach.
+The results show that the combination of tree representations and a Child-Sum Tree-LSTM model, as proposed by Miles et\ al.~\cite{miles2023recursive}, achieves the best performance across all evaluated tasks compared with the other approaches.
+Nevertheless, the other approaches produced comparable results in some cases and may also be suitable for a given use case, particularly when considerations other than predictive performance favor them over the \mbox{tree-based} approach.
 
 Among the approaches that do not access the B-Rep, the vector set representation performs best: it matches the tree-based approach closely in classification and clearly exceeds the class-conditional baseline on all regression targets, indicating that its encoding retains geometric information beyond what the part class already implies. It is therefore the preferable choice whenever no B-Rep is available.
 
