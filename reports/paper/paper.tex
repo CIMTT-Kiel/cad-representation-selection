@@ -223,7 +223,7 @@ Each representation requires its custom ML architecture to be processible in the
 This means that a variety of representations and their corresponding model layouts must be compared when developing a new application to determine the most suitable one. 
 
 Geometric data can be conveyed using a variety of representations.
-These include multi-view images~\cite{kanezaki2018rotationnet}, voxels~\cite{liu2019point-voxel,wang2019normalnet}, point clouds~\cite{qi2016pointnet}, meshes~\cite{pernot2015thin} and graphs~\cite{miles2023recursive}, among others.
+These include multi-view images~\cite{kanezaki2018rotationnet}, voxels~\cite{liu2019point-voxel,wang2019normalnet}, point clouds~\cite{qi2016pointnet}, meshes~\cite{pernot2015thin} and tree-shaped graphs~\cite{miles2023recursive}, among others.
 The different representations of essentially the same information require the use of a variety of ML-based approaches for CAD data analysis. 
 
 Unfortunately, each representation has its own advantages and disadvantages.
@@ -292,8 +292,8 @@ Several prior studies have employed image-based approaches for CAD model analysi
 \subsubsection{Tree Data Structure}\label{sec:CAD-Representations-Tree}
 Miles et al.\ emphasize that \mbox{B-Rep} models possess an inherent hierarchical structure.
 For instance, a line is defined by a point and a direction vector.
-Based on this property, topological entities such as vertices, edges, and faces can be modeled as a graph, with geometric information incorporated through coordinate-based attributes.
-Such a representation is well suited for the application of graph neural networks to CAD models.~\cite{miles2023recursive}
+Based on this property, topological entities such as vertices, edges, and faces can be modeled as a tree, with geometric information incorporated through coordinate-based attributes.
+Such a representation is well suited for the application of tree neural networks to CAD models.~\cite{miles2023recursive}
 
 \subsubsection{Dimensionless Invariants}\label{sec:CAD-Representations-Dimensionless-Invariants}
 Another approach to obtain an encoding vector was introduced by Kaiser et al.\ based on the Pi-Theorem~\cite{kaiser2018automated}.
@@ -392,7 +392,7 @@ The voxel size was chosen such that the longest extent of the part spans the gri
 
 For the image representation, 20 orthographic views of $224\times224$ pixels were rendered per part, with the camera positions distributed evenly over a sphere, matching the viewpoint configuration of RotationNet~\cite{kanezaki2018rotationnet}.
 
-For the tree representation, the STEP file was parsed directly into a graph of topological entities following Miles et\ al.~\cite{miles2023recursive}, with entity types encoded as one-hot node labels.
+For the tree representation, the STEP file was parsed directly into a tree-shaped graph of topological entities following Miles et\ al.~\cite{miles2023recursive}, with entity types encoded as one-hot node labels.
 
 For the vecset representation, $8192$ points were sampled uniformly from the model surface, centred and scaled to the unit sphere, and encoded into a set of $1024$ latent vectors of dimension 32 using the pretrained encoder of Zhang et al.~\cite{zhang20233dshape2vecset}.
 
@@ -498,7 +498,7 @@ This may explain the confusion between bearings and washers: both are predominan
 It should be noted that the displayed violin areas are affected by the logarithmic scale and are therefore not directly comparable in terms of absolute area.
 As in the classification task, the \mbox{tree-based} approach achieves the best overall performance compared with the other approaches.
 
-This conclusion is also supported by MAE, MSE and $R^2$ in \cref{tab:regression}, with the exception of the volume target, where the tree-based approach ranks second behind the invariant-based one. Its advantage on the three topological targets is expected by design, as predicting them reduces to counting the nodes of the input graph (see \cref{tab:encoding}).
+This conclusion is also supported by MAE, MSE and $R^2$ in \cref{tab:regression}, with the exception of the volume target, where the tree-based approach ranks second behind the invariant-based one. Its advantage on the three topological targets is expected by design, as predicting them reduces to counting the nodes of the input tree (see \cref{tab:encoding}).
 
 For the volume target, the invariant representation is strictly scale-invariant and carries no absolute size information, so the high $R^2$ cannot be attributed to the input encoding. The oracle baseline already reaches $R^2 = 0.739$, so part size is largely inferable from part class within FabWave. This also shows that $R^2$ discriminates poorly for this target, as it is dominated by a few large parts. In terms of relative error, which is not affected by this imbalance, the tree-based approach leads on the volume target as well, with a median of $0.23$ against $0.66$ for the invariant-based approach and $0.82$ for the oracle baseline.
 
@@ -511,7 +511,7 @@ The \mbox{invariant-based} approach attains slightly lower medians, but with sub
 We compared five machine learning approaches for CAD model analysis.
 Each approach was evaluated on the FabWave dataset~\cite{starly2019fabwave} using a classification task with high class diversity, as well as several abstract regression tasks.
 
-The results show that the combination of tree-structured graph representations and a Child-Sum Tree-LSTM model, as proposed by Miles et\ al.~\cite{miles2023recursive}, achieves the best performance across all evaluated tasks.
+The results show that the combination of tree representations and a Child-Sum Tree-LSTM model, as proposed by Miles et\ al.~\cite{miles2023recursive}, achieves the best performance across all evaluated tasks.
 We therefore conclude that this method provides a promising starting point for more specialized CAD model analysis applications.
 Nevertheless, the other approaches produced comparable results in some cases and may also be suitable, particularly when considerations other than predictive performance favor them over the \mbox{tree-based} approach.
 
