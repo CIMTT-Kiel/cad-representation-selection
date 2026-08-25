@@ -1,19 +1,16 @@
 FROM continuumio/miniconda3
 
+ENV CONDA_PLUGINS_AUTO_ACCEPT_TOS=yes  
+
 WORKDIR /app
 
-# Python 3.12 in der base-Umgebung installieren
-RUN conda install -y python=3.12
+RUN conda install -y -c conda-forge \
+      python=3.12 \
+      freecad \
+      python-gmsh
 
-#RUN conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/main
-#RUN conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/r
-RUN pip install open3d
-RUN pip install cascadio
-RUN conda install conda-forge::freecad
-RUN pip install uvicorn
-RUN pip install fastapi
-RUN conda install conda-forge::python-gmsh
-RUN pip install trimesh 
+RUN pip install --retries 10 --timeout 60 \
+      open3d cascadio uvicorn fastapi trimesh
 
 
 COPY main.py .
