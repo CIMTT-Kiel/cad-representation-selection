@@ -456,6 +456,11 @@ Please refer to \labelcref{sec:appendix} for all diagrams referenced in this sec
 
 \subsection{Classification}\label{sec:results-classification}
 
+\begin{figure*}[t]\vspace*{4pt}
+\centerline{\includegraphics[width=0.5\textwidth]{classification_metrics_plot.pdf}\hspace*{2mm}\includegraphics[width=0.5\textwidth]{clf_stability.png}}
+\caption{Left: \textbf{Classification Metrics} Comparison of the different approaches in terms of overall accuracy and macro-averaged $F_1$ score, recall and precision. The tree representation and associated Child-Sum Tree-LSTM model is dominating the others across all metrics.; right: \textbf{Dummy Classifier}The plot shows the performance of a dummy classifier that randomly predicts classes based on their frequency in the corresponding data split. The distributions of the results are shown for 1000 different random seeds. For each metric, similar results are obtained for the training, validation and test splits.}
+\end{figure*}
+
 \Cref{fig:classification-metrics} and \cref{tab:classification-metrics} summarize the overall classification performance of the different approaches.
 
 The \mbox{tree-based} approach achieves the best performance for all evaluated metrics.
@@ -492,6 +497,15 @@ This may explain the confusion between bearings and washers: both are predominan
 
 \subsection{Regression}\label{sec:results-regression}
 \Cref{tab:regression} summarizes the regression results with reference baselines. As the targets are strongly right-skewed, the metrics need not agree on a ranking. The global baselines are constant predictors fitted on the global target distribution. The class-conditional predicts the median of the true class indicating what is attainable from class membership. Absolute scores are therefore of limited value on their own. Only the margin over the baselines can be attributed to the geometric information in the representation.
+
+% Error distributions plots
+\begin{figure}[t]\vspace*{4pt}
+\centerline{\includegraphics[width=\columnwidth]{error_distributions.pdf}}
+\caption{\textbf{Violinplot of Error Distributions}\\Each subplot shows the distributions of the relative absolute errors for one of the regressions features and for each approach considered.
+Median and mean values are provided for each distribution.
+For each violinplot, the corresponding boxplot is shown as well. The whiskers of the boxplot extend to 1.5 times the interquartile range. The tree-based approach achieves the lowest mean relative error on all targets.}
+\label{fig:error-distributions}
+\end{figure}
 
 \Cref{fig:error-distributions} shows the distributions of the relative errors for the regression target quantities.
 It should be noted that the displayed violin areas are affected by the logarithmic scale and are therefore not directly comparable in terms of absolute area.
@@ -534,30 +548,6 @@ The generalization capabilities of the evaluated methods could also be explored 
 \section{Results Diagrams}
 \label{sec:appendix}
 The appendix contains all diagrams and tables referenced in \cref{sec:results-and-discussion}.
-
-% Classification metrics plot
-\begin{figure*}[h] 
-\centerline{\includegraphics[width=0.9\textwidth]{classification_metrics_plot.pdf}}
-\caption{\textbf{Classification Metrics}\\Comparison of the different approaches in terms of overall accuracy and macro-averaged $F_1$ score, recall and precision. The tree representation and associated Child-Sum Tree-LSTM model is dominating the others across all metrics.}
-\label{fig:classification-metrics}
-\end{figure*}
-
-\begin{figure*}[h]
-\centerline{\includegraphics[width=0.9\textwidth]{clf_stability.png}}
-\caption{\textbf{Dummy Classifier}\\The plot shows the performance of a dummy classifier that randomly predicts classes based on their frequency in the corresponding data split. The distributions of the results are shown for 1000 different random seeds. For each metric, similar results are obtained for the training, validation and test splits.}
-\label{fig:dummy-classifier}
-\end{figure*}
-
-% Error distributions plots
-\begin{figure*}[t]\vspace*{4pt}
-\centerline{\includegraphics[width=0.9\textwidth]{error_distributions.pdf}}
-\caption{\textbf{Violinplot of Error Distributions}\\Each subplot shows the distributions of the relative absolute errors for one of the regressions features and for each approach considered.
-Median and mean values are provided for each distribution.
-For each violinplot, the corresponding boxplot is shown as well. The whiskers of the boxplot extend to 1.5 times the interquartile range. The tree-based approach achieves the lowest mean relative error on all targets.}
-\label{fig:error-distributions}
-\end{figure*}
-
-\clearpage
 
 %  Tabelle zu Abschnitt 4.2 
 \begin{table*}[t]
