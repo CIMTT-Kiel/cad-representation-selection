@@ -456,21 +456,17 @@ Please refer to \labelcref{sec:appendix} for all diagrams referenced in this sec
 
 \subsection{Classification}\label{sec:results-classification}
 
-\begin{figure*}[t]\vspace*{4pt}
-\centerline{\includegraphics[width=0.5\textwidth]{classification_metrics_plot.pdf}\hspace*{2mm}\includegraphics[width=0.5\textwidth]{clf_stability.png}}
-\caption{Left: \textbf{Classification Metrics} Comparison of the different approaches in terms of overall accuracy and macro-averaged $F_1$ score, recall and precision. The tree representation and associated Child-Sum Tree-LSTM model is dominating the others across all metrics.; right: \textbf{Dummy Classifier}The plot shows the performance of a dummy classifier that randomly predicts classes based on their frequency in the corresponding data split. The distributions of the results are shown for 1000 different random seeds. For each metric, similar results are obtained for the training, validation and test splits.}
-\label{fig:classification-metrics-and-dummy-classifier}
-\end{figure*}
+% \begin{figure*}[t]\vspace*{4pt}
+% \centerline{\includegraphics[width=0.5\textwidth]{classification_metrics_plot.pdf}\hspace*{2mm}\includegraphics[width=0.5\textwidth]{clf_stability.png}}
+% \caption{Left: \textbf{Classification Metrics} Comparison of the different approaches in terms of overall accuracy and macro-averaged $F_1$ score, recall and precision. The tree representation and associated Child-Sum Tree-LSTM model is dominating the others across all metrics.; right: \textbf{Dummy Classifier}The plot shows the performance of a dummy classifier that randomly predicts classes based on their frequency in the corresponding data split. The distributions of the results are shown for 1000 different random seeds. For each metric, similar results are obtained for the training, validation and test splits.}
+% \label{fig:classification-metrics-and-dummy-classifier}
+% \end{figure*}
 
-\Cref{fig:classification-metrics-and-dummy-classifier} and \cref{tab:classification-metrics} summarize the overall classification performance of the different approaches.
-
-The \mbox{tree-based} approach achieves the best performance for all evaluated metrics.
-
-Nevertheless, the other approaches may still achieve sufficiently high performance for practical application, depending on the specific requirements of a given use case.
+\Cref{tab:classification-metrics} summarizes the overall classification performance of the different approaches. The \mbox{tree-based} approach achieves the best performance for all evaluated metrics. Nevertheless, the other approaches may still achieve sufficiently high performance for practical application, depending on the specific requirements of a given use case.
 In particular, they may be preferable if other factors, such as computational efficiency, implementation complexity, or data availability, outweigh the observed loss in prediction quality.
 
-\begin{table}[h]
-\caption{Classification Metrics: Listing of \mbox{macro-averaged} classification metric values as visualised in \cref{fig:classification-metrics-and-dummy-classifier}. The highest value per metric is highlighted in bold font.}
+\begin{table}[t]
+\caption{Classification Metrics: Macro-averaged classification metric values. The highest value per metric is highlighted in bold font.}
 \label{tab:classification-metrics}
 \begin{tabular*}{\hsize}{@{\extracolsep{\fill}}lcccc@{}}
 \toprule
@@ -485,7 +481,7 @@ In particular, they may be preferable if other factors, such as computational ef
 \end{tabular*}
 \end{table}
 
-To set the classification results into context, we also evaluated a dummy classifier that randomly predicts classes based on their frequency in the corresponding data split, see~\cref{fig:classification-metrics-and-dummy-classifier}.
+To set the classification results into context, we also evaluated a dummy classifier that randomly predicts classes based on their frequency in the corresponding data split. It reaches an accuracy of about $0.10$ and a macro $F_1$ score of about $0.03$, confirming that the task is not trivially solvable.
 
 Confusion matrices for all approaches are provided in the accompanying repository. Each approach recognizes most classes with accuracies close to one, which is to be expected given the overall classification metrics. At the same time, the image and tree approaches each fail to recognize one class entirely, and the invariant-based approach two: it assigns all rollers and all bearings to washers. Together with the confusion between o-rings and washers, this indicates that the classes it confuses are all flat rotationally symmetric parts differing mainly in absolute size.
 
@@ -516,7 +512,7 @@ On the topological targets, the class-median baseline already predicts $68\%$ of
 The \mbox{invariant-based} approach attains slightly lower medians, but with substantially heavier tails. Its mean relative errors exceed those of the \mbox{tree-based} approach by roughly a factor of six. The \mbox{tree-based} approach therefore remains the most reliable across all regression targets.
 
 %  Tabelle zu Abschnitt 4.2 
-\begin{table}[h]
+\begin{table}[t]
 \centering
 \caption{Regression results and reference baselines. MAE in the unit of the
 respective target ($10^{5}$ for volume); $R^2$ on the test split. Median and mean
