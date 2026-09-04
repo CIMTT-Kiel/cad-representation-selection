@@ -512,12 +512,12 @@ The \mbox{invariant-based} approach attains slightly lower medians, but with sub
 \begin{table}[t]
 \centering
 \caption{Regression results and reference baselines. MAE in the unit of the
-respective target ($10^{5}$ for volume); $R^2$ on the test split. Median and mean
-relative errors for the four approaches are given in \cref{fig:error-distributions}.
-The complete table including all omitted metrics and baselines is available in the
-accompanying repository. All baselines are fitted on the oversampled training
-split. Best value per target and metric among the four approaches in bold.}
-\label{tab:regression}
+respective target ($10^{5}$ for volume); $R^2$ on the test split. Median and
+mean relative errors for the four approaches are given in \cref{fig:error-distributions}.
+MSE and the global-mean baseline are omitted, as they add no information beyond
+$R^2$; the complete table is available in the accompanying repository. All
+baselines are fitted on the oversampled training split. Best value per target
+and metric among the four approaches in bold.}
 \setlength{\tabcolsep}{3pt}
 \scriptsize
 \begin{tabular}{lrrrrrrrr}
