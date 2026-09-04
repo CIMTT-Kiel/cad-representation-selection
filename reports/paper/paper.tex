@@ -443,7 +443,7 @@ Vertices & I & I & E & I & I \\
 RotationNet is not considered for the regression task, as it was originally designed for classification.
 Although adapting RotationNet for regression appears feasible, such a modification is outside the scope of this work. 
 
-As voxel representations are the least complex representation form considered in this work, they are used as a baseline.
+All models were trained on the training split and tuned by hyperparameter optimization against the validation split. Reported results were then computed once on the held-out test split. The resulting configurations, the corresponding search spaces and the training hardware are documented in the accompanying repository.
 
 \section{Results and Discussion}\label{sec:results-and-discussion}
 This section presents the results of the comparison between the different CAD analysis approaches.
@@ -571,287 +571,287 @@ The generalization capabilities of the evaluated methods could also be explored 
 %% \section{}
 %% \label{}
 
-\appendix
-\section{Results Diagrams}
-\label{sec:appendix}
-The appendix contains all diagrams and tables referenced in \cref{sec:results-and-discussion}.
+% \appendix
+% \section{Results Diagrams}
+% \label{sec:appendix}
+% The appendix contains all diagrams and tables referenced in \cref{sec:results-and-discussion}.
 
-% Tables with hyperparameters
-\begin{table*}[t]
-    \centering
-    \caption{Hyperparameters of the Tree-LSTM Models.}
-    \label{tab:hyperparameters-tree-lstm}
-    %\setlength\rotheadsize{2.2cm}
-    %\def\cellrotangle{45}
-    \begin{tabularx}{\hsize}{X|XX|XX}
-    %\begin{tabularx}{\linewidth}{b{3cm}r{3cm}r}
-        \toprule
-        Hyperparameter &
-        Tree-LSTM Classifier &
-        Search Space & 
-        Tree-LSTM Regressor &
-        Search Space \\
-        \midrule
-        Batch Size & 1024 & - & 1024 & - \\
-        Dropout Rate &
-            $\approx$ \num{1.483e-2} &
-            \numrange{0.0}{0.9} &
-            $\approx$ \num{1.483e-2} &
-            \numrange{0.0}{0.9} \\
-        Learning Rate &
-            $\approx$ \num{1.589e-4} &
-            \numrange{0.001}{0.00001} &
-            $\approx$ \num{1.589e-4} &
-            \numrange{0.1}{0.0001} \\
-        Latent Encoding Size &
-        400 &
-        \numrange{200}{400} &
-        400 &
-        \numrange{200}{400} \\
-        Epochs &
-        \num{100000} &
-        - &
-        \num{20000} &
-        - \\
-        Optimizer &
-            Adam &
-            - &
-            Adam &
-            - \\
-        MLP Header Activation Function &
-            ReLU &
-            - &
-            ReLU &
-            - \\
-        MLP Hidden Layer Sizes &
-            521, 286, 711 &
-            Layers: \numrange{3}{20}, Units: \numrange{256}{1024} & 
-            521, 286, 711 &
-            Layers: \numrange{3}{20}, Units: \numrange{256}{1024} \\
-        Hardware &
-            NVIDIA H200 &
-            - &
-            NVIDIA H200 &
-            - \\
-        \bottomrule
-    \end{tabularx} 
-\end{table*}
+% % Tables with hyperparameters
+% \begin{table*}[t]
+%     \centering
+%     \caption{Hyperparameters of the Tree-LSTM Models.}
+%     \label{tab:hyperparameters-tree-lstm}
+%     %\setlength\rotheadsize{2.2cm}
+%     %\def\cellrotangle{45}
+%     \begin{tabularx}{\hsize}{X|XX|XX}
+%     %\begin{tabularx}{\linewidth}{b{3cm}r{3cm}r}
+%         \toprule
+%         Hyperparameter &
+%         Tree-LSTM Classifier &
+%         Search Space & 
+%         Tree-LSTM Regressor &
+%         Search Space \\
+%         \midrule
+%         Batch Size & 1024 & - & 1024 & - \\
+%         Dropout Rate &
+%             $\approx$ \num{1.483e-2} &
+%             \numrange{0.0}{0.9} &
+%             $\approx$ \num{1.483e-2} &
+%             \numrange{0.0}{0.9} \\
+%         Learning Rate &
+%             $\approx$ \num{1.589e-4} &
+%             \numrange{0.001}{0.00001} &
+%             $\approx$ \num{1.589e-4} &
+%             \numrange{0.1}{0.0001} \\
+%         Latent Encoding Size &
+%         400 &
+%         \numrange{200}{400} &
+%         400 &
+%         \numrange{200}{400} \\
+%         Epochs &
+%         \num{100000} &
+%         - &
+%         \num{20000} &
+%         - \\
+%         Optimizer &
+%             Adam &
+%             - &
+%             Adam &
+%             - \\
+%         MLP Header Activation Function &
+%             ReLU &
+%             - &
+%             ReLU &
+%             - \\
+%         MLP Hidden Layer Sizes &
+%             521, 286, 711 &
+%             Layers: \numrange{3}{20}, Units: \numrange{256}{1024} & 
+%             521, 286, 711 &
+%             Layers: \numrange{3}{20}, Units: \numrange{256}{1024} \\
+%         Hardware &
+%             NVIDIA H200 &
+%             - &
+%             NVIDIA H200 &
+%             - \\
+%         \bottomrule
+%     \end{tabularx} 
+% \end{table*}
 
-\begin{table*}[t]
-    \centering
-    \caption{Hyperparameters of the Voxel Models.}
-    \label{tab:hyperparameters-voxel-cnn}
-    %\setlength\rotheadsize{2.2cm}
-    %\def\cellrotangle{45}
-    \begin{tabularx}{\hsize}{X|XX|XX}
-        \toprule
-        Hyperparameter &
-        Voxel Classifier &
-        Search Space &
-        Voxel Regressor &
-        Search Space \\
-        \midrule
-        Dropout Rate &
-            $\approx$ \num{1.795e-1} &
-            \numrange{0.0}{0.3} &
-            $\approx$ \num{2.874e-1} &
-            \numrange{0.0}{0.3} \\
-        Learning Rate &
-            $\approx$ \num{6.327e-4} &
-            \numrange{1e-5}{1e-3} &
-            $\approx$ \num{1.150e-4} &
-            \numrange{1e-5}{1e-3} \\
-        Epochs &
-        \num{21}  &
-        - &
-        \num{44}  &
-        - \\
-        Optimizer &
-            Adam &
-            - &
-            Adam &
-            - \\
-        Weight Decay &
-            $\approx$ \num{1.568e-06} &
-            \numrange{0.01}{0.1} &
-            $\approx$ \num{2.920e-2} &
-            \numrange{1e-5}{1e-1} \\
-        MLP Header Activation Function &
-            ReLU &
-            - &
-            ReLU &
-            - \\
-        Hardware &
-            NVIDIA H200 &
-            - &
-            NVIDIA H200 &
-            - \\
-        \bottomrule
-    \end{tabularx}
-\end{table*}
+% \begin{table*}[t]
+%     \centering
+%     \caption{Hyperparameters of the Voxel Models.}
+%     \label{tab:hyperparameters-voxel-cnn}
+%     %\setlength\rotheadsize{2.2cm}
+%     %\def\cellrotangle{45}
+%     \begin{tabularx}{\hsize}{X|XX|XX}
+%         \toprule
+%         Hyperparameter &
+%         Voxel Classifier &
+%         Search Space &
+%         Voxel Regressor &
+%         Search Space \\
+%         \midrule
+%         Dropout Rate &
+%             $\approx$ \num{1.795e-1} &
+%             \numrange{0.0}{0.3} &
+%             $\approx$ \num{2.874e-1} &
+%             \numrange{0.0}{0.3} \\
+%         Learning Rate &
+%             $\approx$ \num{6.327e-4} &
+%             \numrange{1e-5}{1e-3} &
+%             $\approx$ \num{1.150e-4} &
+%             \numrange{1e-5}{1e-3} \\
+%         Epochs &
+%         \num{21}  &
+%         - &
+%         \num{44}  &
+%         - \\
+%         Optimizer &
+%             Adam &
+%             - &
+%             Adam &
+%             - \\
+%         Weight Decay &
+%             $\approx$ \num{1.568e-06} &
+%             \numrange{0.01}{0.1} &
+%             $\approx$ \num{2.920e-2} &
+%             \numrange{1e-5}{1e-1} \\
+%         MLP Header Activation Function &
+%             ReLU &
+%             - &
+%             ReLU &
+%             - \\
+%         Hardware &
+%             NVIDIA H200 &
+%             - &
+%             NVIDIA H200 &
+%             - \\
+%         \bottomrule
+%     \end{tabularx}
+% \end{table*}
 
-\begin{table*}[t]
-    \centering
-    \caption{Hyperparameters of the Image Classifier.}
-    \label{tab:hyperparameters-rotationnet}
-    %\setlength\rotheadsize{2.2cm}
-    %\def\cellrotangle{45}
-    \begin{tabular}{lr}
-        \toprule
-        Hyperparameter &
-        RotationNet Classifier \\
-        \midrule
-        Batch Size & 20 \\
-        Learning Rate &
-            $0.01 \cdot 0.1^{\text{floor}(\text{epoch} \div 200)}$ \\
-        Epochs &
-        \num{52}  \\
-        Hardware &
-            NVIDIA Quadro RTX 8000 \\
-        \bottomrule
-    \end{tabular}
-\end{table*}
+% \begin{table*}[t]
+%     \centering
+%     \caption{Hyperparameters of the Image Classifier.}
+%     \label{tab:hyperparameters-rotationnet}
+%     %\setlength\rotheadsize{2.2cm}
+%     %\def\cellrotangle{45}
+%     \begin{tabular}{lr}
+%         \toprule
+%         Hyperparameter &
+%         RotationNet Classifier \\
+%         \midrule
+%         Batch Size & 20 \\
+%         Learning Rate &
+%             $0.01 \cdot 0.1^{\text{floor}(\text{epoch} \div 200)}$ \\
+%         Epochs &
+%         \num{52}  \\
+%         Hardware &
+%             NVIDIA Quadro RTX 8000 \\
+%         \bottomrule
+%     \end{tabular}
+% \end{table*}
 
-\begin{table*}[t]
-    \centering
-    \caption{Hyperparameters of the VecSet Models.}
-    \label{tab:hyperparameters-vecset-mlp}
-    %\setlength\rotheadsize{2.2cm}
-    %\def\cellrotangle{45}
-    \begin{tabularx}{\hsize}{X|XX|XX}
-        \toprule
-        Hyperparameter &
-        VecSet Classifier &
-        Search Space &
-        VecSet Regressor &
-        Search Space \\
-        \midrule
-        Batch Size &
-        256 &
-        \numlist{128, 256} &
-         2048 &
-         - \\
-        Dropout Rate &
-            $\approx$ \num{1.399e-1} &
-            \numrange{0.0}{0.3} &
-            $\approx$ \num{1.564e-2} &
-            \numrange{0.0}{0.25} \\
-        Learning Rate &
-            $\approx$ \num{1.605e-4} &
-            \numrange{1e-5}{1e-3} &
-            $\approx$ \num{9.832e-4} &
-            \numrange{1e-5}{1e-3} \\
-        d\_model &
-            1344 &
-            \numrange{1024}{1408} &
-            448 &
-            \numrange{128}{400} \\
-        nhead & 
-            16 &
-            \numlist{4;8;16} &
-            4 &
-            \numrange{4}{10} \\
-        num\_layers &
-            9 &
-            \numrange{7}{10} &
-            5 &
-            \numrange{2}{4} \\
-        dim\_feedforward &
-            256 &
-            \numlist{256; 512} &
-            384 &
-            - \\
-        Epochs &
-        \num{224} &
-        - &
-        \num{677} &
-        - \\
-        Optimizer &
-            Adam &
-            - &
-            Adam &
-            - \\
-        Weight Decay &
-            $\approx$ \num{4.116e-2} &
-            \numrange{1e-2}{1e-1} &
-            $\approx$ \num{8.128e-2} &
-            \numrange{1e-2}{1e-1} \\
-        MLP Header Activation Function &
-            LeakyReLU &
-            - &
-            LeakyReLU &
-            - \\
-        Hardware &
-            NVIDIA H200 &
-            - &
-            NVIDIA H200 &
-            - \\
-        \bottomrule
-    \end{tabularx}
-\end{table*}
+% \begin{table*}[t]
+%     \centering
+%     \caption{Hyperparameters of the VecSet Models.}
+%     \label{tab:hyperparameters-vecset-mlp}
+%     %\setlength\rotheadsize{2.2cm}
+%     %\def\cellrotangle{45}
+%     \begin{tabularx}{\hsize}{X|XX|XX}
+%         \toprule
+%         Hyperparameter &
+%         VecSet Classifier &
+%         Search Space &
+%         VecSet Regressor &
+%         Search Space \\
+%         \midrule
+%         Batch Size &
+%         256 &
+%         \numlist{128, 256} &
+%          2048 &
+%          - \\
+%         Dropout Rate &
+%             $\approx$ \num{1.399e-1} &
+%             \numrange{0.0}{0.3} &
+%             $\approx$ \num{1.564e-2} &
+%             \numrange{0.0}{0.25} \\
+%         Learning Rate &
+%             $\approx$ \num{1.605e-4} &
+%             \numrange{1e-5}{1e-3} &
+%             $\approx$ \num{9.832e-4} &
+%             \numrange{1e-5}{1e-3} \\
+%         d\_model &
+%             1344 &
+%             \numrange{1024}{1408} &
+%             448 &
+%             \numrange{128}{400} \\
+%         nhead & 
+%             16 &
+%             \numlist{4;8;16} &
+%             4 &
+%             \numrange{4}{10} \\
+%         num\_layers &
+%             9 &
+%             \numrange{7}{10} &
+%             5 &
+%             \numrange{2}{4} \\
+%         dim\_feedforward &
+%             256 &
+%             \numlist{256; 512} &
+%             384 &
+%             - \\
+%         Epochs &
+%         \num{224} &
+%         - &
+%         \num{677} &
+%         - \\
+%         Optimizer &
+%             Adam &
+%             - &
+%             Adam &
+%             - \\
+%         Weight Decay &
+%             $\approx$ \num{4.116e-2} &
+%             \numrange{1e-2}{1e-1} &
+%             $\approx$ \num{8.128e-2} &
+%             \numrange{1e-2}{1e-1} \\
+%         MLP Header Activation Function &
+%             LeakyReLU &
+%             - &
+%             LeakyReLU &
+%             - \\
+%         Hardware &
+%             NVIDIA H200 &
+%             - &
+%             NVIDIA H200 &
+%             - \\
+%         \bottomrule
+%     \end{tabularx}
+% \end{table*}
 
-\begin{table*}[t]
-    \centering
-    \caption{Hyperparameters of the Invariant Models.}
-    \label{tab:hyperparameters-invariant-mlp}
-    %\setlength\rotheadsize{2.2cm}
-    %\def\cellrotangle{45}
-    \begin{tabularx}{\hsize}{X|XX|XX}
-        \toprule
-        Hyperparameter &
-        Invariant Classifier &
-        Search Space &
-        Invariant Regressor &
-        Search Space \\
-        \midrule
-        Batch Size &
-        512 &
-        \numlist{256;512;2048} &
-        2048 &
-        \numlist{128;256;2048} \\
-        Dropout Rate &
-            $\approx$ \num{7.667e-2} &
-            \numrange{0.0}{0.5} &
-            $\approx$ \num{1.824e-1} &
-            \numrange{0.0}{0.3} \\
-        Learning Rate &
-            $\approx$ \num{1.500e-3} &
-            \numrange{1e-4}{1e-2} &
-            $\approx$ \num{2.622e-3} &
-            \numrange{1e-5}{1e-2} \\
-        Weight Decay &
-            $\approx$ \num{1.050e-5} &
-            - &
-            $\approx$ \num{1.050e-5} &
-            - \\
-        Hidden Layer Sizes &
-            462, 924, 1848, 924 &
-            Layers: \numrange{4}{8}, Units: \numrange{64}{4096} &
-            419, 838, 1676, 1676, 1676, 838, 419, 209 &
-            Layers: \numrange{3}{8}, Units: \numrange{256}{2048} \\
-        MLP Activation Function &
-            LeakyReLU &
-            - &
-            LeakyReLU &
-            - \\
-        Epochs &
-        \num{48} &
-        - &
-        \num{402} &
-        - \\
-        Optimizer &
-            Adam &
-            - &
-            Adam &
-            - \\
-        Hardware &
-            NVIDIA H200 &
-            - &
-            NVIDIA H200 &
-            - \\
-        \bottomrule
-    \end{tabularx}
-\end{table*}
+% \begin{table*}[t]
+%     \centering
+%     \caption{Hyperparameters of the Invariant Models.}
+%     \label{tab:hyperparameters-invariant-mlp}
+%     %\setlength\rotheadsize{2.2cm}
+%     %\def\cellrotangle{45}
+%     \begin{tabularx}{\hsize}{X|XX|XX}
+%         \toprule
+%         Hyperparameter &
+%         Invariant Classifier &
+%         Search Space &
+%         Invariant Regressor &
+%         Search Space \\
+%         \midrule
+%         Batch Size &
+%         512 &
+%         \numlist{256;512;2048} &
+%         2048 &
+%         \numlist{128;256;2048} \\
+%         Dropout Rate &
+%             $\approx$ \num{7.667e-2} &
+%             \numrange{0.0}{0.5} &
+%             $\approx$ \num{1.824e-1} &
+%             \numrange{0.0}{0.3} \\
+%         Learning Rate &
+%             $\approx$ \num{1.500e-3} &
+%             \numrange{1e-4}{1e-2} &
+%             $\approx$ \num{2.622e-3} &
+%             \numrange{1e-5}{1e-2} \\
+%         Weight Decay &
+%             $\approx$ \num{1.050e-5} &
+%             - &
+%             $\approx$ \num{1.050e-5} &
+%             - \\
+%         Hidden Layer Sizes &
+%             462, 924, 1848, 924 &
+%             Layers: \numrange{4}{8}, Units: \numrange{64}{4096} &
+%             419, 838, 1676, 1676, 1676, 838, 419, 209 &
+%             Layers: \numrange{3}{8}, Units: \numrange{256}{2048} \\
+%         MLP Activation Function &
+%             LeakyReLU &
+%             - &
+%             LeakyReLU &
+%             - \\
+%         Epochs &
+%         \num{48} &
+%         - &
+%         \num{402} &
+%         - \\
+%         Optimizer &
+%             Adam &
+%             - &
+%             Adam &
+%             - \\
+%         Hardware &
+%             NVIDIA H200 &
+%             - &
+%             NVIDIA H200 &
+%             - \\
+%         \bottomrule
+%     \end{tabularx}
+% \end{table*}
 
 % \begin{tabular}{llrrrrr}
 % \toprule
